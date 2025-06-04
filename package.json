@@ -11,6 +11,7 @@
   "dependencies": {
     "@aws-amplify/ui-react": "^6.5.5",
     "aws-amplify": "^6.6.6",
+    "lucide": "^0.513.0",
     "next": "14.2.10",
     "react": "^18",
     "react-dom": "^18"
@@ -27,5 +28,6 @@
     "esbuild": "^0.23.1",
     "tsx": "^4.19.0",
     "typescript": "^5.6.2"
-  }
+  },
+  "packageManager": "pnpm@10.11.1+sha512.e519b9f7639869dc8d5c3c5dfef73b3f091094b0a006d7317353c72b124e80e1afd429732e28705ad6bfa1ee879c1fce46c128ccebd3192101f43dd67c667912"
 }
