@@ -1,0 +1,109 @@
+{
+    "name": "TypeScript Development",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "."
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": true,
+            "configureZshAsDefaultShell": true,
+            "installOhMyZsh": true,
+            "installOhMyZshConfig": true,
+            "upgradePackages": true,
+            "username": "vscode",
+            "userUid": "1001"
+        },
+        "ghcr.io/rio/features/chezmoi:1": {},
+        "ghcr.io/devcontainers/features/aws-cli:1": {
+            "version": "latest"
+        }
+    },
+    "appPort": [
+        3000
+    ],
+    "containerEnv": {
+        "SSH_CONTEXT": "personal",
+        "AWS_CONTEXT": "personal",
+        "ZSH_PROFILE": "devcontainer",
+        "AWS_PAGER": "",
+        "SAM_CLI_TELEMETRY": "0",
+        "HOME": "/home/vscode",
+        "USER": "vscode",
+        "TMUX_SESSION": "vsc-${containerWorkspaceFolderBasename}"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.vscode-typescript-next",
+                "usernamehw.errorlens",
+                "VisualStudioExptTeam.vscodeintellicode",
+                "streetsidesoftware.code-spell-checker",
+                "eetami.whitespace-formatter",
+                "redhat.vscode-yaml",
+                "rvest.vs-code-prettier-eslint",
+                "esbenp.prettier-vscode",
+                "bradlc.vscode-tailwindcss",
+                "amazonwebservices.aws-toolkit-vscode",
+                "kddejong.vscode-cfn-lint",
+                "amazonwebservices.amazon-q-vscode"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "tmux",
+                "editor.formatOnSave": true,
+                "editor.formatOnType": false,
+                "editor.formatOnPaste": true,
+                "editor.formatOnSaveMode": "file",
+                "files.autoSave": "onFocusChange",
+                "typescript.preferences.importModuleSpecifier": "relative",
+                "editor.codeActionsOnSave": {
+                    "source.formatDocument": true,
+                    "source.fixAll.eslint": true,
+                    "source.organizeImports": true
+                },
+                "[typescript][typescriptreact]": {
+                    "editor.defaultFormatter": "rvest.vs-code-prettier-eslint",
+                    "vs-code-prettier-eslint.prettierLast": false
+                },
+                "[json][jsonc]": {
+                    "editor.defaultFormatter": "esbenp.prettier-vscode"
+                }
+            }
+        }
+    },
+    "runArgs": [
+        "--env-file",
+        ".devcontainer/.env"
+    ],
+    "mounts": [
+        {
+            "type": "bind",
+            "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.ssh/contexts/${localEnv:SSH_CONTEXT}",
+            "target": "/home/vscode/.ssh/contexts/${localEnv:SSH_CONTEXT}"
+        },
+        {
+            "type": "bind",
+            "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.config/zsh",
+            "target": "/home/vscode/.config/zsh"
+        },
+        {
+            "type": "bind",
+            "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.aws/personal",
+            "target": "/home/vscode/.aws"
+        },
+        {
+            "type": "bind",
+            "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.zsh_history",
+            "target": "/home/vscode/.zsh_history"
+            // "consistency": "cached"
+        },
+        {
+            "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.zsh_history_tmux",
+            "target": "/home/vscode/.zsh_history_tmux",
+            "type": "bind"
+            // "consistency": "cached"
+        }
+    ],
+    "postCreateCommand": "/bin/sh /usr/src/post_create.sh",
+    "remoteUser": "vscode"
+}
