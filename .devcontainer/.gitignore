@@ -1,0 +1,10 @@
+# Devcontainer files
+chezmoi.toml
+.env
+package-lock.json 
+
+# Mac OS
+.DS_Store
+
+# Node.js
+node_modules/ 
