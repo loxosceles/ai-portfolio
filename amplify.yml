@@ -3,19 +3,21 @@ backend:
   phases:
     build:
       commands:
-        - npm ci --cache .npm --prefer-offline
+        - corepack enable # Ensure pnpm is available
+        - pnpm install --frozen-lockfile --store-dir .pnpm-store
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
     build:
       commands:
-        - npm run build
+        - corepack enable # Ensure pnpm is available
+        - pnpm run build
   artifacts:
     baseDirectory: .next
     files:
-      - '**/*'
+      - "**/*"
   cache:
     paths:
       - .next/cache/**/*
-      - .npm/**/*
+      - .pnpm-store/**/* # pnpm store cache
       - node_modules/**/*
