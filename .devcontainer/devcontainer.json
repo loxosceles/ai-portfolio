@@ -46,7 +46,8 @@
                 "bradlc.vscode-tailwindcss",
                 "amazonwebservices.aws-toolkit-vscode",
                 "kddejong.vscode-cfn-lint",
-                "amazonwebservices.amazon-q-vscode"
+                "amazonwebservices.amazon-q-vscode",
+                "austenc.tailwind-docs"
             ],
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "tmux",
