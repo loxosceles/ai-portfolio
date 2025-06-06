@@ -1,17 +1,53 @@
-import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 
-/*== STEP 1 ===============================================================
-The section below creates a Todo database table with a "content" field. Try
-adding a new "isDone" field as a boolean. The authorization rule below
-specifies that any user authenticated via an API key can "create", "read",
-"update", and "delete" any "Todo" records.
+/*== PORTFOLIO SCHEMA ====================================================
+This schema defines the data structure for a web developer portfolio with
+developer information and project details. The Developer model contains
+personal/professional info, while the Project model contains project details
+with arrays for highlights and technologies used.
 =========================================================================*/
 const schema = a.schema({
-  Todo: a
+  Developer: a
     .model({
-      content: a.string(),
+      name: a.string().required(),
+      title: a.string().required(), // e.g., "Full Stack Developer"
+      bio: a.string(),
+      email: a.string(),
+      website: a.string(),
+      github: a.string(),
+      linkedin: a.string(),
+      location: a.string(),
+      yearsOfExperience: a.integer(),
+      skills: a.string().array(),
+      isActive: a.boolean().default(true),
+      projects: a.hasMany('Project', 'developerId')
     })
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization((allow) => [
+      allow.publicApiKey().to(['read']),
+      allow.owner()
+    ]),
+
+  Project: a
+    .model({
+      title: a.string().required(),
+      description: a.string().required(),
+      status: a.string().required(), // e.g., "Completed", "In Progress", "Planned"
+      highlights: a.string().array(), // Array of key highlights/features
+      tech: a.string().array(), // Array of technologies used
+      githubUrl: a.string(),
+      liveUrl: a.string(),
+      imageUrl: a.string(),
+      startDate: a.date(),
+      endDate: a.date(),
+      featured: a.boolean().default(false),
+      order: a.integer(), // For custom ordering
+      developerId: a.id(),
+      developer: a.belongsTo('Developer', 'developerId')
+    })
+    .authorization((allow) => [
+      allow.publicApiKey().to(['read']),
+      allow.owner()
+    ])
 });
 
 export type Schema = ClientSchema<typeof schema>;
@@ -19,38 +55,9 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: "apiKey",
+    defaultAuthorizationMode: 'apiKey',
     apiKeyAuthorizationMode: {
-      expiresInDays: 30,
-    },
-  },
+      expiresInDays: 30
+    }
+  }
 });
-
-/*== STEP 2 ===============================================================
-Go to your frontend source code. From your client-side code, generate a
-Data client to make CRUDL requests to your table. (THIS SNIPPET WILL ONLY
-WORK IN THE FRONTEND CODE FILE.)
-
-Using JavaScript or Next.js React Server Components, Middleware, Server 
-Actions or Pages Router? Review how to generate Data clients for those use
-cases: https://docs.amplify.aws/gen2/build-a-backend/data/connect-to-API/
-=========================================================================*/
-
-/*
-"use client"
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
-
-const client = generateClient<Schema>() // use this Data client for CRUDL requests
-*/
-
-/*== STEP 3 ===============================================================
-Fetch records from the database and use them in your frontend component.
-(THIS SNIPPET WILL ONLY WORK IN THE FRONTEND CODE FILE.)
-=========================================================================*/
-
-/* For example, in a React component, you can use this snippet in your
-  function's RETURN statement */
-// const { data: todos } = await client.models.Todo.list()
-
-// return <ul>{todos.map(todo => <li key={todo.id}>{todo.content}</li>)}</ul>
