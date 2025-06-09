@@ -61,6 +61,9 @@ amplifytools.xcconfig
 # Local GraphQL config
 .graphqlrc.yaml
 
+# Local Apollo config 
+apollo.config.js
+
 # Vscode
 .vscode/ 
 !.vscode/launch.json
