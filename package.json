@@ -9,16 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@apollo/client": "^3.13.8",
+    "@aws-amplify/backend-cli": "^1.7.2",
     "@aws-amplify/ui-react": "^6.11.2",
     "aws-amplify": "^6.15.0",
+    "graphql": "^16.11.0",
     "lucide-react": "^0.513.0",
     "next": "15.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@apollo/client-devtools-vscode": "^4.19.13",
     "@aws-amplify/backend": "^1.16.1",
-    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/css": "^0.8.1",
+    "@eslint/js": "^8.57.0",
+    "@eslint/json": "^0.12.0",
+    "@eslint/markdown": "^6.4.0",
     "@tailwindcss/postcss": "^4.1.8",
     "@types/node": "^22.15.29",
     "@types/react": "^19.1.6",
@@ -28,12 +35,15 @@
     "aws-cdk-lib": "^2.200.1",
     "constructs": "^10.4.2",
     "esbuild": "^0.25.5",
-    "eslint": "^9.28.0",
-    "eslint-config-next": "15.3.3",
+    "eslint": "8.57.0",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.2.0",
     "postcss": "^8.5.4",
+    "prettier-eslint": "^16.4.2",
     "tailwindcss": "^4.1.8",
     "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.1"
   },
   "packageManager": "pnpm@10.11.1+sha512.e519b9f7639869dc8d5c3c5dfef73b3f091094b0a006d7317353c72b124e80e1afd429732e28705ad6bfa1ee879c1fce46c128ccebd3192101f43dd67c667912"
 }
