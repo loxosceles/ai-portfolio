@@ -58,6 +58,9 @@ amplifytools.xcconfig
 .secret-*
 **.sample
 
+# Local GraphQL config
+.graphqlrc.yaml
+
 # Vscode
 .vscode/ 
 !.vscode/launch.json
