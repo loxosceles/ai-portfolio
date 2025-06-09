@@ -22,11 +22,13 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 # Install and activate latest pnpm
 RUN corepack prepare pnpm@latest --activate
 
-# Add pnpm's global bin directory to PATH
-ENV PATH="/home/vscode/.local/share/pnpm:$PATH"
+# Switch to vscode user and setup pnpm global directories
+USER vscode
+ENV PNPM_HOME="/home/vscode/.local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN mkdir -p $PNPM_HOME
 
-COPY package*.json ./
-RUN pnpm install
-
-# Add local node_modules/.bin to PATH (lower precedence than global pnpm)
-ENV PATH="/home/vscode/node_modules/.bin:$PATH"
+# Install global dev tools with pnpm
+RUN pnpm add -g \
+    prettier@^3.5.3 \
+    typescript@^5.8.3
