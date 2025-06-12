@@ -17,7 +17,11 @@ function Header() {
           {["about", "projects", "skills", "contact"].map((section) => (
             <button
               key={section}
-              onClick={() => setActiveSection(section)}
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveSection(section);
+                document.getElementById(section)?.scrollIntoView({ behavior: "smooth" });
+              }} 
               className={`capitalize transition-colors duration-200 pb-1 ${
                 activeSection === section
                   ? "text-brand-accent border-b-2 border-brand-accent"
