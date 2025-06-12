@@ -1,4 +1,24 @@
 {
     "name": "ai-portfolio",
     "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "deploy:infra": "pnpm --filter=infrastructure run deploy",
+        "postdeploy": "node scripts/process-cf-outputs.js",
+        "dev:frontend": "pnpm --filter=frontend run dev",
+        "build:frontend": "pnpm --filter=frontend run build",
+        "test": "pnpm --filter='..' run test",
+        "test:frontend": "pnpm  --filter=frontend run test",
+        "test:infra": "pnpm --filter=infrastructure run test",
+        "seed:infra": "pnpm --filter=infrastructure run seed",
+        "seed:infra:force": "pnpm --filter=infrastructure run seed:force"
+    },
+    "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac",
+    "devDependencies": {
+        "@aws-sdk/client-dynamodb": "^3.828.0",
+        "@aws-sdk/lib-dynamodb": "^3.828.0",
+        "@types/node": "^24.0.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.8.3"
+    }
 }
