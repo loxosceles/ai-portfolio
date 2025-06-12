@@ -30,8 +30,8 @@ function SkillsSection() {
               {category}
             </h3>
             <div className="space-y-2">
-              {skillList.map((skill, index) => (
-                <div key={index} className="flex items-center justify-between">
+              {skillList.map((skill) => (
+                <div key={skill} className="flex items-center justify-between">
                   <span className="text-secondary">{skill}</span>
                   <div className="w-2 h-2 bg-brand-accent rounded-full"></div>
                 </div>
