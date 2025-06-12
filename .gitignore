@@ -7,12 +7,9 @@
 .yarn/install-state.gz
 .pnpm-store/
 
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
+# Amplify
+.amplify/
+amplify*
 
 # Production
 /build
@@ -31,35 +28,9 @@ yarn-error.log*
 .env*.local
 .env
 
-# Vercel
-.vercel
-
-# Typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# Amplify
-.amplify
-amplify_outputs*
-amplify/\#current-cloud-backend
-amplify/.config/local-*
-amplify/logs
-amplify/mock-data
-amplify/mock-api-resources
-amplify/backend/amplify-meta.json
-amplify/backend/.temp
-dist/
-aws-exports.js
-awsconfiguration.json
-amplifyconfiguration.*
-amplify-build-config.json
-amplify-gradle-config.json
-amplifytools.xcconfig
-.secret-*
-**.sample
-
-# Local GraphQL config
-.graphqlrc.yaml
+# Secrets
+**/.secret-*
+**/*.pem
 
 # Local Apollo config 
 apollo.config.js
