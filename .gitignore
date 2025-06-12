@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # Dependencies
 /node_modules
 /.pnp
@@ -7,55 +5,38 @@
 .yarn/install-state.gz
 .pnpm-store/
 
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
+# Amplify
+.amplify/
+amplify*
 
 # Production
 /build
+dist/
 
 # Misc
 .DS_Store
-*.pem
 .envrc
+**.sample
 
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Backup by my own convention 
+*__bak__ 
+__bak__*
+**/__bak__helpers/
+/__bak__helpers/
 
 # Local env files
 .env*.local
+.env
 
-# Vercel
-.vercel
+# Secrets
+**/.secret-*
+**/*.pem
 
-# Typescript
-*.tsbuildinfo
-next-env.d.ts
+# Local Apollo config 
+apollo.config.js
 
-# Amplify
-.amplify
-amplify_outputs*
-amplify/\#current-cloud-backend
-amplify/.config/local-*
-amplify/logs
-amplify/mock-data
-amplify/mock-api-resources
-amplify/backend/amplify-meta.json
-amplify/backend/.temp
-dist/
-aws-exports.js
-awsconfiguration.json
-amplifyconfiguration.*
-amplify-build-config.json
-amplify-gradle-config.json
-amplifytools.xcconfig
-.secret-*
-**.sample
+# Local GraphQL config
+.graphqlrc.yaml
 
 # Vscode
 .vscode/ 

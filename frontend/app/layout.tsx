@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import GraphQLProvider from "@/components/apollo-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Magnus Henkel's Portfolio",
-  description: "Powered by Next.js and Tailwind CSS",
+  title: "Magnus Henkel's Developer Portfolio",
+  description:
+    "A showcase of my projects, skills, and experience as a developer.",
 };
 
 export default function RootLayout({
@@ -16,7 +18,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <GraphQLProvider>{children}</GraphQLProvider>
+      </body>
     </html>
   );
 }

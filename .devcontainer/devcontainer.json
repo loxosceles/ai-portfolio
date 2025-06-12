@@ -19,9 +19,6 @@
             "version": "latest"
         }
     },
-    "appPort": [
-        3000
-    ],
     "containerEnv": {
         "SSH_CONTEXT": "personal",
         "AWS_CONTEXT": "personal",
@@ -47,10 +44,15 @@
                 "amazonwebservices.aws-toolkit-vscode",
                 "kddejong.vscode-cfn-lint",
                 "amazonwebservices.amazon-q-vscode",
+                "YoavBls.pretty-ts-errors",
+                "apollographql.vscode-apollo",
+                "GraphQL.vscode-graphql",
+                "GraphQL.vscode-graphql-syntax",
                 "austenc.tailwind-docs"
             ],
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "tmux",
+                "editor.defaultFormatter": "rvest.vs-code-prettier-eslint",
                 "editor.formatOnSave": true,
                 "editor.formatOnType": false,
                 "editor.formatOnPaste": true,
@@ -85,7 +87,8 @@
         {
             "type": "bind",
             "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.config/zsh",
-            "target": "/home/vscode/.config/zsh"
+            "target": "/home/vscode/.config/zsh",
+            "consistency": "cached"
         },
         {
             "type": "bind",
@@ -95,14 +98,20 @@
         {
             "type": "bind",
             "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.zsh_history",
-            "target": "/home/vscode/.zsh_history"
-            // "consistency": "cached"
+            "target": "/home/vscode/.zsh_history",
+            "consistency": "cached"
         },
         {
             "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.zsh_history_tmux",
             "target": "/home/vscode/.zsh_history_tmux",
-            "type": "bind"
-            // "consistency": "cached"
+            "type": "bind",
+            "consistency": "cached"
+        },
+        {
+            "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.tmux",
+            "target": "/home/vscode/.tmux",
+            "type": "bind",
+            "consistency": "cached"
         }
     ],
     "postCreateCommand": "/bin/sh /usr/src/post_create.sh",

@@ -24,8 +24,8 @@ CHEZMOI_DOTFILES_REPOSITORY="git@github.com:/${GITHUB_USERNAME}/devcontainer-dot
 chezmoi init --apply "${CHEZMOI_DOTFILES_REPOSITORY}"
 
 ### FIXME: We're fist copying the .zshrc file to the home directory via chezmoi,
-## but now we're backing it up and linking it to a mounted location.  
+## but now we're backing it up and linking it to a mounted location.
 #
 # Enable the mounted zsh configuration which was mounted under $HOME/.config/zsh
 mv "$HOME"/.zshrc "$HOME"/.zshrc.bak
-ln -s "$HOME"/.config/zsh/.zshrc "$HOME"/.zshrc 
+ln -s "$HOME"/.config/zsh/.zshrc "$HOME"/.zshrc
