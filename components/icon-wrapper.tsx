@@ -15,7 +15,7 @@ function IconWrapper({
     <div className={`${className} invert`}>
       <Image
         src={`/${icon}.svg`}
-        alt="Github Icon"
+        alt={icon ? `${icon} icon` : "Icon"}
         width={width}
         height={height}
       />
