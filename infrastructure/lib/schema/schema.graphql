@@ -1,0 +1,125 @@
+type Developer @aws_cognito_user_pools @aws_api_key {
+  id: ID!
+  name: String!
+  title: String!
+  bio: String
+  email: String
+  website: String
+  github: String
+  linkedin: String
+  location: String
+  yearsOfExperience: Int
+  skills: [String]
+  isActive: Boolean
+  projects: [Project] @hasMany(fields: ["id"])
+}
+
+type Project @aws_cognito_user_pools @aws_api_key {
+  id: ID!
+  title: String!
+  description: String!
+  status: String!
+  highlights: [String]
+  tech: [String]
+  githubUrl: String
+  liveUrl: String
+  imageUrl: String
+  startDate: AWSDateTime
+  endDate: AWSDateTime
+  featured: Boolean
+  order: Int
+  developer: Developer! @belongsTo(fields: ["developerId"])
+  developerId: ID!
+}
+
+type Query {
+  getDeveloper(id: ID!): Developer
+    @aws_cognito_user_pools
+    @aws_api_key
+  listDevelopers: [Developer]
+    @aws_cognito_user_pools
+    @aws_api_key
+  getProject(id: ID!): Project
+    @aws_cognito_user_pools
+    @aws_api_key
+  listProjects: [Project]
+    @aws_cognito_user_pools
+    @aws_api_key
+}
+
+type Mutation {
+  createDeveloper(input: CreateDeveloperInput!): Developer
+    @aws_cognito_user_pools
+  updateDeveloper(input: UpdateDeveloperInput!): Developer
+    @aws_cognito_user_pools
+  deleteDeveloper(id: ID!): Developer
+    @aws_cognito_user_pools
+  createProject(input: CreateProjectInput!): Project
+    @aws_cognito_user_pools
+  updateProject(input: UpdateProjectInput!): Project
+    @aws_cognito_user_pools
+  deleteProject(id: ID!): Project
+    @aws_cognito_user_pools
+}
+
+input CreateDeveloperInput {
+  name: String!
+  title: String!
+  bio: String
+  email: String
+  website: String
+  github: String
+  linkedin: String
+  location: String
+  yearsOfExperience: Int
+  skills: [String]
+  isActive: Boolean
+}
+
+input UpdateDeveloperInput {
+  id: ID!
+  name: String
+  title: String
+  bio: String
+  email: String
+  website: String
+  github: String
+  linkedin: String
+  location: String
+  yearsOfExperience: Int
+  skills: [String]
+  isActive: Boolean
+}
+
+input CreateProjectInput {
+  title: String!
+  description: String!
+  status: String!
+  highlights: [String]
+  tech: [String]
+  githubUrl: String
+  liveUrl: String
+  imageUrl: String
+  startDate: AWSDateTime
+  endDate: AWSDateTime
+  featured: Boolean
+  order: Int
+  developerId: ID!
+}
+
+input UpdateProjectInput {
+  id: ID!
+  title: String
+  description: String
+  status: String
+  highlights: [String]
+  tech: [String]
+  githubUrl: String
+  liveUrl: String
+  imageUrl: String
+  startDate: AWSDateTime
+  endDate: AWSDateTime
+  featured: Boolean
+  order: Int
+  developerId: ID
+}
