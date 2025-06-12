@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # Dependencies
 /node_modules
 /.pnp
@@ -13,16 +11,18 @@ amplify*
 
 # Production
 /build
+dist/
 
 # Misc
 .DS_Store
-*.pem
 .envrc
+**.sample
 
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Backup by my own convention 
+*__bak__ 
+__bak__*
+**/__bak__helpers/
+/__bak__helpers/
 
 # Local env files
 .env*.local
@@ -34,6 +34,9 @@ yarn-error.log*
 
 # Local Apollo config 
 apollo.config.js
+
+# Local GraphQL config
+.graphqlrc.yaml
 
 # Vscode
 .vscode/ 
