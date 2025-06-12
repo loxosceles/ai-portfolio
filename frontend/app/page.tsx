@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import HeroSection from "../components/hero-section";
 import FeaturedProjects from "../components/featured-projects";
 import SkillsSection from "../components/skills-section";
