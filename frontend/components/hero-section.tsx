@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import ProjectPreview from "../components/project-preview";
 import { MessageCircle } from "lucide-react";
 import IconWrapper from "@/components/icon-wrapper";
+import { DeveloperType } from "../shared/types";
 
 function HeroSection() {
   const [isLoaded, setIsLoaded] = useState(false);
