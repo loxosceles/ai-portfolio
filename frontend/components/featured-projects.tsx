@@ -1,45 +1,18 @@
 import React from "react";
+import { DeveloperType } from "@/shared/types";
 
-const projects = [
-  {
-    title: "AI-Powered Portfolio System",
-    description:
-      "Serverless RAG application using AWS services, demonstrating advanced retrieval-augmented generation for personalized recruiter experiences.",
-    tech: ["Next.js", "AWS Lambda", "PostgreSQL", "PGVector", "AWS Titan"],
-    status: "In Development",
-    highlights: [
-      "Semantic search across professional artifacts",
-      "Cost-optimized serverless architecture",
-      "AI-generated third-person introductions",
-    ],
-  },
-  {
-    title: "SSH Context Manager",
-    description:
-      "Full-stack e-commerce solution with real-time inventory management and payment processing.",
-    tech: ["React", "Node.js", "MongoDB", "Stripe API"],
-    status: "Completed",
-    highlights: [
-      "Real-time inventory updates",
-      "Secure payment processing",
-      "Admin dashboard",
-    ],
-  },
-  {
-    title: "Data Visualization Dashboard",
-    description:
-      "Interactive dashboard for business intelligence with real-time data streaming.",
-    tech: ["D3.js", "Python", "Flask", "WebSocket"],
-    status: "Completed",
-    highlights: [
-      "Real-time data streaming",
-      "Interactive visualizations",
-      "Custom analytics engine",
-    ],
-  },
-];
+function FeaturedProjects({ developer }: { developer: DeveloperType }) {
+  console.log("Developer's project:", developer.projects);
+  const { projects } = developer || {};
 
-function FeaturedProjects() {
+  if (!projects || projects.length === 0) {
+    return (
+      <div className="text-center text-muted">
+        <p>Error loading projects.</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <h2 className="text-4xl font-bold text-primary text-center mb-12">
@@ -57,10 +30,11 @@ function FeaturedProjects() {
               </h3>
               <span
                 className={`px-2 py-1 rounded text-xs ${
-                  project.status === "In Development"
+                  project.status === "Active"
                     ? "status-badge-dev"
                     : "status-badge-complete"
-                }`}
+                }
+            `}
               >
                 {project.status}
               </span>
@@ -68,7 +42,7 @@ function FeaturedProjects() {
             <p className="text-secondary mb-4">{project.description}</p>
             <div className="mb-4">
               <div className="flex flex-wrap gap-2">
-                {project.tech.map((tech, techIndex) => (
+                {project.tech?.map((tech, techIndex) => (
                   <span
                     key={techIndex}
                     className="px-2 py-1 tech-tag rounded text-xs"
@@ -79,7 +53,7 @@ function FeaturedProjects() {
               </div>
             </div>
             <ul className="text-sm text-muted space-y-1">
-              {project.highlights.map((highlight, hIndex) => (
+              {project.highlights?.map((highlight, hIndex) => (
                 <li key={hIndex} className="flex items-start">
                   <span className="text-brand-accent mr-2">•</span>
                   {highlight}
