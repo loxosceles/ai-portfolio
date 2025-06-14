@@ -1,7 +1,13 @@
 import { Mail } from "lucide-react";
+import Link from "next/link";
 import IconWrapper from "../components/icon-wrapper";
 
-function MainContent() {
+function MainContent({
+  developer,
+}: {
+  developer: { email: string; github: string; linkedin: string };
+}) {
+  const { email, github, linkedin } = developer;
   return (
     <div className="container mx-auto text-center">
       <h2 className="text-4xl font-bold text-primary mb-8">
@@ -17,21 +23,25 @@ function MainContent() {
           justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6"
       >
         <a
-          href="mailto:magnus@example.com"
+          href={`mailto:${email}`}
           className="flex items-center space-x-2 bg-surface-light hover:bg-surface-medium text-primary px-6 py-3 rounded-lg transition-colors duration-200"
         >
           <Mail className="h-5 w-5" />
-          <span>magnus@example.com</span>
+          <span>{email}</span>
         </a>
-        <a
-          href="#"
+        <Link
+          href={linkedin}
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center space-x-2 bg-surface-light hover:bg-surface-medium text-primary px-6 py-3 rounded-lg transition-colors duration-200"
         >
           <IconWrapper icon="linkedin" className="h-5 w-5" />
-          <span>LinkedIn</span>
-        </a>
-        <a
-          href="#"
+          LinkedIn
+        </Link>
+        <Link
+          href={github}
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center space-x-2 bg-surface-light hover:bg-surface-medium text-primary px-6 py-3 rounded-lg transition-colors duration-200"
         >
           <IconWrapper
@@ -41,7 +51,7 @@ function MainContent() {
             height={30}
           />
           <span>GitHub</span>
-        </a>
+        </Link>
       </div>
     </div>
   );
