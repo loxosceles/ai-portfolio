@@ -23,20 +23,22 @@ const forceFlag = args.includes('--force');
 
 function validateData() {
   // Get all developer IDs
-  const developerIds = developers.map(dev => dev.id);
-  
+  const developerIds = developers.map((dev) => dev.id);
+
   // Validate each project has a developerId that exists
-  projects.forEach(project => {
+  projects.forEach((project) => {
     if (!project.developerId) {
       throw new Error(`Project ${project.id} is missing developerId`);
     }
     if (!developerIds.includes(project.developerId)) {
-      throw new Error(`Project ${project.id} references non-existent developer ${project.developerId}`);
+      throw new Error(
+        `Project ${project.id} references non-existent developer ${project.developerId}`
+      );
     }
   });
 
   // Validate skillSets structure
-  developers.forEach(developer => {
+  developers.forEach((developer) => {
     if (!Array.isArray(developer.skillSets)) {
       throw new Error(`Developer ${developer.id} skillSets must be an array`);
     }
@@ -52,32 +54,34 @@ function validateData() {
       }
       // Check skills array
       if (!Array.isArray(skillSet.skills)) {
-        throw new Error(`Developer ${developer.id} skillSet at index ${index} skills must be an array`);
+        throw new Error(
+          `Developer ${developer.id} skillSet at index ${index} skills must be an array`
+        );
       }
       if (skillSet.skills.length === 0) {
-        throw new Error(`Developer ${developer.id} skillSet at index ${index} skills array is empty`);
+        throw new Error(
+          `Developer ${developer.id} skillSet at index ${index} skills array is empty`
+        );
       }
     });
   });
 }
 
-
 async function seedData() {
-
-  // Validate data before seeding 
+  // Validate data before seeding
   validateData();
 
   try {
     // Seed developers
     await docClient.send(
       new BatchWriteCommand({
-      RequestItems: {
-        [`PortfolioDevelopers-${environment}`]: developers.map(dev => ({
-        PutRequest: {
-          Item: dev
+        RequestItems: {
+          [`PortfolioDevelopers-${environment}`]: developers.map((dev) => ({
+            PutRequest: {
+              Item: dev
+            }
+          }))
         }
-        }))
-      }
       })
     );
 
@@ -85,7 +89,7 @@ async function seedData() {
     await docClient.send(
       new BatchWriteCommand({
         RequestItems: {
-          [`PortfolioProjects-${environment}`]: projects.map(proj => ({
+          [`PortfolioProjects-${environment}`]: projects.map((proj) => ({
             PutRequest: {
               Item: {
                 ...proj,
@@ -104,14 +108,8 @@ async function seedData() {
   }
 }
 
-// Allow force flag to be passed
-const force = process.argv.includes('--force');
-
 async function checkTablesEmpty(force = false) {
-  const tables = [
-    `PortfolioDevelopers-${environment}`,
-    `PortfolioProjects-${environment}`
-  ];
+  const tables = [`PortfolioDevelopers-${environment}`, `PortfolioProjects-${environment}`];
 
   try {
     for (const table of tables) {
@@ -138,12 +136,12 @@ async function checkTablesEmpty(force = false) {
     }
   } catch (error) {
     console.error('🚨 Error checking tables:', error.message);
-    
+
     // Handle specific DynamoDB errors
     if (error.name === 'ResourceNotFoundException') {
       console.error('  Table does not exist - please deploy your infrastructure first');
     }
-    
+
     process.exit(1);
   }
 }
