@@ -1,24 +1,27 @@
-"use client";
-import HeroSection from "@/components/hero-section";
-import FeaturedProjects from "@/components/featured-projects";
-import SkillsSection from "@/components/skills-section";
-import Footer from "@/components/footer";
-import Header from "@/components/header";
-import MainContent from "@/components/main-content";
-import { GET_DEVELOPER_WITH_PROJECTS } from "@/queries/developers";
-import { useQuery } from "@apollo/client";
+'use client';
+import HeroSection from '@/components/hero-section';
+import FeaturedProjects from '@/components/featured-projects';
+import SkillsSection from '@/components/skills-section';
+import Footer from '@/components/footer';
+import Header from '@/components/header';
+import MainContent from '@/components/main-content';
+import { GET_DEVELOPER_WITH_PROJECTS } from '@/queries/developers';
+import { useQuery } from '@apollo/client';
 
 const Portfolio = () => {
-  const developerId = "dev-1";
+  const developerId = 'dev-1';
 
   const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
     variables: { id: developerId },
     onCompleted: (data: { getDeveloper: { name: string } }) => {
-      console.log("Developer data:", data);
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('Developer data:', data);
+      }
     },
     onError: (error: Error) => {
-      console.error("Query error:", error);
-    },
+      console.error('Query error:', error);
+    }
   });
 
   const developer = data?.getDeveloper || {};
