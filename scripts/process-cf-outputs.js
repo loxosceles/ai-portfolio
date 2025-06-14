@@ -46,7 +46,7 @@ function getStackOutputs(stackName) {
 function getAllOutputs() {
   const sharedStackOutputs = getStackOutputs(`PortfolioSharedStack-${environment}`);
   const apiStackOutputs = getStackOutputs(`PortfolioApiStack-${environment}`);
-  
+
   return [...sharedStackOutputs, ...apiStackOutputs];
 }
 
@@ -54,7 +54,7 @@ function readEnvFile(path) {
   if (!fs.existsSync(path)) {
     return {};
   }
-  
+
   const content = fs.readFileSync(path, 'utf8');
   return content.split('\n').reduce((acc, line) => {
     const [key, ...values] = line.split('=');
@@ -68,9 +68,9 @@ function readEnvFile(path) {
 function updateEnvFile() {
   try {
     console.log('Fetching CloudFormation outputs...');
-    
+
     const cfOutputsRaw = getAllOutputs();
-    
+
     // Only include outputs that have a mapping
     const cfOutputs = cfOutputsRaw.reduce((acc, output) => {
       if (output.ExportName) {
@@ -85,7 +85,7 @@ function updateEnvFile() {
     console.log('Parsed CloudFormation outputs:', cfOutputs);
 
     const existingEnv = readEnvFile(frontendEnvPath);
-    
+
     const frontendEnvDir = path.dirname(frontendEnvPath);
     if (!fs.existsSync(frontendEnvDir)) {
       fs.mkdirSync(frontendEnvDir, { recursive: true });

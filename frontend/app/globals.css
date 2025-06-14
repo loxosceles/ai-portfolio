@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   /* Primary Brand Colors */
@@ -6,22 +6,22 @@
   --color-brand-primary-light: #7c3aed;
   --color-brand-primary-lighter: #9333ea;
   --color-brand-accent: #a855f7;
-  
+
   --color-surface-dark: #0f172a;
   --color-surface-medium: #1e293b;
   --color-surface-light: #334155;
-  
+
   --color-text-primary: #ffffff;
   --color-text-secondary: #d1d5db;
   --color-text-muted: #9ca3af;
-  
+
   --color-success: #22c55e;
   --color-warning: #eab308;
   --color-info: #3b82f6;
 
   --color-status-warning: #f59e0b;
-  --color-status-success: #16a34a;  
-  
+  --color-status-success: #16a34a;
+
   --color-border-subtle: rgba(139, 92, 246, 0.2);
   --color-border-hover: rgba(139, 92, 246, 0.4);
   --color-bg-glass: rgba(30, 41, 59, 0.5);
@@ -30,38 +30,84 @@
 
 @layer utilities {
   /* Brand Colors */
-  .bg-brand-primary { background-color: theme(--color-brand-primary); }
-  .bg-brand-primary-light { background-color: theme(--color-brand-primary-light); }
-  .bg-brand-accent { background-color: theme(--color-brand-accent); }
-  .text-brand-primary { color: theme(--color-brand-primary); }
-  .text-brand-accent { color: theme(--color-brand-accent); }
-  .border-brand-primary { border-color: theme(--color-brand-primary); }
-  .border-brand-accent { border-color: theme(--color-brand-accent); }
+  .bg-brand-primary {
+    background-color: theme(--color-brand-primary);
+  }
+  .bg-brand-primary-light {
+    background-color: theme(--color-brand-primary-light);
+  }
+  .bg-brand-accent {
+    background-color: theme(--color-brand-accent);
+  }
+  .text-brand-primary {
+    color: theme(--color-brand-primary);
+  }
+  .text-brand-accent {
+    color: theme(--color-brand-accent);
+  }
+  .border-brand-primary {
+    border-color: theme(--color-brand-primary);
+  }
+  .border-brand-accent {
+    border-color: theme(--color-brand-accent);
+  }
 
   /* Surface Colors */
-  .bg-surface-dark { background-color: theme(--color-surface-dark); }
-  .bg-surface-medium { background-color: theme(--color-surface-medium); }
-  .bg-surface-light { background-color: theme(--color-surface-light); }
-  
+  .bg-surface-dark {
+    background-color: theme(--color-surface-dark);
+  }
+  .bg-surface-medium {
+    background-color: theme(--color-surface-medium);
+  }
+  .bg-surface-light {
+    background-color: theme(--color-surface-light);
+  }
+
   /* Text Colors */
-  .text-primary { color: theme(--color-text-primary); }
-  .text-secondary { color: theme(--color-text-secondary); }
-  .text-muted { color: theme(--color-text-muted); }
-  
+  .text-primary {
+    color: theme(--color-text-primary);
+  }
+  .text-secondary {
+    color: theme(--color-text-secondary);
+  }
+  .text-muted {
+    color: theme(--color-text-muted);
+  }
+
   /* Status Colors */
-  .bg-status-success { background-color: theme(--color-success); }
-  .bg-status-warning { background-color: theme(--color-warning); }
-  .bg-status-info { background-color: theme(--color-info); }
-  .text-status-success { color: theme(--color-success); }
-  .text-status-warning { color: theme(--color-warning); }
-  .text-status-info { color: theme(--color-info); }
-  
+  .bg-status-success {
+    background-color: theme(--color-success);
+  }
+  .bg-status-warning {
+    background-color: theme(--color-warning);
+  }
+  .bg-status-info {
+    background-color: theme(--color-info);
+  }
+  .text-status-success {
+    color: theme(--color-success);
+  }
+  .text-status-warning {
+    color: theme(--color-warning);
+  }
+  .text-status-info {
+    color: theme(--color-info);
+  }
+
   /* Interactive Elements */
-  .border-subtle { border-color: theme(--color-border-subtle); }
-  .border-hover { border-color: theme(--color-border-hover); }
-  .bg-glass { background-color: theme(--color-bg-glass); }
-  .bg-glass-light { background-color: theme(--color-bg-glass-light); }
-  
+  .border-subtle {
+    border-color: theme(--color-border-subtle);
+  }
+  .border-hover {
+    border-color: theme(--color-border-hover);
+  }
+  .bg-glass {
+    background-color: theme(--color-bg-glass);
+  }
+  .bg-glass-light {
+    background-color: theme(--color-bg-glass-light);
+  }
+
   /* Component-specific utilities */
   .btn-primary {
     background-color: theme(--color-brand-primary);
@@ -71,7 +117,7 @@
   .btn-primary:hover {
     background-color: theme(--color-brand-primary-light);
   }
-  
+
   .btn-outline {
     border: 1px solid theme(--color-brand-accent);
     color: theme(--color-brand-accent);
@@ -81,7 +127,7 @@
     background-color: theme(--color-brand-accent);
     color: theme(--color-text-primary);
   }
-  
+
   .card-glass {
     background-color: theme(--color-bg-glass);
     backdrop-filter: blur(8px);
@@ -90,21 +136,26 @@
   .card-glass:hover {
     border-color: theme(--color-border-hover);
   }
-  
+
   .gradient-bg {
-    background: linear-gradient(135deg, theme(--color-surface-dark) 0%, theme(--color-brand-primary) 50%, theme(--color-surface-dark) 100%);
+    background: linear-gradient(
+      135deg,
+      theme(--color-surface-dark) 0%,
+      theme(--color-brand-primary) 50%,
+      theme(--color-surface-dark) 100%
+    );
   }
-  
+
   .status-badge-dev {
     background-color: rgba(234, 179, 8, 0.2);
     color: theme(--color-status-warning);
   }
-  
+
   .status-badge-complete {
     background-color: rgba(34, 197, 94, 0.2);
     color: theme(--color-status-success);
   }
-  
+
   .tech-tag {
     background-color: rgba(168, 85, 247, 0.2);
     color: #c4b5fd;

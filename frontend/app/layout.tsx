@@ -1,21 +1,17 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import GraphQLProvider from "@/components/apollo-provider";
+import React from 'react';
+import { Inter } from 'next/font/google';
+import type { Metadata } from 'next';
+import GraphQLProvider from '@/lib/apollo/apollo-provider';
+import './globals.css';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: "Magnus Henkel's Developer Portfolio",
-  description:
-    "A showcase of my projects, skills, and experience as a developer.",
+  description: 'A showcase of my projects, skills, and experience as a developer.'
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={inter.className}>

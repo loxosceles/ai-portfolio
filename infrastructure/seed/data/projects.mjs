@@ -2,8 +2,9 @@ export const projects = [
   {
     id: 'proj-1',
     title: 'AI-Powered Portfolio Platform',
-    description: 'A dynamic portfolio platform using React and AWS services, featuring AI-driven content recommendations and real-time analytics',
-    status: 'completed',
+    description:
+      'A dynamic portfolio platform using React and AWS services, featuring AI-driven content recommendations and real-time analytics',
+    status: 'Active',
     highlights: [
       'AI-driven content recommendations',
       'Real-time analytics',
@@ -15,23 +16,10 @@ export const projects = [
   },
   {
     id: 'proj-2',
-    title: 'Cloud-Native Task Manager',
-    description: 'A scalable task management system built with microservices architecture, featuring real-time updates and team collaboration tools',
-    status: 'completed',
-    highlights: [
-      'Microservices architecture',
-      'Real-time updates',
-      'Team collaboration tools'
-    ],
-    tech: ['Node.js', 'Docker', 'Kubernetes', 'MongoDB', 'WebSocket'],
-    imageUrl: 'https://example.com/task-manager.jpg',
-    developerId: 'dev-1'
-  },
-  {
-    id: 'proj-3',
     title: 'Secure Authentication Service',
-    description: 'A robust authentication system implementing OAuth2.0 and JWT, with multi-factor authentication and role-based access control',
-    status: 'completed',
+    description:
+      'A robust authentication system implementing OAuth2.0 and JWT, with multi-factor authentication and role-based access control',
+    status: 'Completed',
     highlights: [
       'Multi-factor authentication',
       'Role-based access control',
@@ -42,10 +30,11 @@ export const projects = [
     developerId: 'dev-1'
   },
   {
-    id: 'proj-4',
+    id: 'proj-3',
     title: 'Real-time Analytics Dashboard',
-    description: 'An interactive analytics dashboard with real-time data visualization, supporting multiple data sources and custom reporting',
-    status: 'completed',
+    description:
+      'An interactive analytics dashboard with real-time data visualization, supporting multiple data sources and custom reporting',
+    status: 'Completed',
     highlights: [
       'Real-time data visualization',
       'Multiple data source support',

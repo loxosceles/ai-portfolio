@@ -1,52 +1,119 @@
 import js from '@eslint/js';
+import importPlugin from 'eslint-plugin-import';
+import nextPlugin from '@next/eslint-plugin-next';
+import typescriptEslint from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
 import globals from 'globals';
-import tseslint from 'typescript-eslint';
-import pluginReact from 'eslint-plugin-react';
-import json from '@eslint/json';
-import markdown from '@eslint/markdown';
-import css from '@eslint/css';
-import { defineConfig } from 'eslint/config';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
-export default defineConfig([
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Define ignore patterns that match your .eslintignore
+const IGNORE_PATTERNS = [
+  '**/node_modules/**',
+  '**/.next/**',
+  '**/build/**',
+  '**/dist/**',
+  '**/cdk.out/**',
+  '**/*.d.ts',
+  '**/jest.config.js',
+  '**/*.config.js',
+  '**/.eslintrc.js',
+  '**/__bak__*/**',
+  '**/__bak__*'
+];
+
+const SHARED_RULES = {
+  'eol-last': ['error', 'always'],
+  'no-console': ['warn', { allow: ['error', 'warn', 'dir', 'time', 'timeEnd'] }],
+  'no-unused-vars': 'off',
+  '@typescript-eslint/no-unused-vars': 'warn'
+};
+
+export default [
+  // Global ignores - MUST come first
   {
-    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    plugins: { js },
-    extends: ['js/recommended', 'next', 'next/core-web-vitals', 'prettier']
+    ignores: IGNORE_PATTERNS
   },
+
+  // Base JavaScript config
   {
-    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    languageOptions: { globals: { ...globals.browser, ...globals.node } }
+    files: ['**/*.js'],
+    ignores: IGNORE_PATTERNS,
+    ...js.configs.recommended,
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.browser
+      }
+    },
+    rules: {
+      ...SHARED_RULES
+    }
   },
-  tseslint.configs.recommended,
-  pluginReact.configs.flat.recommended,
+
+  // Frontend TypeScript config
   {
-    files: ['**/*.json'],
-    plugins: { json },
-    language: 'json/json',
-    extends: ['json/recommended']
+    files: ['frontend/**/*.{ts,tsx}'],
+    ignores: IGNORE_PATTERNS,
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        project: path.join(__dirname, 'frontend/tsconfig.json'),
+        ecmaVersion: 'latest',
+        tsconfigRootDir: path.join(__dirname, 'frontend'),
+        sourceType: 'module'
+      }
+    },
+    plugins: {
+      '@next/next': nextPlugin,
+      '@typescript-eslint': typescriptEslint,
+      import: importPlugin
+    },
+    settings: {
+      next: {
+        rootDir: path.join(__dirname, 'frontend')
+      },
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+          project: path.join(__dirname, 'frontend/tsconfig.json')
+        }
+      },
+      node: {
+        extensions: ['.js', '.jsx', '.ts', '.tsx']
+      }
+    },
+    rules: {
+      ...SHARED_RULES,
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'import/no-unresolved': 'error'
+    }
   },
+
+  // Infrastructure TypeScript config
   {
-    files: ['**/*.jsonc'],
-    plugins: { json },
-    language: 'json/jsonc',
-    extends: ['json/recommended']
-  },
-  {
-    files: ['**/*.json5'],
-    plugins: { json },
-    language: 'json/json5',
-    extends: ['json/recommended']
-  },
-  {
-    files: ['**/*.md'],
-    plugins: { markdown },
-    language: 'markdown/gfm',
-    extends: ['markdown/recommended']
-  },
-  {
-    files: ['**/*.css'],
-    plugins: { css },
-    language: 'css/css',
-    extends: ['css/recommended']
+    files: ['infrastructure/**/*.ts'],
+    ignores: IGNORE_PATTERNS,
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        project: path.join(__dirname, 'infrastructure/tsconfig.json'),
+        ecmaVersion: 'latest',
+        sourceType: 'module'
+      }
+    },
+    plugins: {
+      '@typescript-eslint': typescriptEslint
+    },
+    rules: {
+      ...SHARED_RULES,
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn'
+    }
   }
-]);
+];
