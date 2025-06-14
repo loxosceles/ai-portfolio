@@ -1,4 +1,4 @@
-import { gql, useQuery } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 export const GET_DEVELOPER = gql`
   query GetDeveloper($id: ID!) {
@@ -7,7 +7,10 @@ export const GET_DEVELOPER = gql`
       name
       email
       title
-      skills
+      skillSets {
+        name
+        skills
+      }
       bio
       github
       linkedin
@@ -32,7 +35,10 @@ export const LIST_DEVELOPERS = gql`
       linkedin
       location
       yearsOfExperience
-      skills
+      skillSets {
+        name
+        skills
+      }
       isActive
     }
   }
@@ -74,8 +80,8 @@ export const GET_DEVELOPER_WITH_PROJECTS = gql`
       location
       yearsOfExperience
       skillSets {
-        name 
-        skills 
+        name
+        skills
       }
       isActive
       projects {
