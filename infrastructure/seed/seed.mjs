@@ -34,7 +34,33 @@ function validateData() {
       throw new Error(`Project ${project.id} references non-existent developer ${project.developerId}`);
     }
   });
+
+  // Validate skillSets structure
+  developers.forEach(developer => {
+    if (!Array.isArray(developer.skillSets)) {
+      throw new Error(`Developer ${developer.id} skillSets must be an array`);
+    }
+
+    developer.skillSets.forEach((skillSet, index) => {
+      // Check for required ID
+      if (!skillSet.id) {
+        throw new Error(`Developer ${developer.id} skillSet at index ${index} is missing id`);
+      }
+      // Check for required name (previously category)
+      if (!skillSet.name) {
+        throw new Error(`Developer ${developer.id} skillSet at index ${index} is missing name`);
+      }
+      // Check skills array
+      if (!Array.isArray(skillSet.skills)) {
+        throw new Error(`Developer ${developer.id} skillSet at index ${index} skills must be an array`);
+      }
+      if (skillSet.skills.length === 0) {
+        throw new Error(`Developer ${developer.id} skillSet at index ${index} skills array is empty`);
+      }
+    });
+  });
 }
+
 
 async function seedData() {
 
@@ -93,7 +119,7 @@ async function checkTablesEmpty(force = false) {
         new ScanCommand({
           TableName: table,
           Limit: 1,
-          Select: 'COUNT' // More efficient than retrieving full items
+          Select: 'COUNT'
         })
       );
 
