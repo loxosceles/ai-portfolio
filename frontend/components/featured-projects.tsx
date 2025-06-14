@@ -17,6 +17,9 @@ function FeaturedProjects({ developer }: { developer: DeveloperType }) {
   const bla = 1;
   const bla = 2;
 
+  // eslint-disable-next-line no-console
+  console.log('bla', bla);
+
   return (
     <>
       <h2 className="text-4xl font-bold text-primary text-center mb-12">Featured Projects</h2>
