@@ -19,7 +19,9 @@ const IGNORE_PATTERNS = [
   '**/*.d.ts',
   '**/jest.config.js',
   '**/*.config.js',
-  '**/.eslintrc.js'
+  '**/.eslintrc.js',
+  '**/__bak__*/**',
+  '**/__bak__*'
 ];
 
 const SHARED_RULES = {
