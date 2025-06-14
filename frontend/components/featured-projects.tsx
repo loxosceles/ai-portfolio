@@ -14,11 +14,6 @@ function FeaturedProjects({ developer }: { developer: DeveloperType }) {
       </div>
     );
   }
-  const bla = 1;
-  const bla = 2;
-
-  // eslint-disable-next-line no-console
-  console.log('bla', bla);
 
   return (
     <>
