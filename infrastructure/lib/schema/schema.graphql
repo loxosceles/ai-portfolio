@@ -9,7 +9,7 @@ type Developer @aws_cognito_user_pools @aws_api_key {
   linkedin: String
   location: String
   yearsOfExperience: Int
-  skills: [String]
+  skillSets: [SkillSet]
   isActive: Boolean
   projects: [Project] @hasMany(fields: ["id"])
 }
@@ -30,6 +30,12 @@ type Project @aws_cognito_user_pools @aws_api_key {
   order: Int
   developer: Developer! @belongsTo(fields: ["developerId"])
   developerId: ID!
+}
+
+type SkillSet @aws_cognito_user_pools @aws_api_key {
+  id: ID!
+  name: String! 
+  skills: [String]!
 }
 
 type Query {
