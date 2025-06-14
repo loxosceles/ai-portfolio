@@ -1,3 +1,9 @@
 packages:
-  - "frontend"
-  - "infrastructure"
+  - frontend
+  - infrastructure
+
+ignoredBuiltDependencies:
+  - esbuild
+
+onlyBuiltDependencies:
+  - sharp
