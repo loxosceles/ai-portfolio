@@ -38,7 +38,6 @@
                 "streetsidesoftware.code-spell-checker",
                 "eetami.whitespace-formatter",
                 "redhat.vscode-yaml",
-                "rvest.vs-code-prettier-eslint",
                 "esbenp.prettier-vscode",
                 "bradlc.vscode-tailwindcss",
                 "amazonwebservices.aws-toolkit-vscode",
@@ -48,11 +47,12 @@
                 "apollographql.vscode-apollo",
                 "GraphQL.vscode-graphql",
                 "GraphQL.vscode-graphql-syntax",
-                "austenc.tailwind-docs"
+                "austenc.tailwind-docs",
+                "dbaeumer.vscode-eslint"
             ],
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "tmux",
-                "editor.defaultFormatter": "rvest.vs-code-prettier-eslint",
+                "editor.defaultFormatter": "esbenp.prettier-vscode",
                 "editor.formatOnSave": true,
                 "editor.formatOnType": false,
                 "editor.formatOnPaste": true,
@@ -65,7 +65,7 @@
                     "source.organizeImports": true
                 },
                 "[typescript][typescriptreact]": {
-                    "editor.defaultFormatter": "rvest.vs-code-prettier-eslint",
+                    "editor.defaultFormatter": "esbenp.prettier-vscode",
                     "vs-code-prettier-eslint.prettierLast": false
                 },
                 "[json][jsonc]": {
