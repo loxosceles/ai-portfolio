@@ -1,4 +1,4 @@
-import { Bot, Code, Database, Cloud } from "lucide-react";
+import { Bot, Code, Database, Cloud } from 'lucide-react';
 
 function ProjectPreview() {
   return (
@@ -6,12 +6,8 @@ function ProjectPreview() {
       <div className="flex items-center justify-center mb-6">
         <div className="flex items-center space-x-3">
           <Bot className="h-6 w-6 text-brand-accent" />
-          <span className="text-lg font-semibold text-primary">
-            AI-Powered Portfolio System
-          </span>
-          <div className="px-3 py-1 status-badge-complete rounded-full text-sm">
-            Active
-          </div>
+          <span className="text-lg font-semibold text-primary">AI-Powered Portfolio System</span>
+          <div className="px-3 py-1 status-badge-complete rounded-full text-sm">Active</div>
         </div>
       </div>
 
@@ -20,8 +16,7 @@ function ProjectPreview() {
           <Database className="h-8 w-8 text-status-info mb-3" />
           <h3 className="font-semibold text-primary mb-2">RAG System</h3>
           <p className="text-secondary text-sm">
-            Semantic search across CV, GitHub, and project artifacts using
-            PGVector
+            Semantic search across CV, GitHub, and project artifacts using PGVector
           </p>
         </div>
 

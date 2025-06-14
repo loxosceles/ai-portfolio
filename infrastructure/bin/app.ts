@@ -3,9 +3,8 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
-import { ApiStack } from '../lib/stacks/api-stack';
-import { SharedStack } from '../lib/stacks/shared-stack';
+import { ApiStack } from '@/lib/stacks/api-stack';
+import { SharedStack } from '@/lib/stacks/shared-stack';
 
 // Load environment variables from .env file
 dotenv.config({

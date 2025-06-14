@@ -1,3 +1,11 @@
 packages:
-  - "frontend"
-  - "infrastructure"
+  - frontend
+  - infrastructure
+
+ignoredBuiltDependencies:
+  - esbuild
+
+onlyBuiltDependencies:
+  - '@tailwindcss/oxide'
+  - sharp
+  - unrs-resolver

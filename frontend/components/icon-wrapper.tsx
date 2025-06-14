@@ -1,10 +1,10 @@
-import Image from "next/image";
+import Image from 'next/image';
 
 function IconWrapper({
   className,
   height = 100,
   width = 100,
-  icon,
+  icon
 }: {
   className?: string;
   height?: number;
@@ -15,7 +15,7 @@ function IconWrapper({
     <div className={`${className || ''} invert`}>
       <Image
         src={`/${icon}.svg`}
-        alt={icon ? `${icon} icon` : "Icon"}
+        alt={icon ? `${icon} icon` : 'Icon'}
         width={width}
         height={height}
       />

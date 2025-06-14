@@ -9,7 +9,7 @@ type Developer @aws_cognito_user_pools @aws_api_key {
   linkedin: String
   location: String
   yearsOfExperience: Int
-  skills: [String]
+  skillSets: [SkillSet]
   isActive: Boolean
   projects: [Project] @hasMany(fields: ["id"])
 }
@@ -32,34 +32,26 @@ type Project @aws_cognito_user_pools @aws_api_key {
   developerId: ID!
 }
 
+type SkillSet @aws_cognito_user_pools @aws_api_key {
+  id: ID!
+  name: String!
+  skills: [String]!
+}
+
 type Query {
-  getDeveloper(id: ID!): Developer
-    @aws_cognito_user_pools
-    @aws_api_key
-  listDevelopers: [Developer]
-    @aws_cognito_user_pools
-    @aws_api_key
-  getProject(id: ID!): Project
-    @aws_cognito_user_pools
-    @aws_api_key
-  listProjects: [Project]
-    @aws_cognito_user_pools
-    @aws_api_key
+  getDeveloper(id: ID!): Developer @aws_cognito_user_pools @aws_api_key
+  listDevelopers: [Developer] @aws_cognito_user_pools @aws_api_key
+  getProject(id: ID!): Project @aws_cognito_user_pools @aws_api_key
+  listProjects: [Project] @aws_cognito_user_pools @aws_api_key
 }
 
 type Mutation {
-  createDeveloper(input: CreateDeveloperInput!): Developer
-    @aws_cognito_user_pools
-  updateDeveloper(input: UpdateDeveloperInput!): Developer
-    @aws_cognito_user_pools
-  deleteDeveloper(id: ID!): Developer
-    @aws_cognito_user_pools
-  createProject(input: CreateProjectInput!): Project
-    @aws_cognito_user_pools
-  updateProject(input: UpdateProjectInput!): Project
-    @aws_cognito_user_pools
-  deleteProject(id: ID!): Project
-    @aws_cognito_user_pools
+  createDeveloper(input: CreateDeveloperInput!): Developer @aws_cognito_user_pools
+  updateDeveloper(input: UpdateDeveloperInput!): Developer @aws_cognito_user_pools
+  deleteDeveloper(id: ID!): Developer @aws_cognito_user_pools
+  createProject(input: CreateProjectInput!): Project @aws_cognito_user_pools
+  updateProject(input: UpdateProjectInput!): Project @aws_cognito_user_pools
+  deleteProject(id: ID!): Project @aws_cognito_user_pools
 }
 
 input CreateDeveloperInput {

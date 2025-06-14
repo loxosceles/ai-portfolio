@@ -97,9 +97,7 @@ export class SharedStack extends cdk.Stack {
   }
 
   private generateDomainPrefix(): string {
-    return `${this.stackName}-${cdk.Names.uniqueId(this)}`
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-');
+    return `${this.stackName}-${cdk.Names.uniqueId(this)}`.toLowerCase().replace(/[^a-z0-9]/g, '-');
   }
   private addCognitoOutputs() {
     // Infrastructure outputs

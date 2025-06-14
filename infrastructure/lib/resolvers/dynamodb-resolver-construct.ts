@@ -18,20 +18,16 @@ export class DynamoDBResolverConstruct extends Construct {
 
     const resolverConfig = this.getResolverConfig(props);
 
-    props.dataSource.createResolver(
-      `${props.typeName}${props.fieldName}Resolver`,
-      {
-        typeName: props.typeName,
-        fieldName: props.fieldName,
-        requestMappingTemplate: resolverConfig.request,
-        responseMappingTemplate: resolverConfig.response
-      }
-    );
+    props.dataSource.createResolver(`${props.typeName}${props.fieldName}Resolver`, {
+      typeName: props.typeName,
+      fieldName: props.fieldName,
+      requestMappingTemplate: resolverConfig.request,
+      responseMappingTemplate: resolverConfig.response
+    });
   }
 
   private getResolverConfig(props: DynamoDBResolverProps) {
     const pk = props.partitionKey || 'id';
-    const sk = props.sortKey;
 
     switch (props.operation) {
       case 'get':
