@@ -68,23 +68,23 @@ export class ApiStack extends cdk.Stack {
           ...(stage === 'prod'
             ? { userPoolConfig: { userPool } }
             : {
-                apiKeyConfig: {
-                  expires: cdk.Expiration.after(cdk.Duration.days(365))
-                }
-              })
+              apiKeyConfig: {
+                expires: cdk.Expiration.after(cdk.Duration.days(365))
+              }
+            })
         },
         additionalAuthorizationModes: [
           stage === 'prod'
             ? {
-                authorizationType: appsync.AuthorizationType.API_KEY,
-                apiKeyConfig: {
-                  expires: cdk.Expiration.after(cdk.Duration.days(365))
-                }
+              authorizationType: appsync.AuthorizationType.API_KEY,
+              apiKeyConfig: {
+                expires: cdk.Expiration.after(cdk.Duration.days(365))
               }
+            }
             : {
-                authorizationType: appsync.AuthorizationType.USER_POOL,
-                userPoolConfig: { userPool }
-              }
+              authorizationType: appsync.AuthorizationType.USER_POOL,
+              userPoolConfig: { userPool }
+            }
         ]
       }
     });
@@ -109,6 +109,11 @@ export class ApiStack extends cdk.Stack {
         ? cdk.RemovalPolicy.RETAIN
         : cdk.RemovalPolicy.DESTROY,
       deletionProtection: isProd
+    });
+
+    projectTable.addGlobalSecondaryIndex({
+      indexName: 'byDeveloperId',
+      partitionKey: { name: 'developerId', type: dynamodb.AttributeType.STRING },
     });
 
     return { developerTable, projectTable };
@@ -186,17 +191,28 @@ export class ApiStack extends cdk.Stack {
       operation: 'list'
     });
 
-    // Custom relationship resolvers (kept as before)
-    dataSources.projectDS.createResolver('DeveloperProjects', {
+    // For Developer.projects relationship
+    dataSources.projectDS.createResolver('DeveloperProjectsResolver', {
       typeName: 'Developer',
       fieldName: 'projects',
-      requestMappingTemplate: appsync.MappingTemplate.dynamoDbQuery(
-        appsync.KeyCondition.eq('developerId', 'id')
-      ),
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+    {
+      "version": "2018-05-29",
+      "operation": "Query",
+      "query": {
+        "expression": "developerId = :developerId",
+        "expressionValues": {
+          ":developerId": $util.dynamodb.toDynamoDBJson($ctx.source.id)
+        }
+      },
+      "index": "byDeveloperId"
+    }
+  `),
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultList()
     });
 
-    dataSources.developerDS.createResolver('ProjectDeveloper', {
+    // For Project.developers relationship
+    dataSources.developerDS.createResolver('ProjectDeveloperResolver', {
       typeName: 'Project',
       fieldName: 'developer',
       requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem(
