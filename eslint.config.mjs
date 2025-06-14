@@ -25,6 +25,7 @@ const IGNORE_PATTERNS = [
 ];
 
 const SHARED_RULES = {
+  'eol-last': ['error', 'always'],
   'no-console': ['warn', { allow: ['error', 'warn', 'dir', 'time', 'timeEnd'] }],
   'no-unused-vars': 'off',
   '@typescript-eslint/no-unused-vars': 'warn'

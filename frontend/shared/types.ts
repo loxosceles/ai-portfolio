@@ -9,7 +9,7 @@ export type DeveloperType = {
   linkedin?: string;
   location?: string;
   yearsOfExperience?: number;
-  skillSets?: SkillSetType[]
+  skillSets?: SkillSetType[];
   isActive?: boolean;
   projects?: ProjectType[];
 };
@@ -19,7 +19,6 @@ type SkillSetType = {
   name: string;
   skills: string[];
 };
-
 
 export type ProjectType = {
   id: string;

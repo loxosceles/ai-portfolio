@@ -22,10 +22,7 @@ const authLink = setContext(async (_, { headers }) => {
   }
 
   // For development, use API key if configured
-  if (
-    process.env.NODE_ENV === 'development' &&
-    process.env.NEXT_PUBLIC_APPSYNC_API_KEY
-  ) {
+  if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_APPSYNC_API_KEY) {
     return {
       headers: {
         ...headers,
@@ -66,14 +63,12 @@ export const client = new ApolloClient({
     },
     query: {
       errorPolicy: 'all',
-      fetchPolicy:
-        typeof window === 'undefined' ? 'network-only' : 'cache-first'
+      fetchPolicy: typeof window === 'undefined' ? 'network-only' : 'cache-first'
     }
   },
   name: 'portfolio-client',
   version: '1.0',
   assumeImmutableResults: true,
   // Add this to handle SSR better
-  connectToDevTools:
-    process.env.NODE_ENV === 'development' && typeof window !== 'undefined'
+  connectToDevTools: process.env.NODE_ENV === 'development' && typeof window !== 'undefined'
 });
