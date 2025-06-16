@@ -3,13 +3,20 @@ import { setContext } from '@apollo/client/link/context';
 import { authService } from '../auth/auth-config';
 
 const appsyncUrl = process.env.NEXT_PUBLIC_APPSYNC_URL;
+const appsyncApiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
+const awsRegion = process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1';
+const isProduction = process.env.ENVIRONMENT === 'production';
+
+if (!appsyncApiKey) {
+  console.error('AppSync API Key is not defined in environment variables');
+}
 
 if (!appsyncUrl) {
   console.error('AppSync URL is not defined in environment variables');
 }
 
 const httpLink = createHttpLink({
-  uri: process.env.NEXT_PUBLIC_APPSYNC_URL,
+  uri: appsyncUrl,
   fetchOptions: {
     mode: 'cors'
   }
@@ -26,13 +33,13 @@ const authLink = setContext(async (_, { headers }) => {
     return {
       headers: {
         ...headers,
-        'x-api-key': process.env.NEXT_PUBLIC_APPSYNC_API_KEY,
+        'x-api-key': appsyncApiKey,
         'Content-Type': 'application/json'
       }
     };
   }
 
-  // For production, use Cognito token
+  // In production, use Cognito token
   try {
     const token = await authService.getToken();
     return {
