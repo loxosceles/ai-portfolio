@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as appsync from 'aws-cdk-lib/aws-appsync';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { DynamoDBResolverConstruct } from '../resolvers/dynamodb-resolver-construct';
 import { Construct } from 'constructs';
 import * as path from 'path';
@@ -13,14 +14,20 @@ interface ApiStackProps extends cdk.StackProps {
 
 export class ApiStack extends cdk.Stack {
   public readonly api: appsync.GraphqlApi;
+  private readonly stage: string;
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
     const { stage, userPool } = props;
+    this.stage = stage;
+
+    if (!['dev', 'prod'].includes(this.stage)) {
+      throw new Error('Stage must be either "dev" or "prod"');
+    }
 
     // Create AppSync API
     this.api = this.createAppSyncApi(userPool, stage);
-    const isProd = props.stage === 'prod';
+    const isProd = this.stage === 'prod';
 
     // Create DynamoDB tables
     const { developerTable, projectTable } = this.createDynamoDBTables(stage, isProd);
@@ -36,39 +43,44 @@ export class ApiStack extends cdk.Stack {
   }
 
   private createAppSyncApi(userPool: cognito.UserPool, stage: string): appsync.GraphqlApi {
-    return new appsync.GraphqlApi(this, 'PortfolioApi', {
+    const api = new appsync.GraphqlApi(this, 'PortfolioApi', {
       name: `portfolio-api-${stage}`,
       schema: appsync.SchemaFile.fromAsset(path.join(__dirname, '../schema/schema.graphql')),
       authorizationConfig: {
         defaultAuthorization: {
-          // In prod, use USER_POOL as default
-          authorizationType:
-            stage === 'prod'
-              ? appsync.AuthorizationType.USER_POOL
-              : appsync.AuthorizationType.API_KEY,
-          ...(stage === 'prod'
-            ? { userPoolConfig: { userPool } }
-            : {
-                apiKeyConfig: {
-                  expires: cdk.Expiration.after(cdk.Duration.days(365))
-                }
-              })
+          // Use IAM (public) as default for queries
+          authorizationType: appsync.AuthorizationType.IAM
         },
         additionalAuthorizationModes: [
-          stage === 'prod'
-            ? {
-                authorizationType: appsync.AuthorizationType.API_KEY,
-                apiKeyConfig: {
-                  expires: cdk.Expiration.after(cdk.Duration.days(365))
-                }
-              }
-            : {
-                authorizationType: appsync.AuthorizationType.USER_POOL,
-                userPoolConfig: { userPool }
-              }
+          // For mutations in prod: USER_POOL
+          {
+            authorizationType: appsync.AuthorizationType.USER_POOL,
+            userPoolConfig: { userPool }
+          },
+          // For mutations in dev: API_KEY
+          {
+            authorizationType: appsync.AuthorizationType.API_KEY,
+            apiKeyConfig: {
+              expires: cdk.Expiration.after(cdk.Duration.days(365))
+            }
+          }
         ]
       }
     });
+
+    // Create IAM policy to allow public access to queries
+    const publicAccessPolicy = new cdk.aws_iam.PolicyStatement({
+      effect: cdk.aws_iam.Effect.ALLOW,
+      actions: ['appsync:GraphQL'],
+      resources: [`${api.arn}/types/Query/*`]
+    });
+
+    // Add policy to allow unauthenticated access to queries
+    new cdk.aws_iam.Policy(this, 'PublicQueryAccess', {
+      statements: [publicAccessPolicy]
+    });
+
+    return api;
   }
 
   private createDynamoDBTables(stage: string, isProd: boolean) {
@@ -192,35 +204,51 @@ export class ApiStack extends cdk.Stack {
   }
 
   private addStackOutputs() {
-    // AppSync Outputs
-    new cdk.CfnOutput(this, 'AppSyncApiUrl', {
-      value: this.api.graphqlUrl,
-      description: 'The URL of the GraphQL API',
-      exportName: 'AppSyncApiUrl'
-    });
+    const outputs = [
+      {
+        id: 'AppSyncApiUrl',
+        value: this.api.graphqlUrl,
+        description: 'The URL of the GraphQL API',
+        exportName: 'appsync-url',
+        paramName: 'NEXT_PUBLIC_APPSYNC_URL'
+      },
+      {
+        id: 'AppSyncApiKey',
+        value: this.api.apiKey || '',
+        description: 'API Key for development access',
+        exportName: 'appsync-api-key',
+        paramName: 'NEXT_PUBLIC_APPSYNC_API_KEY'
+      },
+      {
+        id: 'AppSyncRegion',
+        value: this.region,
+        description: 'AWS Region for AppSync API',
+        exportName: 'appsync-region',
+        paramName: 'NEXT_PUBLIC_AWS_REGION'
+      }
+    ];
 
-    new cdk.CfnOutput(this, 'AppSyncApiKey', {
-      value: this.api.apiKey || '',
-      description: 'API Key for development access',
-      exportName: 'AppSyncApiKey'
-    });
+    outputs.forEach((output) => {
+      // Stack outputs
+      new cdk.CfnOutput(this, output.id, {
+        value: output.value,
+        description: output.description,
+        exportName: output.exportName
+      });
 
-    // Add to environment variables
-    this.addEnvOutputs();
-  }
+      // SSM Parameters
+      new ssm.StringParameter(this, `${output.id}Param`, {
+        parameterName: `/portfolio/${this.stage}/${output.paramName}`,
+        stringValue: output.value,
+        description: output.description
+      });
 
-  private addEnvOutputs() {
-    // Frontend environment variables
-    new cdk.CfnOutput(this, 'NextPublicAppSyncUrl', {
-      value: this.api.graphqlUrl,
-      description: 'AppSync URL for frontend environment',
-      exportName: 'next-public-appsync-url'
-    });
-
-    new cdk.CfnOutput(this, 'NextPublicAppSyncApiKey', {
-      value: this.api.apiKey || '',
-      description: 'AppSync API Key for frontend environment',
-      exportName: 'next-public-appsync-api-key'
+      // Frontend environment variables
+      new cdk.CfnOutput(this, `NextPublic${output.id}`, {
+        value: output.value,
+        description: `${output.description} for frontend environment`,
+        exportName: `next-public-${output.exportName}`
+      });
     });
   }
 }

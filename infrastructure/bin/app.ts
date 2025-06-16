@@ -3,8 +3,9 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { ApiStack } from '@/lib/stacks/api-stack';
-import { SharedStack } from '@/lib/stacks/shared-stack';
+import { ApiStack } from '../lib/stacks/api-stack';
+import { SharedStack } from '../lib/stacks/shared-stack';
+import { FrontendStack } from '../lib/stacks/frontend-stack';
 
 // Load environment variables from .env file
 dotenv.config({
@@ -31,6 +32,7 @@ if (!['dev', 'prod'].includes(stage)) {
 
 // Create shared infrastructure
 const sharedStack = new SharedStack(app, `PortfolioSharedStack-${stage}`, {
+  stage: stage as 'dev' | 'prod',
   env
 });
 
@@ -41,7 +43,13 @@ const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
   userPool: sharedStack.userPool
 });
 
+const frontendStack = new FrontendStack(app, `PortfolioFrontendStack-${stage}`, {
+  stage: stage as 'dev' | 'prod',
+  env
+});
+
 // Add dependencies
 apiStack.addDependency(sharedStack);
+frontendStack.addDependency(apiStack);
 
 app.synth();
