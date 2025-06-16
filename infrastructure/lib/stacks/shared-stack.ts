@@ -1,19 +1,30 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
+
+interface SharedStackProps extends cdk.StackProps {
+  stage: 'dev' | 'prod';
+}
 
 export class SharedStack extends cdk.Stack {
   public readonly userPool: cognito.UserPool;
   private readonly userPoolClient: cognito.UserPoolClient;
   private readonly userPoolDomain: cognito.UserPoolDomain;
+  private readonly stage: string;
 
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: SharedStackProps) {
     super(scope, id, props);
+    this.stage = props.stage;
+
+    if (!['dev', 'prod'].includes(this.stage)) {
+      throw new Error('Stage must be either "dev" or "prod"');
+    }
 
     this.userPool = this.createUserPool();
     this.userPoolClient = this.createUserPoolClient();
     this.userPoolDomain = this.createUserPoolDomain();
-    this.addCognitoOutputs();
+    this.addStackOutputs();
   }
 
   private createUserPool(): cognito.UserPool {
@@ -99,52 +110,73 @@ export class SharedStack extends cdk.Stack {
   private generateDomainPrefix(): string {
     return `${this.stackName}-${cdk.Names.uniqueId(this)}`.toLowerCase().replace(/[^a-z0-9]/g, '-');
   }
-  private addCognitoOutputs() {
-    // Infrastructure outputs
-    new cdk.CfnOutput(this, 'CognitoUserPoolId', {
-      value: this.userPool.userPoolId,
-      description: 'Cognito User Pool ID',
-      exportName: 'cognito-user-pool-id'
-    });
 
-    new cdk.CfnOutput(this, 'CognitoClientId', {
-      value: this.userPoolClient.userPoolClientId,
-      description: 'Cognito User Pool Client ID',
-      exportName: 'cognito-client-id'
-    });
+  private addStackOutputs() {
+    const cognitoAuthority = `https://${this.userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`;
+    const redirectUri =
+      process.env.ENVIRONMENT === 'development'
+        ? 'http://localhost:3000/auth/callback'
+        : 'https://your-production-domain/auth/callback';
 
-    new cdk.CfnOutput(this, 'CognitoDomainName', {
-      value: this.userPoolDomain.domainName,
-      description: 'Cognito Domain Name',
-      exportName: 'cognito-domain-name'
-    });
+    const outputs = [
+      {
+        id: 'CognitoUserPoolId',
+        value: this.userPool.userPoolId,
+        description: 'Cognito User Pool ID',
+        exportName: 'cognito-user-pool-id',
+        paramName: 'NEXT_PUBLIC_COGNITO_USER_POOL_ID'
+      },
+      {
+        id: 'CognitoClientId',
+        value: this.userPoolClient.userPoolClientId,
+        description: 'Cognito User Pool Client ID',
+        exportName: 'cognito-client-id',
+        paramName: 'NEXT_PUBLIC_COGNITO_CLIENT_ID'
+      },
+      {
+        id: 'CognitoDomainName',
+        value: this.userPoolDomain.domainName,
+        description: 'Cognito Domain Name',
+        exportName: 'cognito-domain-name',
+        paramName: 'NEXT_PUBLIC_COGNITO_DOMAIN_NAME'
+      },
+      {
+        id: 'CognitoAuthority',
+        value: cognitoAuthority,
+        description: 'Cognito Authority URL',
+        exportName: 'cognito-authority',
+        paramName: 'NEXT_PUBLIC_COGNITO_AUTHORITY'
+      },
+      {
+        id: 'RedirectUri',
+        value: redirectUri,
+        description: 'OAuth Redirect URI',
+        exportName: 'redirect-uri',
+        paramName: 'NEXT_PUBLIC_REDIRECT_URI'
+      }
+    ];
 
-    // Frontend environment variables
-    new cdk.CfnOutput(this, 'NextPublicCognitoUserPoolId', {
-      value: this.userPool.userPoolId,
-      description: 'Cognito User Pool ID for frontend',
-      exportName: 'next-public-cognito-user-pool-id'
-    });
+    outputs.forEach((output) => {
+      // Stack outputs
+      new cdk.CfnOutput(this, output.id, {
+        value: output.value,
+        description: output.description,
+        exportName: output.exportName
+      });
 
-    new cdk.CfnOutput(this, 'NextPublicCognitoClientId', {
-      value: this.userPoolClient.userPoolClientId,
-      description: 'Cognito Client ID for frontend',
-      exportName: 'next-public-cognito-client-id'
-    });
+      // Frontend environment variables
+      new cdk.CfnOutput(this, `NextPublic${output.id}`, {
+        value: output.value,
+        description: `${output.description} for frontend`,
+        exportName: `next-public-${output.exportName}`
+      });
 
-    new cdk.CfnOutput(this, 'NextPublicCognitoAuthority', {
-      value: `https://${this.userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`,
-      description: 'Cognito Authority URL for frontend',
-      exportName: 'next-public-cognito-authority'
-    });
-
-    new cdk.CfnOutput(this, 'NextPublicRedirectUri', {
-      value:
-        process.env.NODE_ENV === 'development'
-          ? 'http://localhost:3000/auth/callback'
-          : 'https://your-production-domain/auth/callback',
-      description: 'OAuth Redirect URI',
-      exportName: 'next-public-redirect-uri'
+      // SSM Parameters
+      new ssm.StringParameter(this, `${output.id}Param`, {
+        parameterName: `/portfolio/${this.stage}/${output.paramName}`,
+        stringValue: output.value,
+        description: output.description
+      });
     });
   }
 }
