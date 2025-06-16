@@ -1,4 +1,5 @@
 'use client';
+
 import HeroSection from '@/components/hero-section';
 import FeaturedProjects from '@/components/featured-projects';
 import SkillsSection from '@/components/skills-section';
@@ -14,7 +15,7 @@ const Portfolio = () => {
   const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
     variables: { id: developerId },
     onCompleted: (data: { getDeveloper: { name: string } }) => {
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.ENVIRONMENT === 'development') {
         // eslint-disable-next-line no-console
         console.log('Developer data:', data);
       }

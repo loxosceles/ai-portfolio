@@ -1,7 +1,7 @@
 import { DeveloperType } from '@/shared/types';
 
 function FeaturedProjects({ developer }: { developer: DeveloperType }) {
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.ENVIRONMENT === 'development') {
     // eslint-disable-next-line no-console
     console.log("Developer's project:", developer.projects);
   }
