@@ -1,10 +1,21 @@
 import { UserManager, WebStorageStateStore } from 'oidc-client-ts';
 
+const cognitoAuthority = process.env.NEXT_PUBLIC_COGNITO_AUTHORITY;
+const cognitoClientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID;
+const redirectUri = process.env.NEXT_PUBLIC_REDIRECT_URI;
+
+if (!cognitoAuthority || !cognitoClientId || !redirectUri) {
+  console.error('Cognito configuration is missing in environment variables');
+  console.error('Authority:', cognitoAuthority);
+  console.error('Client ID:', cognitoClientId);
+  console.error('Redirect URI:', redirectUri);
+}
+
 const createUserManager = () => {
   return new UserManager({
-    authority: process.env.NEXT_PUBLIC_COGNITO_AUTHORITY ?? '',
-    client_id: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID ?? '',
-    redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URI ?? '',
+    authority: cognitoAuthority ?? '',
+    client_id: cognitoClientId ?? '',
+    redirect_uri: redirectUri ?? '',
     response_type: 'code',
     scope: 'openid email profile phone',
     loadUserInfo: true,
