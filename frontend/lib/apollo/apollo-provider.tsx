@@ -7,7 +7,7 @@ import { client } from './apollo-client';
 export default function GraphQLProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Connect to VSCode DevTools in development
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.ENVIRONMENT === 'development') {
       import('@apollo/client-devtools-vscode')
         .then(({ connectApolloClientToVSCodeDevTools }) => {
           connectApolloClientToVSCodeDevTools(client, 'ws://localhost:7095');
