@@ -5,10 +5,12 @@ const cognitoClientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID;
 const redirectUri = process.env.NEXT_PUBLIC_REDIRECT_URI;
 
 if (!cognitoAuthority || !cognitoClientId || !redirectUri) {
-  console.error('Cognito configuration is missing in environment variables');
-  console.error('Authority:', cognitoAuthority);
-  console.error('Client ID:', cognitoClientId);
-  console.error('Redirect URI:', redirectUri);
+  const missingVars = [
+    !cognitoAuthority && 'NEXT_PUBLIC_COGNITO_AUTHORITY',
+    !cognitoClientId && 'NEXT_PUBLIC_COGNITO_CLIENT_ID',
+    !redirectUri && 'NEXT_PUBLIC_REDIRECT_URI'
+  ].filter(Boolean).join(', ');
+  console.error(`Cognito configuration is missing the following environment variables: ${missingVars}`);
 }
 
 const createUserManager = () => {
