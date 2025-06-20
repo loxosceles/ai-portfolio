@@ -1,17 +1,22 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
+import Cookies from 'js-cookie';
 import HeroSection from '@/components/hero-section';
 import FeaturedProjects from '@/components/featured-projects';
 import SkillsSection from '@/components/skills-section';
 import Footer from '@/components/footer';
 import Header from '@/components/header';
+import { setDevelopmentCookies } from '@/utils/dev-cookies';
 import MainContent from '@/components/main-content';
 import { GET_DEVELOPER_WITH_PROJECTS } from '@/queries/developers';
 import { useQuery } from '@apollo/client';
 
 const Portfolio = () => {
   const developerId = 'dev-1';
+  const [isChecking, setIsChecking] = useState(true);
 
+  // Move useQuery to the top level, before any conditional returns
   const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
     variables: { id: developerId },
     onCompleted: (data: { getDeveloper: { name: string } }) => {
@@ -25,10 +30,35 @@ const Portfolio = () => {
     }
   });
 
-  const developer = data?.getDeveloper || {};
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const visitorHash = params.get('visitor');
 
-  if (loading) return <div>Loading...</div>;
+    if (process.env.NODE_ENV === 'development' && visitorHash) {
+      // Set cookies directly in development
+      console.log('Setting development cookies for visitor:', visitorHash);
+      setDevelopmentCookies(visitorHash);
+    } else if (!visitorHash) {
+      // Clean up cookies if no visitor parameter
+      const visitorCookies = ['visitor_company', 'visitor_name', 'visitor_context'];
+      visitorCookies.forEach((cookieName) => {
+        if (Cookies.get(cookieName)) {
+          Cookies.remove(cookieName);
+        }
+      });
+    }
+
+    setIsChecking(false);
+  }, []);
+
+  // Show loading state if either checking cookies or loading data
+  if (isChecking || loading) {
+    return <div>Loading...</div>;
+  }
+
   if (error) return <div>Error: {error.message}</div>;
+
+  const developer = data?.getDeveloper || {};
 
   return (
     <div className="min-h-screen gradient-bg">
