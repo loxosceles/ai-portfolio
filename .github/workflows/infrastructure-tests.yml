@@ -1,12 +1,15 @@
-name: Lint
+name: Infrastructure Tests
 
 on:
   pull_request:
     branches: [main]
+    paths:
+      - 'infrastructure/**'
+      - '.github/workflows/infrastructure-tests.yml'
 
 jobs:
-  lint:
-    name: Run Linting
+  test:
+    name: Run Infrastructure Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -40,7 +43,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Run linting
-        run: |
-          pnpm lint:frontend
-          pnpm lint:infra
+      - name: Run infrastructure tests
+        run: pnpm test:infra
