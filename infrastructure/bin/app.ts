@@ -3,9 +3,9 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
+import { WebStack } from '../lib/stacks/web-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { SharedStack } from '../lib/stacks/shared-stack';
-import { CombinedWebsiteStack } from '../lib/stacks/combined-website-stack';
 
 // Load environment variables from .env file
 dotenv.config({
@@ -43,22 +43,20 @@ const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
   userPool: sharedStack.userPool
 });
 
-// Create combined website stack with visitor context in us-east-1
-// This stack now includes a Lambda@Edge function for CORS headers
-const combinedWebsiteStack = new CombinedWebsiteStack(
-  app,
-  `PortfolioCombinedWebsiteStack-${stage}`,
-  {
-    stage,
-    env: {
-      account: env.account,
-      region: 'us-east-1' // Everything must be in us-east-1 for Lambda@Edge
-    }
-  }
-);
+// Create combined website stack in us-east-1
+const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
+  stage,
+  userPool: sharedStack.userPool,
+  userPoolClient: sharedStack.userPoolClient,
+  env: {
+    account: env.account,
+    region: 'us-east-1' // Lambda@Edge must be in us-east-1
+  },
+  crossRegionReferences: true
+});
 
 // Add dependencies
 apiStack.addDependency(sharedStack);
-combinedWebsiteStack.addDependency(apiStack);
+webStack.addDependency(apiStack);
 
 app.synth();
