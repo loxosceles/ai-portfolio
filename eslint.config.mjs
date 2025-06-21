@@ -53,6 +53,31 @@ export default [
     }
   },
 
+  // Infrastructure JavaScript config (for test files)
+  {
+    files: ['infrastructure/**/*.js'],
+    ignores: IGNORE_PATTERNS,
+    ...js.configs.recommended,
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        jest: true // Add Jest globals
+      },
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module'
+      }
+    },
+    plugins: {
+      '@typescript-eslint': typescriptEslint
+    },
+    rules: {
+      ...SHARED_RULES,
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn'
+    }
+  },
+
   // Frontend TypeScript config
   {
     files: ['frontend/**/*.{ts,tsx}'],

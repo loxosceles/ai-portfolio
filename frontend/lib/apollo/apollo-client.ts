@@ -4,7 +4,6 @@ import { authService } from '../auth/auth-config';
 
 const appsyncUrl = process.env.NEXT_PUBLIC_APPSYNC_URL;
 const appsyncApiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
-const awsRegion = process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1';
 const isProduction = process.env.ENVIRONMENT === 'production';
 
 if (!appsyncApiKey) {
@@ -15,10 +14,13 @@ if (!appsyncUrl) {
   console.error('AppSync URL is not defined in environment variables');
 }
 
+// Create HTTP link with CORS mode but WITHOUT credentials
 const httpLink = createHttpLink({
   uri: appsyncUrl,
   fetchOptions: {
-    mode: 'cors'
+    mode: 'cors',
+    // Omit credentials allows for wildcard CORS which is needed by AppSync/ Lambda@Edge
+    credentials: 'omit'
   }
 });
 
