@@ -2,10 +2,10 @@ import * as cdk from 'aws-cdk-lib';
 import * as appsync from 'aws-cdk-lib/aws-appsync';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { DynamoDBResolverConstruct } from '../resolvers/dynamodb-resolver-construct';
 import { Construct } from 'constructs';
 import * as path from 'path';
+import { addStackOutputs } from '../utils/stack-outputs';
 
 interface ApiStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
@@ -39,13 +39,38 @@ export class ApiStack extends cdk.Stack {
     this.createResolvers(dataSources);
 
     // Add API outputs
-    this.addStackOutputs();
+    addStackOutputs(this, stage, [
+      {
+        id: 'AppSyncApiUrl',
+        value: this.api.graphqlUrl,
+        description: 'The URL of the GraphQL API',
+        exportName: `appsync-url-${stage}`,
+        paramName: 'NEXT_PUBLIC_APPSYNC_URL'
+      },
+      {
+        id: 'AppSyncApiKey',
+        value: this.api.apiKey || '',
+        description: 'API Key for development access',
+        exportName: `appsync-api-key-${stage}`,
+        paramName: 'NEXT_PUBLIC_APPSYNC_API_KEY'
+      },
+      {
+        id: 'AppSyncRegion',
+        value: this.region,
+        description: 'AWS Region for AppSync API',
+        exportName: `appsync-region-${stage}`,
+        paramName: 'NEXT_PUBLIC_AWS_REGION'
+      }
+    ]);
   }
 
   private createAppSyncApi(userPool: cognito.UserPool, stage: string): appsync.GraphqlApi {
+    // Create the AppSync API using the L2 construct
     const api = new appsync.GraphqlApi(this, 'PortfolioApi', {
       name: `portfolio-api-${stage}`,
-      schema: appsync.SchemaFile.fromAsset(path.join(__dirname, '../schema/schema.graphql')),
+      definition: appsync.Definition.fromSchema(
+        appsync.SchemaFile.fromAsset(path.join(__dirname, '../schema/schema.graphql'))
+      ),
       authorizationConfig: {
         defaultAuthorization: {
           // Use IAM (public) as default for queries
@@ -65,7 +90,9 @@ export class ApiStack extends cdk.Stack {
             }
           }
         ]
-      }
+      },
+      // Enable X-Ray for tracing
+      xrayEnabled: true
     });
 
     // Create IAM policy to allow public access to queries
@@ -200,55 +227,6 @@ export class ApiStack extends cdk.Stack {
       fieldName: 'developer',
       requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem('id', 'developerId'),
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem()
-    });
-  }
-
-  private addStackOutputs() {
-    const outputs = [
-      {
-        id: 'AppSyncApiUrl',
-        value: this.api.graphqlUrl,
-        description: 'The URL of the GraphQL API',
-        exportName: 'appsync-url',
-        paramName: 'NEXT_PUBLIC_APPSYNC_URL'
-      },
-      {
-        id: 'AppSyncApiKey',
-        value: this.api.apiKey || '',
-        description: 'API Key for development access',
-        exportName: 'appsync-api-key',
-        paramName: 'NEXT_PUBLIC_APPSYNC_API_KEY'
-      },
-      {
-        id: 'AppSyncRegion',
-        value: this.region,
-        description: 'AWS Region for AppSync API',
-        exportName: 'appsync-region',
-        paramName: 'NEXT_PUBLIC_AWS_REGION'
-      }
-    ];
-
-    outputs.forEach((output) => {
-      // Stack outputs
-      new cdk.CfnOutput(this, output.id, {
-        value: output.value,
-        description: output.description,
-        exportName: output.exportName
-      });
-
-      // SSM Parameters
-      new ssm.StringParameter(this, `${output.id}Param`, {
-        parameterName: `/portfolio/${this.stage}/${output.paramName}`,
-        stringValue: output.value,
-        description: output.description
-      });
-
-      // Frontend environment variables
-      new cdk.CfnOutput(this, `NextPublic${output.id}`, {
-        value: output.value,
-        description: `${output.description} for frontend environment`,
-        exportName: `next-public-${output.exportName}`
-      });
     });
   }
 }

@@ -5,7 +5,7 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { SharedStack } from '../lib/stacks/shared-stack';
-import { FrontendStack } from '../lib/stacks/frontend-stack';
+import { CombinedWebsiteStack } from '../lib/stacks/combined-website-stack';
 
 // Load environment variables from .env file
 dotenv.config({
@@ -43,13 +43,22 @@ const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
   userPool: sharedStack.userPool
 });
 
-const frontendStack = new FrontendStack(app, `PortfolioFrontendStack-${stage}`, {
-  stage: stage as 'dev' | 'prod',
-  env
-});
+// Create combined website stack with visitor context in us-east-1
+// This stack now includes a Lambda@Edge function for CORS headers
+const combinedWebsiteStack = new CombinedWebsiteStack(
+  app,
+  `PortfolioCombinedWebsiteStack-${stage}`,
+  {
+    stage,
+    env: {
+      account: env.account,
+      region: 'us-east-1' // Everything must be in us-east-1 for Lambda@Edge
+    }
+  }
+);
 
 // Add dependencies
 apiStack.addDependency(sharedStack);
-frontendStack.addDependency(apiStack);
+combinedWebsiteStack.addDependency(apiStack);
 
 app.synth();

@@ -2,6 +2,7 @@ import React from 'react';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import GraphQLProvider from '@/lib/apollo/apollo-provider';
+import VisitorBanner from '@/components/visitor-banner';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -15,7 +16,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={inter.className}>
-        <GraphQLProvider>{children}</GraphQLProvider>
+        <GraphQLProvider>
+          <VisitorBanner />
+          {children}
+        </GraphQLProvider>
       </body>
     </html>
   );

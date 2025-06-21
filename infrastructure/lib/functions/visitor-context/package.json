@@ -1,0 +1,9 @@
+{
+  "name": "visitor-context-function",
+  "version": "1.0.0",
+  "description": "Lambda@Edge function for visitor context",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.1400.0"
+  }
+}
