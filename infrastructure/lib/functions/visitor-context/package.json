@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "Lambda@Edge function for visitor context",
   "main": "index.js",
+  "type": "module",
   "dependencies": {
-    "aws-sdk": "^2.1400.0"
+    "@aws-sdk/client-cognito-identity-provider": "^3.830.0",
+    "@aws-sdk/client-secrets-manager": "^3.830.0",
+    "@aws-sdk/client-ssm": "^3.830.0"
   }
 }

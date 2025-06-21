@@ -1,3 +1,59 @@
+const { SSMClient, GetParametersCommand } = require('@aws-sdk/client-ssm');
+const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
+const {
+  CognitoIdentityProviderClient,
+  AdminInitiateAuthCommand
+} = require('@aws-sdk/client-cognito-identity-provider');
+
+// Configure AWS clients with region
+const cognito = new CognitoIdentityProviderClient({
+  region: 'us-east-1'
+});
+
+const ssm = new SSMClient({
+  region: 'us-east-1'
+});
+
+const secretsManager = new SecretsManagerClient({
+  region: 'us-east-1'
+});
+
+// Configuration cache
+let config = null;
+
+async function getConfig() {
+  if (config) return config;
+
+  const command = new GetParametersCommand({
+    Names: [
+      '/portfolio/dev/edge/cognito-client-id',
+      '/portfolio/dev/edge/cognito-user-pool-id',
+      '/portfolio/dev/edge/service-account-secret-arn'
+    ],
+    WithDecryption: true
+  });
+
+  const parameters = await ssm.send(command);
+
+  config = {
+    clientId: parameters.Parameters.find((p) => p.Name.endsWith('cognito-client-id')).Value,
+    userPoolId: parameters.Parameters.find((p) => p.Name.endsWith('cognito-user-pool-id')).Value,
+    secretArn: parameters.Parameters.find((p) => p.Name.endsWith('service-account-secret-arn'))
+      .Value
+  };
+
+  return config;
+}
+
+async function getServiceAccountPassword(secretArn) {
+  const command = new GetSecretValueCommand({
+    SecretId: secretArn
+  });
+
+  const result = await secretsManager.send(command);
+  return result.SecretString;
+}
+
 exports.handler = async (event) => {
   console.log('Lambda@Edge function started');
 
@@ -22,19 +78,52 @@ exports.handler = async (event) => {
     const params = new URLSearchParams(request.querystring);
     const visitorHash = params.get('visitor');
 
-    console.log(`Visitor hash in request: ${visitorHash}`);
+    if (visitorHash) {
+      try {
+        // Get configuration
+        const config = await getConfig();
 
-    if (visitorHash === 'test123') {
-      if (!request.headers) {
-        request.headers = {};
-      }
-      request.headers['x-visitor-hash'] = [
-        {
-          key: 'X-Visitor-Hash',
-          value: visitorHash
+        // Get service account password
+        const serviceAccountPassword = await getServiceAccountPassword(config.secretArn);
+
+        // Generate Cognito token using service account
+        const authCommand = new AdminInitiateAuthCommand({
+          UserPoolId: config.userPoolId,
+          ClientId: config.clientId,
+          AuthFlow: 'ADMIN_NO_SRP_AUTH',
+          AuthParameters: {
+            USERNAME: 'service-account',
+            PASSWORD: serviceAccountPassword
+          }
+        });
+
+        const authResult = await cognito.send(authCommand);
+        const { IdToken, AccessToken } = authResult.AuthenticationResult;
+
+        if (!request.headers) {
+          request.headers = {};
         }
-      ];
-      console.log('Added visitor hash to request headers');
+
+        // Add tokens to request headers for viewer-response handling
+        request.headers['x-auth-tokens'] = [
+          {
+            key: 'X-Auth-Tokens',
+            value: JSON.stringify({ IdToken, AccessToken })
+          }
+        ];
+
+        // Also add visitor hash for context
+        request.headers['x-visitor-hash'] = [
+          {
+            key: 'X-Visitor-Hash',
+            value: visitorHash
+          }
+        ];
+
+        console.log('Added auth tokens and visitor hash to request headers');
+      } catch (error) {
+        console.error('Error generating Cognito token:', error);
+      }
     }
 
     return request;
@@ -44,26 +133,38 @@ exports.handler = async (event) => {
   if (eventType === 'viewer-response') {
     console.log('Processing viewer-response');
 
+    const authTokens = request.headers['x-auth-tokens']?.[0]?.value;
     const visitorHash = request.headers['x-visitor-hash']?.[0]?.value;
-    console.log(`Visitor hash in response: ${visitorHash}`);
 
-    if (visitorHash === 'test123') {
-      console.log('Setting visitor cookies');
-      response.headers['set-cookie'] = [
+    if (authTokens) {
+      const { IdToken, AccessToken } = JSON.parse(authTokens);
+
+      // Set secure HTTP-only cookies
+      const cookies = [
         {
           key: 'Set-Cookie',
-          value: 'visitor_company=Test%20Company; Path=/; Secure; SameSite=None'
+          value: `auth_token=${IdToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=3600`
         },
         {
           key: 'Set-Cookie',
-          value: 'visitor_name=John%20Doe; Path=/; Secure; SameSite=None'
-        },
-        {
-          key: 'Set-Cookie',
-          value: 'visitor_context=engineering; Path=/; Secure; SameSite=None'
+          value: `access_token=${AccessToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=3600`
         }
       ];
-      console.log('Cookies set in response');
+
+      // Add visitor context cookie if hash exists
+      if (visitorHash) {
+        cookies.push({
+          key: 'Set-Cookie',
+          value: `visitor_hash=${visitorHash}; Path=/; Secure; SameSite=Strict; Max-Age=3600`
+        });
+      }
+
+      if (!response.headers['set-cookie']) {
+        response.headers['set-cookie'] = [];
+      }
+      response.headers['set-cookie'].push(...cookies);
+
+      console.log('Set auth and visitor cookies in response');
     }
 
     return response;
