@@ -1,7 +1,7 @@
 import Cookies from 'js-cookie';
 
-export const setDevelopmentCookies = (visitorHash: string) => {
-  if (process.env.NODE_ENV === 'development' && visitorHash === 'test123') {
+export const setDevelopmentCookies = (visitorQParam: string) => {
+  if (process.env.NODE_ENV === 'development' && visitorQParam === 'test123') {
     Cookies.set('visitor_company', 'Test Company', {
       path: '/',
       secure: true,
