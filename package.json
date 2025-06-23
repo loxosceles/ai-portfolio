@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "deploy": "npm run deploy:main",
+    "deploy": "pnpm run deploy:main",
     "deploy:main": "node scripts/deploy.js",
     "deploy:infra": "pnpm --filter=infrastructure run deploy",
     "deploy:frontend": "node scripts/update-env.js --frontend && pnpm --filter=frontend run deploy",
