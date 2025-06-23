@@ -5,24 +5,29 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { Construct } from 'constructs';
 import { addStackOutputs } from '../utils/stack-outputs';
 import * as path from 'path';
 
-interface CombinedWebsiteStackProps extends cdk.StackProps {
+interface WebStackProps extends cdk.StackProps {
   stage: 'dev' | 'prod';
+  userPool: cognito.UserPool;
+  userPoolClient: cognito.UserPoolClient;
 }
 
 /**
  * Combined stack for website hosting, content delivery, and visitor context
  * This eliminates cross-region references and circular dependencies
  */
-export class CombinedWebsiteStack extends cdk.Stack {
+export class WebStack extends cdk.Stack {
   public readonly websiteBucket: s3.Bucket;
   public readonly distribution: cloudfront.Distribution;
+  public readonly userPool: cognito.UserPool;
+  public readonly userPoolClient: cognito.UserPoolClient;
   private readonly stage: string;
 
-  constructor(scope: Construct, id: string, props: CombinedWebsiteStackProps) {
+  constructor(scope: Construct, id: string, props: WebStackProps) {
     super(scope, id, {
       ...props,
       env: {
@@ -31,6 +36,8 @@ export class CombinedWebsiteStack extends cdk.Stack {
       }
     });
     this.stage = props.stage;
+    this.userPool = props.userPool;
+    this.userPoolClient = props.userPoolClient;
 
     if (!['dev', 'prod'].includes(this.stage)) {
       throw new Error('Stage must be either "dev" or "prod"');
@@ -38,12 +45,31 @@ export class CombinedWebsiteStack extends cdk.Stack {
 
     const isProd = this.stage === 'prod';
 
-    // Create S3 bucket for hosting
+    // Create DynamoDB table for visitor context
+    const visitorTable = new dynamodb.Table(this, 'VisitorLinkTable', {
+      tableName: `portfolio-visitor-links-${this.stage}`,
+      partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
+      timeToLiveAttribute: 'ttl', // Add TTL for link expiration
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+      deletionProtection: isProd
+    });
+
+    // // Create S3 bucket for hosting
     this.websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {
-      bucketName: `portfolio-combined-${this.stage}-${this.account}-${this.region}`,
+      bucketName: `portfolio-web-${this.stage}-${this.account}-${this.region}`,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: !isProd
+    });
+
+    new cloudfront.CfnOriginAccessControl(this, 'BucketOAC', {
+      originAccessControlConfig: {
+        name: `${this.stackName}-oac`,
+        originAccessControlOriginType: 's3',
+        signingBehavior: 'always',
+        signingProtocol: 'sigv4'
+      }
     });
 
     const edgeFunctionRole = new iam.Role(this, 'VisitorContextFunctionRole', {
@@ -56,7 +82,48 @@ export class CombinedWebsiteStack extends cdk.Stack {
       ]
     });
 
-    // Add explicit permissions to create log groups in all regions
+    // Add permissions for SSM Parameter Store in both regions
+    edgeFunctionRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['ssm:GetParameter', 'ssm:GetParameters'],
+        resources: [
+          `arn:aws:ssm:${this.region}:${this.account}:parameter/portfolio/${props.stage}/*`,
+          `arn:aws:ssm:eu-central-1:${this.account}:parameter/portfolio/${props.stage}/*`
+        ]
+      })
+    );
+
+    // Add permissions for Secrets Manager
+    edgeFunctionRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: [
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:/portfolio/${props.stage}/cognito/service-account-*`
+        ]
+      })
+    );
+
+    // Add permissions for Cognito
+    edgeFunctionRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['cognito-idp:AdminInitiateAuth', 'cognito-idp:AdminGetUser'],
+        resources: [props.userPool.userPoolArn]
+      })
+    );
+
+    // Add DynamoDB permissions
+    edgeFunctionRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['dynamodb:GetItem'],
+        resources: [visitorTable.tableArn]
+      })
+    );
+
+    // Add explicit permissions to create log groups in all regions (required for Edge Functions)
     edgeFunctionRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
@@ -70,7 +137,7 @@ export class CombinedWebsiteStack extends cdk.Stack {
       this,
       'VisitorContextFunction',
       {
-        runtime: lambda.Runtime.NODEJS_20_X, // Update to Node.js 20 which is the latest supported
+        runtime: lambda.Runtime.NODEJS_20_X,
         handler: 'index.handler',
         code: lambda.Code.fromAsset(path.join(__dirname, '../../lib/functions/visitor-context')),
         role: edgeFunctionRole,
@@ -78,29 +145,14 @@ export class CombinedWebsiteStack extends cdk.Stack {
         timeout: cdk.Duration.seconds(5),
         memorySize: 128,
         description: 'Adds visitor context headers based on query parameters',
-        logRetention: cdk.aws_logs.RetentionDays.ONE_WEEK // Add log retention to create log groups
+        logRetention: cdk.aws_logs.RetentionDays.ONE_WEEK,
+        environment: {
+          STAGE: this.stage
+        }
       }
     );
 
-    // Create DynamoDB table for visitor context
-    const visitorTable = new dynamodb.Table(this, 'VisitorContextTable', {
-      tableName: `PortfolioVisitorContext-${this.stage}`,
-      partitionKey: { name: 'visitorHash', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
-      deletionProtection: isProd
-    });
-
-    // Add DynamoDB permissions
-    edgeFunctionRole.addToPolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ['dynamodb:GetItem', 'dynamodb:Query'],
-        resources: [visitorTable.tableArn]
-      })
-    );
-
-    // Create the S3 origin with OAC
+    // Create the S3 origin using the provided bucket and OAC
     const s3Origin = origins.S3BucketOrigin.withOriginAccessControl(this.websiteBucket, {
       originAccessLevels: [cloudfront.AccessLevel.READ, cloudfront.AccessLevel.LIST]
     });
@@ -113,7 +165,6 @@ export class CombinedWebsiteStack extends cdk.Stack {
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
         cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
         compress: true,
-        // Use only the viewer-request Lambda@Edge function
         edgeLambdas: [
           {
             functionVersion: visitorContextFunction.currentVersion,
@@ -138,7 +189,7 @@ export class CombinedWebsiteStack extends cdk.Stack {
       ]
     });
 
-    // Add bucket policy for CloudFront OAC
+    // Add bucket policy for CloudFront access
     this.websiteBucket.addToResourcePolicy(
       new iam.PolicyStatement({
         actions: ['s3:GetObject', 's3:ListBucket'],
@@ -155,32 +206,46 @@ export class CombinedWebsiteStack extends cdk.Stack {
     // Add stack outputs with unique export names
     addStackOutputs(this, this.stage, [
       {
-        id: 'CombinedBucketName',
+        id: 'WebBucketName',
         value: this.websiteBucket.bucketName,
-        description: 'Name of the combined website bucket',
-        exportName: 'combined-website-bucket',
-        paramName: 'COMBINED_WEBSITE_BUCKET_NAME'
+        description: 'Name of the website bucket',
+        exportName: 'web-bucket',
+        paramName: 'WEB_BUCKET_NAME'
       },
       {
-        id: 'CombinedDistributionDomainName',
+        id: 'WebDistributionDomainName',
         value: this.distribution.distributionDomainName,
-        description: 'CloudFront Distribution Domain Name for combined stack',
-        exportName: 'combined-cloudfront-domain',
-        paramName: 'COMBINED_CLOUDFRONT_DOMAIN'
+        description: 'CloudFront Distribution Domain Name for web stack',
+        exportName: 'web-cloudfront-domain',
+        paramName: 'WEB_CLOUDFRONT_DOMAIN'
       },
       {
-        id: 'CombinedDistributionId',
+        id: 'WebDistributionId',
         value: this.distribution.distributionId,
-        description: 'CloudFront Distribution ID for combined stack',
-        exportName: 'combined-cloudfront-distribution-id',
-        paramName: 'COMBINED_CLOUDFRONT_DISTRIBUTION_ID'
+        description: 'CloudFront Distribution ID for web stack',
+        exportName: 'web-cloudfront-distribution-id',
+        paramName: 'WEB_CLOUDFRONT_DISTRIBUTION_ID'
       },
       {
-        id: 'VisitorContextTableName',
+        id: 'EdgeFunctionRegion',
+        value: 'eu-central-1',
+        description: 'Region for Edge Function to access Cognito',
+        exportName: 'edge-function-region',
+        paramName: 'edge/function-region'
+      },
+      {
+        id: 'EdgeVisitorTableName',
         value: visitorTable.tableName,
-        description: 'Name of the visitor context DynamoDB table',
-        exportName: 'visitor-context-table',
-        paramName: 'VISITOR_CONTEXT_TABLE'
+        description: 'DynamoDB table for visitor links',
+        exportName: 'edge-visitor-table',
+        paramName: 'edge/visitor-table-name'
+      },
+      {
+        id: 'EdgeVisitorTableRegion',
+        value: 'us-east-1',
+        description: 'Region for visitor table',
+        exportName: 'edge-visitor-table-region',
+        paramName: 'edge/visitor-table-region'
       }
     ]);
   }

@@ -1,0 +1,46 @@
+{
+  "Records": [
+    {
+      "cf": {
+        "config": {
+          "distributionDomainName": "dn1zl0xw9h7s2.cloudfront.net",
+          "distributionId": "E1RYTJ353WDN8N",
+          "eventType": "viewer-response",
+          "requestId": "test-request-id"
+        },
+        "request": {
+          "clientIp": "203.0.113.178",
+          "headers": {
+            "x-auth-tokens": [
+              {
+                "key": "X-Auth-Tokens",
+                "value": "{\"IdToken\":\"test-id-token\",\"AccessToken\":\"test-access-token\",\"ExpiresIn\":3600}"
+              }
+            ],
+            "x-link-id": [
+              {
+                "key": "X-Link-Id",
+                "value": "7fc1e9cb-a4ed-42bb-b039-dbd0e5e4cc15"
+              }
+            ]
+          },
+          "method": "GET",
+          "querystring": "visitor=7fc1e9cb-a4ed-42bb-b039-dbd0e5e4cc15",
+          "uri": "/index.html"
+        },
+        "response": {
+          "status": "200",
+          "statusDescription": "OK",
+          "headers": {
+            "content-type": [
+              {
+                "key": "Content-Type",
+                "value": "text/html"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "Records": [
+    {
+      "cf": {
+        "config": {
+          "distributionDomainName": "dn1zl0xw9h7s2.cloudfront.net",
+          "distributionId": "E1RYTJ353WDN8N",
+          "eventType": "viewer-request",
+          "requestId": "test-request-id"
+        },
+        "request": {
+          "clientIp": "203.0.113.178",
+          "headers": {
+            "host": [
+              {
+                "key": "Host",
+                "value": "dn1zl0xw9h7s2.cloudfront.net"
+              }
+            ]
+          },
+          "method": "GET",
+          "querystring": "",
+          "uri": "/_next/static/chunks/main.js"
+        }
+      }
+    }
+  ]
+}
