@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "deploy": "npm run deploy:main",
+    "deploy:main": "node scripts/deploy.js",
     "deploy:infra": "pnpm --filter=infrastructure run deploy",
-    "deploy:frontend": "pnpm --filter=frontend run deploy",
-    "postdeploy": "node scripts/process-cf-outputs.js",
+    "deploy:frontend": "node scripts/update-env.js --frontend && pnpm --filter=frontend run deploy",
+    "postdeploy": "node scripts/update-env.js",
     "dev:frontend": "pnpm --filter=frontend run dev",
     "build:frontend": "pnpm --filter=frontend run build",
     "dev": "pnpm --filter=frontend run dev",
