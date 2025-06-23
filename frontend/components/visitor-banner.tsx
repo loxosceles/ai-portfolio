@@ -14,12 +14,12 @@ function VisitorBannerContent(): React.ReactElement | null {
   });
 
   const searchParams = useSearchParams();
-  const visitorHash = searchParams.get('visitor');
+  const visitorQParam = searchParams.get('visitor');
 
   useEffect(() => {
     // Only set cookies if they don't exist and we have a visitor hash
     if (
-      visitorHash === 'test123' &&
+      visitorQParam === 'test123' &&
       process.env.NODE_ENV === 'development' &&
       !Cookies.get('visitor_company')
     ) {
@@ -45,7 +45,7 @@ function VisitorBannerContent(): React.ReactElement | null {
       context: decodeURIComponent(Cookies.get('visitor_context') || '')
     });
     setIsLoading(false);
-  }, [visitorHash]);
+  }, [visitorQParam]);
 
   // Handle main content margin adjustment
   useEffect(() => {
