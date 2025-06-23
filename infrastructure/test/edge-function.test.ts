@@ -1,4 +1,4 @@
-const { handler } = require('../lib/functions/visitor-context/index.js');
+const { handler } = require('../lib/functions/visitor-context-test/index.js');
 
 describe('Lambda@Edge Function', () => {
   // Helper function to create viewer-request event
