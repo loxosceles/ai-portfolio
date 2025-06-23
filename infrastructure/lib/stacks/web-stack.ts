@@ -145,7 +145,10 @@ export class WebStack extends cdk.Stack {
         timeout: cdk.Duration.seconds(5),
         memorySize: 128,
         description: 'Adds visitor context headers based on query parameters',
-        logRetention: cdk.aws_logs.RetentionDays.ONE_WEEK
+        logRetention: cdk.aws_logs.RetentionDays.ONE_WEEK,
+        environment: {
+          STAGE: this.stage
+        }
       }
     );
 

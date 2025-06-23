@@ -18,11 +18,13 @@ let config = null;
 async function getConfig() {
   if (config) return config;
 
+  const stage = process.env.STAGE || 'dev';
+
   // Fetch main app config from eu-central-1
   const mainConfigCommand = new GetParametersCommand({
     Names: [
-      '/portfolio/dev/NEXT_PUBLIC_COGNITO_CLIENT_ID',
-      '/portfolio/dev/NEXT_PUBLIC_COGNITO_USER_POOL_ID'
+      `/portfolio/${stage}/NEXT_PUBLIC_COGNITO_CLIENT_ID`,
+      `/portfolio/${stage}/NEXT_PUBLIC_COGNITO_USER_POOL_ID`
     ],
     WithDecryption: true
   });
@@ -30,7 +32,7 @@ async function getConfig() {
   // Fetch edge-specific config from us-east-1
   const edgeConfigCommand = new GetParametersCommand({
     Names: [
-      '/portfolio/dev/edge/visitor-table-name'
+      `/portfolio/${stage}/edge/visitor-table-name`
     ],
     WithDecryption: true
   });
