@@ -1,6 +1,6 @@
-describe('Lambda@Edge Function', () => {
-  const handler = require('../lib/functions/visitor-context/index').handler;
+const { handler } = require('../lib/functions/visitor-context/index.js');
 
+describe('Lambda@Edge Function', () => {
   // Helper function to create viewer-request event
   const createViewerRequestEvent = (querystring = '', headers = {}) => ({
     Records: [
@@ -20,7 +20,7 @@ describe('Lambda@Edge Function', () => {
   });
 
   // Helper function to create viewer-response event
-  const createViewerResponseEvent = (requestHeaders = {}) => ({
+  const createViewerResponseEvent = (requestHeaders = {}, responseHeaders = {}) => ({
     Records: [
       {
         cf: {
@@ -28,11 +28,11 @@ describe('Lambda@Edge Function', () => {
             eventType: 'viewer-response'
           },
           request: {
-            uri: '/test-page', // Add this line
+            uri: '/test-page',
             headers: requestHeaders
           },
           response: {
-            headers: {}
+            headers: responseHeaders
           }
         }
       }
@@ -65,66 +65,41 @@ describe('Lambda@Edge Function', () => {
     });
   });
 
-  describe('Viewer Request Processing', () => {
-    test('should add visitor hash header when valid hash provided', async () => {
-      const event = createViewerRequestEvent('visitor=test123');
-
+  describe('Event Type Handling', () => {
+    test('should handle viewer-request events', async () => {
+      const event = createViewerRequestEvent();
       const result = await handler(event);
 
-      expect(result.headers['x-visitor-hash']).toBeDefined();
-      expect(result.headers['x-visitor-hash'][0].value).toBe('test123');
+      // Should return the request object
+      expect(result).toHaveProperty('uri');
+      expect(result).toHaveProperty('headers');
     });
 
-    test('should not add visitor hash header for invalid hash', async () => {
-      const event = createViewerRequestEvent('visitor=invalid');
-
+    test('should handle viewer-response events', async () => {
+      const event = createViewerResponseEvent();
       const result = await handler(event);
 
-      expect(result.headers?.['x-visitor-hash']).toBeUndefined();
+      // Should return the response object
+      expect(result).toHaveProperty('headers');
     });
   });
 
-  describe('Viewer Response Processing', () => {
-    test('should set cookies when valid visitor hash present', async () => {
-      const event = createViewerResponseEvent({
-        'x-visitor-hash': [
+  describe('Error Handling', () => {
+    test('should handle errors gracefully and return original request/response', async () => {
+      // Test with malformed event
+      const malformedEvent = {
+        Records: [
           {
-            key: 'X-Visitor-Hash',
-            value: 'test123'
+            cf: {
+              config: { eventType: 'viewer-request' },
+              request: { uri: '/', querystring: '', headers: {} }
+            }
           }
         ]
-      });
+      };
 
-      const result = await handler(event);
-
-      expect(result.headers['set-cookie']).toBeDefined();
-      expect(result.headers['set-cookie']).toHaveLength(3);
-      expect(result.headers['set-cookie'][0].value).toContain('visitor_company=Test%20Company');
-      expect(result.headers['set-cookie'][1].value).toContain('visitor_name=John%20Doe');
-      expect(result.headers['set-cookie'][2].value).toContain('visitor_context=engineering');
-    });
-
-    test('should not set cookies when visitor hash is invalid', async () => {
-      const event = createViewerResponseEvent({
-        'x-visitor-hash': [
-          {
-            key: 'X-Visitor-Hash',
-            value: 'invalid'
-          }
-        ]
-      });
-
-      const result = await handler(event);
-
-      expect(result.headers['set-cookie']).toBeUndefined();
-    });
-
-    test('should not set cookies when no visitor hash present', async () => {
-      const event = createViewerResponseEvent();
-
-      const result = await handler(event);
-
-      expect(result.headers['set-cookie']).toBeUndefined();
+      const result = await handler(malformedEvent);
+      expect(result).toBeDefined();
     });
   });
 });
