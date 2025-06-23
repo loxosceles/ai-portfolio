@@ -16,7 +16,6 @@ const Portfolio = () => {
   const developerId = 'dev-1';
   const [isChecking, setIsChecking] = useState(true);
 
-  // Move useQuery to the top level, before any conditional returns
   const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
     variables: { id: developerId },
     onCompleted: (data: { getDeveloper: { name: string } }) => {
@@ -32,13 +31,13 @@ const Portfolio = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const visitorHash = params.get('visitor');
+    const visitorQParam = params.get('visitor');
 
-    if (process.env.NODE_ENV === 'development' && visitorHash) {
+    if (process.env.NODE_ENV === 'development' && visitorQParam) {
       // Set cookies directly in development
-      console.log('Setting development cookies for visitor:', visitorHash);
-      setDevelopmentCookies(visitorHash);
-    } else if (!visitorHash) {
+      console.log('Setting development cookies for visitor:', visitorQParam);
+      setDevelopmentCookies(visitorQParam);
+    } else if (!visitorQParam) {
       // Clean up cookies if no visitor parameter
       const visitorCookies = ['visitor_company', 'visitor_name', 'visitor_context'];
       visitorCookies.forEach((cookieName) => {
