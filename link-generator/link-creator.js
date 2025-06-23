@@ -51,7 +51,7 @@ function validateEnvironment() {
   };
 }
 
-async function createDynamoDBEntry(tableName, linkId, region) {
+async function createDynamoDBEntry(tableName, linkId, password, region) {
   try {
     // Create DynamoDB client
     const client = new DynamoDBClient({ region });
@@ -66,6 +66,7 @@ async function createDynamoDBEntry(tableName, linkId, region) {
       TableName: tableName,
       Item: {
         linkId,
+        password,
         created_at: new Date().toISOString(),
         ttl
       }
@@ -93,7 +94,8 @@ async function createCognitoUser(userPoolId, clientId, linkId, region) {
       symbols: true,
       uppercase: true,
       lowercase: true,
-      strict: true
+      strict: true,
+      exclude: '"`\'\\${}[]()' // Exclude characters that might break the shell command
     });
 
     // Create the user
@@ -158,13 +160,18 @@ async function createLink() {
     const config = validateEnvironment();
     const linkId = uuidv4();
 
-    await createDynamoDBEntry(config.dynamoDbTableName, linkId, config.dynamoDbRegion);
-
     const credentials = await createCognitoUser(
       config.cognitoUserPoolId,
       config.cognitoClientId,
       linkId,
       config.cognitoRegion
+    );
+
+    await createDynamoDBEntry(
+      config.dynamoDbTableName,
+      linkId,
+      credentials.password,
+      config.dynamoDbRegion
     );
 
     const cleanDomainUrl = config.domainUrl.replace(/\/+$/, '');
