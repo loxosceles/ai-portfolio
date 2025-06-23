@@ -82,13 +82,14 @@ export class WebStack extends cdk.Stack {
       ]
     });
 
-    // Add permissions for SSM Parameter Store
+    // Add permissions for SSM Parameter Store in both regions
     edgeFunctionRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['ssm:GetParameter', 'ssm:GetParameters'],
         resources: [
-          `arn:aws:ssm:${this.region}:${this.account}:parameter/portfolio/${props.stage}/edge/*`
+          `arn:aws:ssm:${this.region}:${this.account}:parameter/portfolio/${props.stage}/*`,
+          `arn:aws:ssm:eu-central-1:${this.account}:parameter/portfolio/${props.stage}/*`
         ]
       })
     );
