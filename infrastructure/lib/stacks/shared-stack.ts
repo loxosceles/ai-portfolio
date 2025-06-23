@@ -9,7 +9,7 @@ interface SharedStackProps extends cdk.StackProps {
 
 export class SharedStack extends cdk.Stack {
   public readonly userPool: cognito.UserPool;
-  private readonly userPoolClient: cognito.UserPoolClient;
+  public readonly userPoolClient: cognito.UserPoolClient;
   private readonly userPoolDomain: cognito.UserPoolDomain;
   private readonly stage: string;
 
@@ -71,8 +71,8 @@ export class SharedStack extends cdk.Stack {
   }
 
   private createUserPool(): cognito.UserPool {
-    return new cognito.UserPool(this, 'PortfolioUserPool', {
-      userPoolName: 'portfolio-user-pool',
+    return new cognito.UserPool(this, 'SharedUserPool', {
+      userPoolName: `shared-user-pool-${this.stage}`,
       selfSignUpEnabled: false,
       signInAliases: {
         email: true,
@@ -84,57 +84,26 @@ export class SharedStack extends cdk.Stack {
           mutable: true
         }
       },
-      customAttributes: {
-        // Example of custom attributes
-        //   profilePicture: new cognito.StringAttribute({ mutable: true }),
-        //   firstName: new cognito.StringAttribute({ mutable: true }),
-        //   lastName: new cognito.StringAttribute({ mutable: true })
-      },
       passwordPolicy: {
-        minLength: 8,
+        minLength: 12,
         requireLowercase: true,
         requireUppercase: true,
         requireDigits: true,
-        requireSymbols: true
+        requireSymbols: false
       },
-      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
-      deviceTracking: {
-        challengeRequiredOnNewDevice: true,
-        deviceOnlyRememberedOnUserPrompt: true
-      }
+      accountRecovery: cognito.AccountRecovery.NONE,
+      removalPolicy: cdk.RemovalPolicy.RETAIN
     });
   }
 
   private createUserPoolClient(): cognito.UserPoolClient {
-    return this.userPool.addClient('PortfolioClient', {
-      oAuth: {
-        flows: {
-          authorizationCodeGrant: true,
-          implicitCodeGrant: false
-        },
-        scopes: [
-          cognito.OAuthScope.EMAIL,
-          cognito.OAuthScope.OPENID,
-          cognito.OAuthScope.PROFILE,
-          cognito.OAuthScope.PHONE
-        ],
-        callbackUrls: [
-          'http://localhost:3000/auth/callback'
-          // 'https://your-production-domain/auth/callback'
-        ],
-        logoutUrls: [
-          'http://localhost:3000/login'
-          // 'https://your-production-domain/login'
-        ]
+    return this.userPool.addClient('SharedServiceClient', {
+      authFlows: {
+        adminUserPassword: true,
+        userSrp: true,
+        custom: false
       },
       preventUserExistenceErrors: true,
-      authFlows: {
-        userPassword: true,
-        adminUserPassword: true,
-        custom: false,
-        userSrp: true
-      },
       accessTokenValidity: cdk.Duration.minutes(60),
       idTokenValidity: cdk.Duration.minutes(60),
       refreshTokenValidity: cdk.Duration.days(30)

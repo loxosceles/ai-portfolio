@@ -1,0 +1,18 @@
+{
+  "name": "link-generator",
+  "version": "0.1.0",
+  "description": "Generate link for special visitors",
+  "main": "generate-link.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.830.0",
+    "@aws-sdk/client-dynamodb": "^3.830.0",
+    "@aws-sdk/lib-dynamodb": "^3.830.0",
+    "dotenv": "^16.5.0",
+    "generate-password": "^1.7.1"
+  }
+}
