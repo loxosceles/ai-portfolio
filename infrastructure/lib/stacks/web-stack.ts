@@ -151,7 +151,10 @@ export class WebStack extends cdk.Stack {
 
     // Create the S3 origin using the provided bucket and OAC
     const s3Origin = origins.S3BucketOrigin.withOriginAccessControl(this.websiteBucket, {
-      originAccessLevels: [cloudfront.AccessLevel.READ, cloudfront.AccessLevel.LIST]
+      originAccessLevels: [cloudfront.AccessLevel.READ, cloudfront.AccessLevel.LIST],
+      customHeaders: {
+        'X-Portfolio-Stage': this.stage
+      }
     });
 
     // Create CloudFront distribution
