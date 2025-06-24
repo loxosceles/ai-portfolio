@@ -168,15 +168,15 @@ async function handleViewerResponse(request, response) {
     const tokens = JSON.parse(authTokens);
     const linkId = request.headers['x-link-id']?.[0]?.value;
 
-    // Set secure HTTP-only cookies for auth tokens
+    // Set secure cookies for auth tokens (readable by client)
     const cookies = [
       {
         key: 'Set-Cookie',
-        value: `IdToken=${tokens.IdToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
+        value: `IdToken=${tokens.IdToken}; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
       },
       {
         key: 'Set-Cookie',
-        value: `AccessToken=${tokens.AccessToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
+        value: `AccessToken=${tokens.AccessToken}; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
       }
     ];
 
