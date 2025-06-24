@@ -15,10 +15,12 @@ const ssmEdgeRegion = new SSMClient({ region: 'us-east-1' }); // For edge-specif
 
 let config = null;
 
-async function getConfig() {
+async function getConfig(request) {
   if (config) return config;
 
-  const stage = process.env.STAGE || 'dev';
+  // Extract stage from CloudFront custom header
+  const stage = request.headers['x-portfolio-stage']?.[0]?.value || 'dev';
+  console.log(`Using stage from custom header: ${stage}`);
 
   // Fetch main app config from eu-central-1
   const mainConfigCommand = new GetParametersCommand({
@@ -110,7 +112,7 @@ async function handleViewerRequest(request) {
   }
 
   try {
-    const { tableName, userPoolId, clientId } = await getConfig();
+    const { tableName, userPoolId, clientId } = await getConfig(request);
 
     // Get link data from DynamoDB
     const linkData = await getLinkData(tableName, linkId);
