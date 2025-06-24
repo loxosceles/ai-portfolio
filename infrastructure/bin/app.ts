@@ -6,6 +6,7 @@ import * as cdk from 'aws-cdk-lib';
 import { WebStack } from '../lib/stacks/web-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { SharedStack } from '../lib/stacks/shared-stack';
+import { JobMatchingStack } from '../lib/stacks/job-matching-stack';
 
 // Load environment variables from .env file
 dotenv.config({
@@ -43,6 +44,13 @@ const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
   userPool: sharedStack.userPool
 });
 
+// Create Job Matching stack
+const jobMatchingStack = new JobMatchingStack(app, `JobMatchingStack-${stage}`, {
+  stage: stage as 'dev' | 'prod',
+  env,
+  userPool: sharedStack.userPool
+});
+
 // Create combined website stack in us-east-1
 const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
   stage,
@@ -57,6 +65,8 @@ const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
 
 // Add dependencies
 apiStack.addDependency(sharedStack);
+jobMatchingStack.addDependency(sharedStack);
 webStack.addDependency(apiStack);
+webStack.addDependency(jobMatchingStack);
 
 app.synth();
