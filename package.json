@@ -16,6 +16,7 @@
     "test:infra": "pnpm --filter=infrastructure run test",
     "seed:infra": "pnpm --filter=infrastructure run seed",
     "seed:infra:force": "pnpm --filter=infrastructure run seed:force",
+    "seed:job-matching": "pnpm --filter=infrastructure run seed:job-matching",
     "install:frontend": "pnpm --filter=frontend install",
     "install:infra": "pnpm --filter=infrastructure install",
     "lint": "pnpm --filter='..' run lint",
