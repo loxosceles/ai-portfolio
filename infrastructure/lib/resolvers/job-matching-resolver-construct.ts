@@ -36,10 +36,29 @@ export class JobMatchingResolverConstruct extends Construct {
     // Create data source
     this.dataSource = props.api.addLambdaDataSource('JobMatchingDataSource', jobMatchingFunction);
 
-    // Create resolver
+    // Create resolvers
     this.dataSource.createResolver('GetJobMatchingResolver', {
       typeName: 'Query',
       fieldName: 'getJobMatching'
+    });
+
+    // Add resolver for direct linkId access (API key auth)
+    this.dataSource.createResolver('GetJobMatchingByLinkIdResolver', {
+      typeName: 'Query',
+      fieldName: 'getJobMatchingByLinkId',
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "arguments": $util.toJson($ctx.arguments),
+            "identity": $util.toJson($ctx.identity)
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        $util.toJson($ctx.result)
+      `)
     });
   }
 }
