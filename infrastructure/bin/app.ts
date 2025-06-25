@@ -37,18 +37,19 @@ const sharedStack = new SharedStack(app, `PortfolioSharedStack-${stage}`, {
   env
 });
 
-// Create API stack
-const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
+// Create Job Matching stack first
+const jobMatchingStack = new JobMatchingStack(app, `JobMatchingStack-${stage}`, {
   stage: stage as 'dev' | 'prod',
   env,
   userPool: sharedStack.userPool
 });
 
-// Create Job Matching stack
-const jobMatchingStack = new JobMatchingStack(app, `JobMatchingStack-${stage}`, {
+// Create API stack with job matching table
+const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
   stage: stage as 'dev' | 'prod',
   env,
-  userPool: sharedStack.userPool
+  userPool: sharedStack.userPool,
+  jobMatchingTable: jobMatchingStack.matchingTable
 });
 
 // Create combined website stack in us-east-1
@@ -64,9 +65,9 @@ const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
 });
 
 // Add dependencies
-apiStack.addDependency(sharedStack);
 jobMatchingStack.addDependency(sharedStack);
+apiStack.addDependency(sharedStack);
+apiStack.addDependency(jobMatchingStack);
 webStack.addDependency(apiStack);
-webStack.addDependency(jobMatchingStack);
 
 app.synth();
