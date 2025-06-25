@@ -11,6 +11,7 @@ import { addStackOutputs } from '../utils/stack-outputs';
 interface JobMatchingStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
   stage: 'dev' | 'prod';
+  cloudfrontDomain: string;
 }
 
 export class JobMatchingStack extends cdk.Stack {
@@ -20,7 +21,7 @@ export class JobMatchingStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: JobMatchingStackProps) {
     super(scope, id, props);
-    const { stage, userPool } = props;
+    const { stage, userPool, cloudfrontDomain } = props;
     this.stage = stage;
 
     if (!['dev', 'prod'].includes(this.stage)) {
@@ -31,13 +32,21 @@ export class JobMatchingStack extends cdk.Stack {
     this.matchingTable = this.createMatchingTable(stage === 'prod');
 
     // Create Lambda function for job matching
-    const matchingFunction = this.createMatchingFunction(this.matchingTable);
+    const matchingFunction = this.createMatchingFunction(
+      this.matchingTable,
+      props.cloudfrontDomain
+    );
 
     // Create API Gateway logging role
     const apiGatewayLoggingRole = this.createApiGatewayLoggingRole();
 
     // Create API Gateway with Cognito authorizer
-    this.api = this.createApiGateway(userPool, matchingFunction, apiGatewayLoggingRole);
+    this.api = this.createApiGateway(
+      userPool,
+      matchingFunction,
+      apiGatewayLoggingRole,
+      props.cloudfrontDomain
+    );
 
     // Add stack outputs
     this.addOutputs(stage);
@@ -54,7 +63,7 @@ export class JobMatchingStack extends cdk.Stack {
     });
   }
 
-  private createMatchingFunction(table: dynamodb.Table): lambda.Function {
+  private createMatchingFunction(table: dynamodb.Table, cloudfrontDomain: string): lambda.Function {
     // Create Lambda function
     const fn = new lambda.Function(this, 'JobMatchingFunction', {
       functionName: `job-matching-${this.stage}`,
@@ -62,7 +71,8 @@ export class JobMatchingStack extends cdk.Stack {
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../functions/job-matching')),
       environment: {
-        MATCHING_TABLE_NAME: table.tableName
+        MATCHING_TABLE_NAME: table.tableName,
+        ALLOWED_ORIGIN: cloudfrontDomain
       },
       timeout: cdk.Duration.seconds(10),
       memorySize: 256
@@ -89,7 +99,8 @@ export class JobMatchingStack extends cdk.Stack {
   private createApiGateway(
     userPool: cognito.UserPool,
     fn: lambda.Function,
-    loggingRole: iam.Role
+    loggingRole: iam.Role,
+    cloudfrontDomain: string
   ): apigateway.RestApi {
     // Create account settings for API Gateway logging
     new apigateway.CfnAccount(this, 'ApiGatewayAccount', {
@@ -101,7 +112,7 @@ export class JobMatchingStack extends cdk.Stack {
       restApiName: `job-matching-api-${this.stage}`,
       description: 'API for job matching data',
       defaultCorsPreflightOptions: {
-        allowOrigins: ['https://dn1zl0xw9h7s2.cloudfront.net'],
+        allowOrigins: [cloudfrontDomain],
         allowMethods: ['GET', 'POST', 'OPTIONS'],
         allowHeaders: ['Content-Type', 'Authorization', 'X-Amz-Date', 'X-Api-Key'],
         allowCredentials: true,

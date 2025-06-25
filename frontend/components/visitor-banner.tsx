@@ -70,7 +70,7 @@ function VisitorBannerContent(): React.ReactElement | null {
         (isAuthenticated && matchingData?.greeting))
     ) {
       mainContent.style.transition = 'margin-top 0.3s ease';
-      mainContent.style.marginTop = '6rem'; // Increased for potential message content
+      mainContent.style.marginTop = '6rem';
     } else if (mainContent) {
       mainContent.style.marginTop = '0';
     }

@@ -13,7 +13,7 @@ function getCookie(name: string): string | null {
 
 export const cookieAuth = {
   getTokens(): { accessToken: string | null; idToken: string | null } {
-    // These are readable cookies set by your Lambda@Edge function
+    // These are readable cookies set by the Lambda@Edge function
     const accessToken = getCookie('AccessToken');
     const idToken = getCookie('IdToken');
 
