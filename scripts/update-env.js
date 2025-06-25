@@ -6,22 +6,23 @@ const path = require('path');
 const environment = process.env.ENVIRONMENT || 'dev';
 const mainRegion = 'eu-central-1';
 const edgeRegion = 'us-east-1';
+const jobMatchingRegion = 'eu-central-1';
 
 function getSSMParameters(region, pathPrefix = null) {
   try {
-    const command = pathPrefix 
+    const command = pathPrefix
       ? `aws ssm get-parameters-by-path --path "${pathPrefix}" --recursive --region ${region}`
       : `aws ssm get-parameters-by-path --path "/portfolio/${environment}/" --recursive --region ${region}`;
-    
+
     const output = execSync(command, { encoding: 'utf-8' });
     const response = JSON.parse(output);
-    
+
     const params = {};
-    response.Parameters.forEach(param => {
+    response.Parameters.forEach((param) => {
       const key = param.Name.split('/').pop();
       params[key] = param.Value;
     });
-    
+
     return params;
   } catch (error) {
     console.error(`Error fetching parameters from ${region}:`, error.message);
@@ -31,31 +32,42 @@ function getSSMParameters(region, pathPrefix = null) {
 
 function updateFrontendEnv() {
   console.log('Updating frontend environment...');
-  
+
   const mainParams = getSSMParameters(mainRegion);
+  const jobMatchingParams = getSSMParameters(
+    jobMatchingRegion,
+    `/portfolio/${environment}/job-matching/`
+  );
   const frontendParams = {};
-  
+
+  // Add main parameters
   Object.entries(mainParams).forEach(([key, value]) => {
     if (key.startsWith('NEXT_PUBLIC_')) {
       frontendParams[key] = value;
     }
   });
-  
+
+  // Add job matching parameters
+  if (jobMatchingParams['NEXT_PUBLIC_JOB_MATCHING_API_URL']) {
+    frontendParams['NEXT_PUBLIC_JOB_MATCHING_API_URL'] =
+      jobMatchingParams['NEXT_PUBLIC_JOB_MATCHING_API_URL'];
+  }
+
   const envPath = path.join(process.cwd(), 'frontend', '.env.local');
   const envContent = Object.entries(frontendParams)
     .map(([key, value]) => `${key}=${value}`)
     .join('\n');
-  
+
   fs.writeFileSync(envPath, envContent);
   console.log(`✅ Frontend env updated: ${Object.keys(frontendParams).length} variables`);
 }
 
 function updateLinkGeneratorEnv() {
   console.log('Updating link-generator environment...');
-  
+
   const mainParams = getSSMParameters(mainRegion);
   const edgeParams = getSSMParameters(edgeRegion);
-  
+
   const envContent = [
     `DYNAMODB_TABLE_NAME=${edgeParams['visitor-table-name']}`,
     `COGNITO_USER_POOL_ID=${mainParams['NEXT_PUBLIC_COGNITO_USER_POOL_ID']}`,
@@ -65,7 +77,7 @@ function updateLinkGeneratorEnv() {
     `OUTPUT_FILE_PATH=./link.txt`,
     `DOMAIN_URL=https://${edgeParams['WEB_CLOUDFRONT_DOMAIN']}/`
   ].join('\n');
-  
+
   const envPath = path.join(process.cwd(), 'link-generator', '.env');
   fs.writeFileSync(envPath, envContent);
   console.log('✅ Link-generator env updated');
@@ -73,9 +85,9 @@ function updateLinkGeneratorEnv() {
 
 function main() {
   const target = process.argv[2] || '--all';
-  
+
   console.log(`🔄 Updating environment files for: ${environment}`);
-  
+
   try {
     switch (target) {
       case '--frontend':

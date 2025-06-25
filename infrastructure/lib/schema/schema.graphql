@@ -38,11 +38,22 @@ type SkillSet @aws_iam @aws_cognito_user_pools @aws_api_key {
   skills: [String]!
 }
 
+type JobMatching @aws_iam @aws_cognito_user_pools @aws_api_key {
+  linkId: String!
+  companyName: String
+  recruiterName: String
+  context: String
+  greeting: String
+  message: String
+  skills: [String]
+}
+
 type Query {
   getDeveloper(id: ID!): Developer @aws_iam @aws_api_key @aws_cognito_user_pools
   listDevelopers: [Developer] @aws_iam @aws_api_key @aws_cognito_user_pools
   getProject(id: ID!): Project @aws_iam @aws_api_key @aws_cognito_user_pools
   listProjects: [Project] @aws_iam @aws_api_key @aws_cognito_user_pools
+  getJobMatching: JobMatching @aws_cognito_user_pools
 }
 
 type Mutation {

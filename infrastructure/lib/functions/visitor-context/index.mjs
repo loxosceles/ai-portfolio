@@ -15,10 +15,12 @@ const ssmEdgeRegion = new SSMClient({ region: 'us-east-1' }); // For edge-specif
 
 let config = null;
 
-async function getConfig() {
+async function getConfig(request) {
   if (config) return config;
 
-  const stage = process.env.STAGE || 'dev';
+  // Extract stage from CloudFront custom header
+  const stage = request.headers['x-portfolio-stage']?.[0]?.value || 'dev';
+  console.log(`Using stage from custom header: ${stage}`);
 
   // Fetch main app config from eu-central-1
   const mainConfigCommand = new GetParametersCommand({
@@ -110,7 +112,7 @@ async function handleViewerRequest(request) {
   }
 
   try {
-    const { tableName, userPoolId, clientId } = await getConfig();
+    const { tableName, userPoolId, clientId } = await getConfig(request);
 
     // Get link data from DynamoDB
     const linkData = await getLinkData(tableName, linkId);
@@ -168,15 +170,18 @@ async function handleViewerResponse(request, response) {
     const tokens = JSON.parse(authTokens);
     const linkId = request.headers['x-link-id']?.[0]?.value;
 
-    // Set secure HTTP-only cookies for auth tokens
+    // Set secure cookies for auth tokens (readable by client)
+    // NOTE: HttpOnly flag is intentionally omitted as the static frontend needs
+    // JavaScript access to these tokens for client-side API requests.
+    // Security is enhanced with SameSite=Strict and short expiration times.
     const cookies = [
       {
         key: 'Set-Cookie',
-        value: `IdToken=${tokens.IdToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
+        value: `IdToken=${tokens.IdToken}; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
       },
       {
         key: 'Set-Cookie',
-        value: `AccessToken=${tokens.AccessToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
+        value: `AccessToken=${tokens.AccessToken}; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
       }
     ];
 

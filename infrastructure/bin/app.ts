@@ -6,6 +6,7 @@ import * as cdk from 'aws-cdk-lib';
 import { WebStack } from '../lib/stacks/web-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { SharedStack } from '../lib/stacks/shared-stack';
+import { JobMatchingStack } from '../lib/stacks/job-matching-stack';
 
 // Load environment variables from .env file
 dotenv.config({
@@ -36,14 +37,7 @@ const sharedStack = new SharedStack(app, `PortfolioSharedStack-${stage}`, {
   env
 });
 
-// Create API stack
-const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
-  stage: stage as 'dev' | 'prod',
-  env,
-  userPool: sharedStack.userPool
-});
-
-// Create combined website stack in us-east-1
+// Create combined website stack in us-east-1 first to get the CloudFront domain
 const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
   stage,
   userPool: sharedStack.userPool,
@@ -55,8 +49,28 @@ const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
   crossRegionReferences: true
 });
 
+// Create Job Matching stack with CloudFront domain
+const jobMatchingStack = new JobMatchingStack(app, `JobMatchingStack-${stage}`, {
+  stage: stage as 'dev' | 'prod',
+  env,
+  userPool: sharedStack.userPool,
+  cloudfrontDomain: `https://${webStack.distribution.distributionDomainName}`,
+  crossRegionReferences: true
+});
+
+// Create API stack with job matching table
+const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
+  stage: stage as 'dev' | 'prod',
+  env,
+  userPool: sharedStack.userPool,
+  jobMatchingTable: jobMatchingStack.matchingTable
+});
+
 // Add dependencies
+webStack.addDependency(sharedStack);
+jobMatchingStack.addDependency(sharedStack);
+jobMatchingStack.addDependency(webStack); // Job matching depends on web stack for CloudFront domain
 apiStack.addDependency(sharedStack);
-webStack.addDependency(apiStack);
+apiStack.addDependency(jobMatchingStack);
 
 app.synth();
