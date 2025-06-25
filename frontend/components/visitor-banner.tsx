@@ -15,7 +15,7 @@ function VisitorBannerContent(): React.ReactElement | null {
   });
 
   // Use job matching hook to get personalized data
-  const { matchingData, isLoading: isLoadingMatching } = useJobMatching();
+  const { matchingData, isLoading: isLoadingMatching, isAuthenticated } = useJobMatching();
 
   const searchParams = useSearchParams();
   const visitorQParam = searchParams.get('visitor');
@@ -42,12 +42,17 @@ function VisitorBannerContent(): React.ReactElement | null {
       });
     }
 
-    // Read current cookies or use matching data if available
+    // Read current cookies or use matching data if available (only for authenticated users)
     setVisitorInfo({
       company:
-        matchingData?.companyName || decodeURIComponent(Cookies.get('visitor_company') || ''),
-      name: matchingData?.recruiterName || decodeURIComponent(Cookies.get('visitor_name') || ''),
-      context: matchingData?.context || decodeURIComponent(Cookies.get('visitor_context') || '')
+        (isAuthenticated ? matchingData?.companyName : null) ||
+        decodeURIComponent(Cookies.get('visitor_company') || ''),
+      name:
+        (isAuthenticated ? matchingData?.recruiterName : null) ||
+        decodeURIComponent(Cookies.get('visitor_name') || ''),
+      context:
+        (isAuthenticated ? matchingData?.context : null) ||
+        decodeURIComponent(Cookies.get('visitor_context') || '')
     });
     setIsLoading(false);
   }, [visitorQParam, matchingData]);
@@ -59,7 +64,10 @@ function VisitorBannerContent(): React.ReactElement | null {
       mainContent &&
       !isLoading &&
       isVisible &&
-      (visitorInfo.company || visitorInfo.name || visitorInfo.context || matchingData?.greeting)
+      (visitorInfo.company ||
+        visitorInfo.name ||
+        visitorInfo.context ||
+        (isAuthenticated && matchingData?.greeting))
     ) {
       mainContent.style.transition = 'margin-top 0.3s ease';
       mainContent.style.marginTop = '6rem'; // Increased for potential message content
@@ -77,7 +85,10 @@ function VisitorBannerContent(): React.ReactElement | null {
   if (
     isLoading ||
     !isVisible ||
-    (!visitorInfo.company && !visitorInfo.name && !visitorInfo.context && !matchingData?.greeting)
+    (!visitorInfo.company &&
+      !visitorInfo.name &&
+      !visitorInfo.context &&
+      !(isAuthenticated && matchingData?.greeting))
   ) {
     return null;
   }
@@ -106,10 +117,12 @@ function VisitorBannerContent(): React.ReactElement | null {
               <span className="text-yellow-300">[Development Mode]</span>
             )}
           </div>
-          {matchingData?.greeting && (
+          {isAuthenticated && matchingData?.greeting && (
             <div className="text-lg font-medium">{matchingData.greeting}</div>
           )}
-          {matchingData?.message && <div className="text-sm">{matchingData.message}</div>}
+          {isAuthenticated && matchingData?.message && (
+            <div className="text-sm">{matchingData.message}</div>
+          )}
         </div>
         <button
           onClick={handleClose}
