@@ -171,6 +171,9 @@ async function handleViewerResponse(request, response) {
     const linkId = request.headers['x-link-id']?.[0]?.value;
 
     // Set secure cookies for auth tokens (readable by client)
+    // NOTE: HttpOnly flag is intentionally omitted as the static frontend needs
+    // JavaScript access to these tokens for client-side API requests.
+    // Security is enhanced with SameSite=Strict and short expiration times.
     const cookies = [
       {
         key: 'Set-Cookie',

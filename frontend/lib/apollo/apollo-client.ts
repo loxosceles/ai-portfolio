@@ -56,7 +56,7 @@ const authLink = setContext(async (_, { headers }) => {
     };
   }
 
-  return { 
+  return {
     headers: {
       ...headers,
       'Content-Type': 'application/json'
