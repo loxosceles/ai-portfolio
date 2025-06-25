@@ -56,7 +56,12 @@ const authLink = setContext(async (_, { headers }) => {
     };
   }
 
-  return { headers };
+  return { 
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json'
+    }
+  };
 });
 
 export const client = new ApolloClient({
