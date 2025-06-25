@@ -26,8 +26,13 @@ function main() {
   // 3. Deploy frontend with fresh env vars
   run('pnpm deploy:frontend', 'Frontend deployment');
 
-  // 4. Seed job matching data
-  run('pnpm seed:job-matching', 'Job matching data seeding');
+  // 4. Seed data (only in development environments)
+  if (environment === 'dev') {
+    run('pnpm seed:infra', 'Developer and project data seeding');
+    run('pnpm seed:job-matching', 'Job matching data seeding');
+  } else {
+    console.log('\n⏭️ Skipping data seeding in non-development environment');
+  }
 
   // 5. Invalidate CloudFront cache
   const distributionId = execSync(
