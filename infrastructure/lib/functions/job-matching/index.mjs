@@ -74,7 +74,7 @@ export const handler = async (event) => {
 
 // CORS headers for API responses
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://dn1zl0xw9h7s2.cloudfront.net',
+  'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || '*',
   'Access-Control-Allow-Headers': 'Content-Type,Authorization',
   'Access-Control-Allow-Methods': 'GET,OPTIONS',
   'Access-Control-Allow-Credentials': 'true',
