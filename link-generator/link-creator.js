@@ -95,7 +95,7 @@ async function createCognitoUser(userPoolId, clientId, linkId, region) {
       uppercase: true,
       lowercase: true,
       strict: true,
-      exclude: '"`\'\\${}[]()' // Exclude characters that might break the shell command
+      exclude: '"`\'\\${}[]()!?><|&;*' // Exclude characters that might break the shell command
     });
 
     // Create the user
