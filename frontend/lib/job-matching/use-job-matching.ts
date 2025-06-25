@@ -1,35 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { jobMatchingService, JobMatchingData } from './job-matching-service';
+import { useQuery } from '@apollo/client';
+import { GET_JOB_MATCHING } from '../../queries/job-matching';
+import { JobMatchingData } from './job-matching-service';
+import { cookieAuth } from '../auth/cookie-auth';
 
 export function useJobMatching() {
-  const [matchingData, setMatchingData] = useState<JobMatchingData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { accessToken } = cookieAuth.getTokens();
+  const isAuthenticated = !!accessToken;
 
-  useEffect(() => {
-    const fetchMatchingData = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const data = await jobMatchingService.getJobMatchingData();
-        setMatchingData(data);
-      } catch (err) {
-        setError('Failed to load job matching data');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMatchingData();
-  }, []);
+  const { data, loading, error } = useQuery(GET_JOB_MATCHING, {
+    skip: !isAuthenticated, // Don't run query if no ID token
+    fetchPolicy: 'cache-and-network'
+  });
 
   return {
-    matchingData,
-    isLoading,
-    error
+    matchingData: data?.getJobMatching as JobMatchingData | null,
+    isLoading: loading,
+    error: error?.message || null,
+    isAuthenticated
   };
 }
