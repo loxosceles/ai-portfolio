@@ -3,6 +3,7 @@ import * as appsync from 'aws-cdk-lib/aws-appsync';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { DynamoDBResolverConstruct } from '../resolvers/dynamodb-resolver-construct';
+import { JobMatchingResolverConstruct } from '../resolvers/job-matching-resolver-construct';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { addStackOutputs } from '../utils/stack-outputs';
@@ -10,6 +11,7 @@ import { addStackOutputs } from '../utils/stack-outputs';
 interface ApiStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
   stage: 'dev' | 'prod';
+  jobMatchingTable?: dynamodb.ITable;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -18,7 +20,7 @@ export class ApiStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
-    const { stage, userPool } = props;
+    const { stage, userPool, jobMatchingTable } = props;
     this.stage = stage;
 
     if (!['dev', 'prod'].includes(this.stage)) {
@@ -37,6 +39,15 @@ export class ApiStack extends cdk.Stack {
 
     // Add resolvers
     this.createResolvers(dataSources);
+
+    // Create job matching resolver if table is provided
+    if (jobMatchingTable) {
+      new JobMatchingResolverConstruct(this, 'JobMatchingResolver', {
+        api: this.api,
+        jobMatchingTable,
+        stage
+      });
+    }
 
     // Add API outputs
     addStackOutputs(this, stage, [
