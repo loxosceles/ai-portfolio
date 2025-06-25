@@ -2,7 +2,7 @@ import React from 'react';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import GraphQLProvider from '@/lib/apollo/apollo-provider';
-import VisitorBanner from '@/components/visitor-banner';
+import RecruiterGreetingModal from '@/components/recruiter-greeting-modal';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={inter.className}>
         <GraphQLProvider>
-          <VisitorBanner />
+          <RecruiterGreetingModal />
           {children}
         </GraphQLProvider>
       </body>
