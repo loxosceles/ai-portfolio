@@ -196,6 +196,57 @@ async function createLink() {
   }
 }
 
+// Create job matching data for a new link
+async function createJobMatchingData(linkId) {
+  try {
+    // Check if job matching environment variables are set
+    const jobMatchingTable = process.env.JOB_MATCHING_TABLE_NAME;
+    const jobMatchingRegion = process.env.AWS_REGION_JOB_MATCHING || 'eu-central-1';
+    
+    if (!jobMatchingTable) {
+      console.log('\nSkipping job matching data creation (JOB_MATCHING_TABLE_NAME not set)');
+      return false;
+    }
+    
+    // Check if we're in production
+    const environment = process.env.ENVIRONMENT || 'dev';
+    if (environment === 'prod') {
+      console.error('\nCreating job matching data not allowed in production');
+      return false;
+    }
+
+    console.log('\nCreating job matching data...');
+    
+    // Sample job matching data
+    const jobMatchingData = {
+      linkId,
+      companyName: 'New Company',
+      recruiterName: 'New Recruiter',
+      context: 'Software Engineering',
+      greeting: `Welcome! Thanks for checking out my portfolio.`,
+      message: 'I appreciate your interest in my work. My experience with cloud architecture and full-stack development could be a great match for your needs.',
+      skills: ['AWS', 'React', 'Node.js', 'TypeScript', 'Serverless']
+    };
+
+    // Create DynamoDB client for job matching table (eu-central-1)
+    const client = new DynamoDBClient({ region: jobMatchingRegion });
+    const docClient = DynamoDBDocumentClient.from(client);
+
+    // Add to job matching table
+    const command = new PutCommand({
+      TableName: jobMatchingTable,
+      Item: jobMatchingData
+    });
+
+    await docClient.send(command);
+    console.log('Job matching data created successfully!');
+    return true;
+  } catch (error) {
+    console.error('Error creating job matching data:', error);
+    return false;
+  }
+}
+
 // Main function
 async function main() {
   try {
@@ -208,6 +259,15 @@ async function main() {
       console.log('Username:', result.username);
       console.log('Temporary Password:', result.password);
       console.log('Tokens:', JSON.stringify(result.tokens, null, 2));
+      
+      // Create job matching data if requested
+      const createJobMatching = process.argv.includes('--create-job-matching');
+      if (createJobMatching) {
+        await createJobMatchingData(result.linkId);
+      } else {
+        console.log('\nTo create job matching data, run with --create-job-matching flag');
+      }
+      
       console.log('\nTest with:');
       console.log(`aws cognito-idp admin-initiate-auth \\
 --user-pool-id ${process.env.COGNITO_USER_POOL_ID} \\
