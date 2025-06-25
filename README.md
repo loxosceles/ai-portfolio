@@ -123,3 +123,8 @@ graph TB
 | Vector DB  | PostgreSQL + PGVector | RDS Free Tier (750 hrs) |
 | Embeddings | AWS Titan             | Free ≤1M tokens/month   |
 | API        | Lambda + API Gateway  | Always Free tier        |
+
+## Documentation
+
+- [Deployment Guide](docs/deployment.md)
+- [Further Development Ideas](docs/further-development-ideas.md)
