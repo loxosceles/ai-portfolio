@@ -4,6 +4,17 @@ import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 const dynamodb = new DynamoDBClient({ region: 'eu-central-1' });
 const docClient = DynamoDBDocumentClient.from(dynamodb);
 
+// Default response object
+const createDefaultResponse = (linkId = 'unknown') => ({
+  linkId,
+  companyName: null,
+  recruiterName: null,
+  context: null,
+  greeting: null,
+  message: null,
+  skills: null
+});
+
 export const handler = async (event) => {
   console.log('Event:', JSON.stringify(event, null, 2));
 
@@ -27,45 +38,18 @@ export const handler = async (event) => {
 
     if (!linkId) {
       console.log('No linkId found in claims');
-      return {
-        linkId: 'unknown',
-        companyName: null,
-        recruiterName: null,
-        context: null,
-        greeting: null,
-        message: null,
-        skills: null
-      };
+      return createDefaultResponse();
     }
 
     // Get matching data from DynamoDB
     const tableName = process.env.MATCHING_TABLE_NAME;
     const result = await getMatchingData(tableName, linkId);
 
-    if (!result) {
-      return {
-        linkId,
-        companyName: null,
-        recruiterName: null,
-        context: null,
-        greeting: null,
-        message: null,
-        skills: null
-      };
-    }
-
-    return result;
+    // Return the result or a default response with the linkId
+    return result || createDefaultResponse(linkId);
   } catch (error) {
     console.error('Error:', error);
-    return {
-      linkId: 'error',
-      companyName: null,
-      recruiterName: null,
-      context: null,
-      greeting: null,
-      message: null,
-      skills: null
-    };
+    return createDefaultResponse('error');
   }
 };
 
