@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "deploy": "pnpm run deploy:main",
-    "deploy:main": "node scripts/deploy.js",
+    "deploy:full": "node scripts/deploy.js && pnpm run seed:infra",
     "deploy:infra": "pnpm --filter=infrastructure run deploy",
     "deploy:frontend": "node scripts/update-env.js --frontend && pnpm --filter=frontend run deploy",
     "postdeploy": "node scripts/update-env.js",
