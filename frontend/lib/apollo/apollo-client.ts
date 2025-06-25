@@ -1,10 +1,9 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
-import { authService } from '../auth/auth-config';
+import { cookieAuth } from '../auth/cookie-auth';
 
 const appsyncUrl = process.env.NEXT_PUBLIC_APPSYNC_URL;
 const appsyncApiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
-const isProduction = process.env.ENVIRONMENT === 'production';
 
 if (!appsyncApiKey) {
   console.error('AppSync API Key is not defined in environment variables');
@@ -30,8 +29,24 @@ const authLink = setContext(async (_, { headers }) => {
     return { headers };
   }
 
-  // In development, always use API key for all operations
-  if (!isProduction && appsyncApiKey) {
+  // Try ID token first (recruiters with special links)
+  try {
+    const { accessToken } = cookieAuth.getTokens();
+    if (accessToken) {
+      return {
+        headers: {
+          ...headers,
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      };
+    }
+  } catch (error) {
+    console.error('Error getting ID token:', error);
+  }
+
+  // Fallback to API key (anonymous visitors)
+  if (appsyncApiKey) {
     return {
       headers: {
         ...headers,
@@ -41,20 +56,12 @@ const authLink = setContext(async (_, { headers }) => {
     };
   }
 
-  // In production, use Cognito token
-  try {
-    const token = await authService.getToken();
-    return {
-      headers: {
-        ...headers,
-        Authorization: token ? `Bearer ${token}` : '',
-        'Content-Type': 'application/json'
-      }
-    };
-  } catch (error) {
-    console.error('Error getting auth token:', error);
-    return { headers };
-  }
+  return {
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json'
+    }
+  };
 });
 
 export const client = new ApolloClient({

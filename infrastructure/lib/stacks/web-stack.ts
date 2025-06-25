@@ -145,16 +145,16 @@ export class WebStack extends cdk.Stack {
         timeout: cdk.Duration.seconds(5),
         memorySize: 128,
         description: 'Adds visitor context headers based on query parameters',
-        logRetention: cdk.aws_logs.RetentionDays.ONE_WEEK,
-        environment: {
-          STAGE: this.stage
-        }
+        logRetention: cdk.aws_logs.RetentionDays.ONE_WEEK
       }
     );
 
     // Create the S3 origin using the provided bucket and OAC
     const s3Origin = origins.S3BucketOrigin.withOriginAccessControl(this.websiteBucket, {
-      originAccessLevels: [cloudfront.AccessLevel.READ, cloudfront.AccessLevel.LIST]
+      originAccessLevels: [cloudfront.AccessLevel.READ, cloudfront.AccessLevel.LIST],
+      customHeaders: {
+        'X-Portfolio-Stage': this.stage
+      }
     });
 
     // Create CloudFront distribution
