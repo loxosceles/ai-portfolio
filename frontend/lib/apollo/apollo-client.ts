@@ -1,6 +1,6 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
-import { cookieAuth } from '../auth/cookie-auth';
+import { cookieAuth } from '@/lib/auth/cookie-auth';
 
 const appsyncUrl = process.env.NEXT_PUBLIC_APPSYNC_URL;
 const appsyncApiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
@@ -14,9 +14,6 @@ if (!appsyncUrl) {
 if (!isDev && !appsyncApiKey) {
   console.warn('AppSync API Key is not defined (OK for deployed environments)');
 }
-
-console.log('AppSync URL:', appsyncUrl);
-console.log('Environment:', process.env.NODE_ENV);
 
 // Create HTTP link with CORS mode but WITHOUT credentials
 const httpLink = createHttpLink({
@@ -56,13 +53,6 @@ const authLink = setContext(async (_, { headers }) => {
     headers: {
       ...headers,
       Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    }
-  };
-
-  return {
-    headers: {
-      ...headers,
       'Content-Type': 'application/json'
     }
   };

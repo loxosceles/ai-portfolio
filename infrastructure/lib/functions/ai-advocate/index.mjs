@@ -21,35 +21,36 @@ const createDefaultResponse = (linkId = 'unknown') => ({
 });
 
 export const handler = async (event) => {
-  console.log('Event:', JSON.stringify(event, null, 2));
-  
+  // Log the incoming event for debugging
+  // console.log('Event:', JSON.stringify(event, null, 2));
+
   // Extract field name to determine which operation to perform
   const fieldName = event.info.fieldName;
-  
+
   try {
     switch (fieldName) {
       case 'getJobMatching':
         return await handleGetJobMatching(event);
-      
+
       case 'getJobMatchingByLinkId':
         return await handleGetJobMatchingByLinkId(event);
-        
+
       case 'askAIQuestion':
         return await handleAskAIQuestion(event);
-        
+
       default:
         throw new Error(`Unhandled field: ${fieldName}`);
     }
   } catch (error) {
     console.error('Error:', error);
-    
+
     if (fieldName === 'askAIQuestion') {
       return {
         answer: 'Sorry, I encountered an error while processing your question.',
         context: error.message
       };
     }
-    
+
     return createDefaultResponse('error');
   }
 };
@@ -57,24 +58,20 @@ export const handler = async (event) => {
 async function handleGetJobMatching(event) {
   // Extract linkId from JWT claims (AppSync context)
   const claims = event.identity?.claims;
-  
+
   // Safely extract linkId with defensive checks
   let linkId = claims?.['custom:linkId'] || claims?.sub;
-  
+
   // Only try to split if email/username exists and is a string
   if (!linkId && typeof claims?.email === 'string') {
     linkId = claims.email.split('@')[0];
   }
-  
+
   if (!linkId && typeof claims?.username === 'string') {
     linkId = claims.username.split('@')[0];
   }
 
-  console.log('Claims:', claims);
-  console.log('Extracted linkId:', linkId);
-
   if (!linkId) {
-    console.log('No linkId found in claims');
     return createDefaultResponse();
   }
 
@@ -88,11 +85,8 @@ async function handleGetJobMatching(event) {
 
 async function handleGetJobMatchingByLinkId(event) {
   const linkId = event.arguments?.linkId;
-  
-  console.log('Received linkId:', linkId);
 
   if (!linkId) {
-    console.log('No linkId provided in arguments');
     return createDefaultResponse();
   }
 
@@ -106,39 +100,41 @@ async function handleGetJobMatchingByLinkId(event) {
 
 async function handleAskAIQuestion(event) {
   const question = event.arguments?.question;
-  
+
   if (!question) {
     return {
       answer: 'No question was provided.',
       context: 'Please provide a question to get a response.'
     };
   }
-  
+
   // Extract linkId from JWT claims for context
   const claims = event.identity?.claims;
   let linkId = claims?.['custom:linkId'] || claims?.sub;
-  
+
   if (!linkId && typeof claims?.email === 'string') {
     linkId = claims.email.split('@')[0];
   }
-  
+
   if (!linkId && typeof claims?.username === 'string') {
     linkId = claims.username.split('@')[0];
   }
-  
+
   // Get recruiter data for context
   let recruiterData = null;
   if (linkId) {
     const tableName = process.env.MATCHING_TABLE_NAME;
     recruiterData = await getMatchingData(tableName, linkId);
   }
-  
+
   // Generate AI response
   const answer = await generateAIResponse(question, recruiterData);
-  
+
   return {
     answer,
-    context: recruiterData ? `Response for ${recruiterData.recruiterName} from ${recruiterData.companyName}` : null
+    context: recruiterData
+      ? `Response for ${recruiterData.recruiterName} from ${recruiterData.companyName}`
+      : null
   };
 }
 
@@ -170,11 +166,10 @@ async function generateAIResponse(question, recruiterData) {
         Skills they might be interested in: ${recruiterData.skills?.join(', ') || 'Not specified'}
       `;
     }
-    
+
     // Using configurable AI model
     const modelId = process.env.BEDROCK_MODEL_ID || 'amazon.titan-text-express-v1';
-    console.log('Using Bedrock model:', modelId);
-    
+
     const prompt = `
       ${context}
       
@@ -192,7 +187,7 @@ async function generateAIResponse(question, recruiterData) {
       
       Keep your response professional, concise (around 150 words), and focused on the question asked.
     `;
-    
+
     const payload = {
       inputText: prompt,
       textGenerationConfig: {
@@ -206,13 +201,16 @@ async function generateAIResponse(question, recruiterData) {
       modelId,
       body: JSON.stringify(payload),
       contentType: 'application/json',
-      accept: 'application/json',
+      accept: 'application/json'
     });
 
     const response = await bedrockClient.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-    
-    return responseBody.results?.[0]?.outputText || 'Sorry, I could not generate a response at this time.';
+
+    return (
+      responseBody.results?.[0]?.outputText ||
+      'Sorry, I could not generate a response at this time.'
+    );
   } catch (error) {
     console.error('AI generation error:', error);
     return 'Sorry, I could not generate a response at this time. Please try again later.';

@@ -1,9 +1,9 @@
 'use client';
 
 import { useQuery } from '@apollo/client';
-import { GET_JOB_MATCHING } from '../../queries/job-matching';
+import { GET_JOB_MATCHING } from '@/queries/job-matching';
 import { JobMatchingData } from './job-matching-service';
-import { cookieAuth } from '../auth/cookie-auth';
+import { cookieAuth } from '@/lib/auth/cookie-auth';
 
 export function useJobMatching() {
   const { accessToken } = cookieAuth.getTokens();

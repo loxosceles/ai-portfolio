@@ -1,7 +1,7 @@
 'use client';
 
-import { client } from '../apollo/apollo-client';
-import { GET_JOB_MATCHING } from '../../queries/job-matching';
+import { client } from '@/lib/apollo/apollo-client';
+import { GET_JOB_MATCHING } from '@/queries/job-matching';
 
 export interface JobMatchingData {
   linkId: string;
