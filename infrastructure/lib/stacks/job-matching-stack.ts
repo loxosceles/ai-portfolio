@@ -32,10 +32,7 @@ export class JobMatchingStack extends cdk.Stack {
     this.matchingTable = this.createMatchingTable(stage === 'prod');
 
     // Create Lambda function for job matching
-    const matchingFunction = this.createMatchingFunction(
-      this.matchingTable,
-      props.cloudfrontDomain
-    );
+    const matchingFunction = this.createMatchingFunction(this.matchingTable, cloudfrontDomain);
 
     // Create API Gateway logging role
     const apiGatewayLoggingRole = this.createApiGatewayLoggingRole();
@@ -45,7 +42,7 @@ export class JobMatchingStack extends cdk.Stack {
       userPool,
       matchingFunction,
       apiGatewayLoggingRole,
-      props.cloudfrontDomain
+      cloudfrontDomain
     );
 
     // Add stack outputs
