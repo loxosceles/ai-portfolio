@@ -28,7 +28,7 @@ function main() {
 
   // 4. Seed data (only in development environments)
   if (environment === 'dev') {
-    run('pnpm seed:infra', 'Developer and project data seeding');
+    run('pnpm seed:infra:force', 'Developer and project data seeding (force)');
     run('pnpm seed:job-matching', 'Job matching data seeding');
   } else {
     console.log('\n⏭️ Skipping data seeding in non-development environment');
