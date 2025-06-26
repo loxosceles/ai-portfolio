@@ -21,7 +21,7 @@ function Header({ developer }: { developer: DeveloperType }) {
             <button
               key={section}
               onClick={() => handleSectionClick(section)}
-              className="capitalize transition-colors duration-200 pb-1 text-secondary hover:text-primary hover:text-brand-accent"
+              className="capitalize transition-colors duration-200 pb-1 text-secondary  hover:text-brand-accent"
             >
               {section}
             </button>
