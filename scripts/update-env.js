@@ -52,6 +52,9 @@ function updateFrontendEnv() {
     frontendParams['NEXT_PUBLIC_JOB_MATCHING_API_URL'] =
       jobMatchingParams['NEXT_PUBLIC_JOB_MATCHING_API_URL'];
   }
+  
+  // Set NEXT_PUBLIC_ENVIRONMENT based on the current environment
+  frontendParams['NEXT_PUBLIC_ENVIRONMENT'] = environment;
 
   const envPath = path.join(process.cwd(), 'frontend', '.env.local');
   const envContent = Object.entries(frontendParams)

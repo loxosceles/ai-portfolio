@@ -37,25 +37,26 @@ export function useJobMatchingDev() {
   const { accessToken } = cookieAuth.getTokens();
   const isAuthenticated = !!accessToken;
 
-  // Check for development mode via URL parameter
+  // Check for local development mode via URL parameter
   const searchParams = useSearchParams();
   const visitorParam = searchParams?.get('visitor');
-  const isDev = process.env.ENVIRONMENT === 'dev';
+  const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || 'local';
+  const isLocal = environment === 'local';
 
-  // Development mode is active if we're in development environment AND
+  // Local development mode is active if we're in local environment AND
   // there's any visitor parameter
-  const devMode = isDev && !!visitorParam;
+  const localDevMode = isLocal && !!visitorParam;
 
   // Use the standard query if authenticated
   const standardQuery = useQuery(GET_JOB_MATCHING, {
-    skip: !isAuthenticated || devMode, // Skip if not authenticated or in dev mode
+    skip: !isAuthenticated || localDevMode, // Skip if not authenticated or in local dev mode
     fetchPolicy: 'cache-and-network'
   });
 
-  // Use direct linkId query if in dev mode with a visitor parameter
+  // Use direct linkId query if in local dev mode with a visitor parameter
   const directQuery = useQuery(GET_JOB_MATCHING_BY_LINK_ID, {
     variables: { linkId: visitorParam || 'dev-test-link' },
-    skip: !devMode, // Only run this query if we're in dev mode
+    skip: !localDevMode, // Only run this query if we're in local dev mode
     fetchPolicy: 'network-only', // Always fetch from network to avoid caching issues
     context: {
       headers: {
@@ -69,13 +70,13 @@ export function useJobMatchingDev() {
   let isLoading = false;
   let errorMessage = null;
 
-  if (isAuthenticated && !devMode) {
+  if (isAuthenticated && !localDevMode) {
     // Authenticated mode - use standard query
     matchingData = standardQuery.data?.getJobMatching;
     isLoading = standardQuery.loading;
     errorMessage = standardQuery.error?.message;
-  } else if (devMode) {
-    // Dev mode - use direct query
+  } else if (localDevMode) {
+    // Local dev mode - use direct query
     matchingData = directQuery.data?.getJobMatchingByLinkId;
     isLoading = directQuery.loading;
     errorMessage = directQuery.error?.message;
@@ -102,6 +103,6 @@ export function useJobMatchingDev() {
     matchingData: matchingData as JobMatchingData | null,
     isLoading,
     error: errorMessage,
-    isAuthenticated: isAuthenticated || devMode // Consider dev mode as "authenticated"
+    isAuthenticated: isAuthenticated || localDevMode // Consider local dev mode as "authenticated"
   };
 }

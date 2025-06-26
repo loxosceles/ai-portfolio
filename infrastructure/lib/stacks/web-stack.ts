@@ -173,7 +173,7 @@ export class WebStack extends cdk.Stack {
         },
         contentSecurityPolicy: {
           contentSecurityPolicy:
-            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' *.amazonaws.com *.execute-api.*.amazonaws.com; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none';",
+            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' *.amazonaws.com *.execute-api.eu-central-1.amazonaws.com *.execute-api.us-east-1.amazonaws.com; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none';",
           override: true
         }
       }

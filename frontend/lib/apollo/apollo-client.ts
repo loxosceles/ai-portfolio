@@ -4,15 +4,21 @@ import { cookieAuth } from '@/lib/auth/cookie-auth';
 
 const appsyncUrl = process.env.NEXT_PUBLIC_APPSYNC_URL;
 const appsyncApiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
-const isDev = process.env.ENVIRONMENT === 'dev';
+
+// Environment strategy:
+// - 'local': API key auth for local development
+// - 'dev': Cognito auth for deployed development environment
+// - 'prod': Cognito auth for production
+const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || 'local';
+const isLocal = environment === 'local';
 
 if (!appsyncUrl) {
   console.error('NEXT_PUBLIC_APPSYNC_URL is not defined in environment variables');
   throw new Error('AppSync URL is required');
 }
 
-if (!isDev && !appsyncApiKey) {
-  console.warn('AppSync API Key is not defined (OK for deployed environments)');
+if (isLocal && !appsyncApiKey) {
+  console.warn('AppSync API Key is not defined but required for local development');
 }
 
 // Create HTTP link with CORS mode but WITHOUT credentials
@@ -31,8 +37,8 @@ const authLink = setContext(async (_, { headers }) => {
     return { headers };
   }
 
-  // In local development, use API key
-  if (isDev) {
+  // In local development only, use API key for simplified auth
+  if (isLocal) {
     return {
       headers: {
         ...headers,
@@ -42,7 +48,7 @@ const authLink = setContext(async (_, { headers }) => {
     };
   }
 
-  // In deployed environments, ONLY use Cognito tokens
+  // In dev and prod environments, use Cognito tokens for proper auth flow testing
   const { accessToken } = cookieAuth.getTokens();
   if (!accessToken) {
     console.error('No access token available in deployed environment');
@@ -78,5 +84,5 @@ export const client = new ApolloClient({
   name: 'portfolio-client',
   version: '1.0',
   assumeImmutableResults: true,
-  connectToDevTools: process.env.ENVIRONMENT === 'development' && typeof window !== 'undefined'
+  connectToDevTools: (isLocal || environment === 'dev') && typeof window !== 'undefined'
 });
