@@ -40,7 +40,7 @@ export function useJobMatchingDev() {
   // Check for development mode via URL parameter
   const searchParams = useSearchParams();
   const visitorParam = searchParams?.get('visitor');
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = process.env.ENVIRONMENT === 'dev';
 
   // Development mode is active if we're in development environment AND
   // there's any visitor parameter
