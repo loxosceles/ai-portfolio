@@ -117,14 +117,17 @@ graph TB
 
 ## Tech Stack
 
-| Component  | Technology            | Cost Consideration      |
-| ---------- | --------------------- | ----------------------- |
-| Frontend   | Next.js (Amplify)     | Free tier eligible      |
-| Vector DB  | PostgreSQL + PGVector | RDS Free Tier (750 hrs) |
-| Embeddings | AWS Titan             | Free ≤1M tokens/month   |
-| API        | Lambda + API Gateway  | Always Free tier        |
+| Layer           | Technologies                                       |
+| --------------- | -------------------------------------------------- |
+| Frontend        | Next.js, TypeScript/Javascript, Tailwind CSS, Jest |
+| Backend         | AWS Lambda, CloudFront, Cognito, DynamoDB, S3, CDK |
+| Dynamic Content | AWS Bedrock with Titan Text G1 - Express Model     |
 
 ## Documentation
 
+- [Infrastructure (Backend)](docs/infrastructure.md)
+- [Frontend (Next.js)](docs/frontend.md)
 - [Deployment Guide](docs/deployment.md)
+- [Security Policy](docs/security-policy.md)
 - [Further Development Ideas](docs/further-development-ideas.md)
+- [AI Advocate Implementation Plan](docs/ai-advocate-implementation-plan.md)
