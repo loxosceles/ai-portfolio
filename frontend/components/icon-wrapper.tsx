@@ -12,7 +12,7 @@ function IconWrapper({
   icon?: string;
 }) {
   return (
-    <div className={`${className || ''} invert`}>
+    <div className={className ? `${className} invert` : 'invert'}>
       <Image
         src={`/${icon}.svg`}
         alt={icon ? `${icon} icon` : 'Icon'}
