@@ -4,18 +4,23 @@ import { cookieAuth } from '../auth/cookie-auth';
 
 const appsyncUrl = process.env.NEXT_PUBLIC_APPSYNC_URL;
 const appsyncApiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
-
-if (!appsyncApiKey) {
-  console.error('AppSync API Key is not defined in environment variables');
-}
+const isDev = process.env.ENVIRONMENT === 'dev';
 
 if (!appsyncUrl) {
-  console.error('AppSync URL is not defined in environment variables');
+  console.error('NEXT_PUBLIC_APPSYNC_URL is not defined in environment variables');
+  throw new Error('AppSync URL is required');
 }
+
+if (!isDev && !appsyncApiKey) {
+  console.warn('AppSync API Key is not defined (OK for deployed environments)');
+}
+
+console.log('AppSync URL:', appsyncUrl);
+console.log('Environment:', process.env.NODE_ENV);
 
 // Create HTTP link with CORS mode but WITHOUT credentials
 const httpLink = createHttpLink({
-  uri: appsyncUrl,
+  uri: appsyncUrl, // Always use the AppSync URL directly to avoid CloudFront 403 errors
   fetchOptions: {
     mode: 'cors',
     // Omit credentials allows for wildcard CORS which is needed by AppSync/ Lambda@Edge
@@ -29,24 +34,8 @@ const authLink = setContext(async (_, { headers }) => {
     return { headers };
   }
 
-  // Try ID token first (recruiters with special links)
-  try {
-    const { accessToken } = cookieAuth.getTokens();
-    if (accessToken) {
-      return {
-        headers: {
-          ...headers,
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      };
-    }
-  } catch (error) {
-    console.error('Error getting ID token:', error);
-  }
-
-  // Fallback to API key (anonymous visitors)
-  if (appsyncApiKey) {
+  // In local development, use API key
+  if (isDev) {
     return {
       headers: {
         ...headers,
@@ -55,6 +44,21 @@ const authLink = setContext(async (_, { headers }) => {
       }
     };
   }
+
+  // In deployed environments, ONLY use Cognito tokens
+  const { accessToken } = cookieAuth.getTokens();
+  if (!accessToken) {
+    console.error('No access token available in deployed environment');
+    throw new Error('Authentication required');
+  }
+
+  return {
+    headers: {
+      ...headers,
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    }
+  };
 
   return {
     headers: {
