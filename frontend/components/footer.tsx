@@ -1,4 +1,4 @@
-import { DeveloperType } from '../shared/types';
+import { DeveloperType } from '@/shared/types';
 
 function Footer({ developer }: { developer: DeveloperType }) {
   return (

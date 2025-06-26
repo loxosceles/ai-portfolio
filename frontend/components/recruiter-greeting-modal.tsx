@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useJobMatchingDev } from '../lib/job-matching/use-job-matching-dev';
+import { useJobMatchingDev } from '@/lib/job-matching/use-job-matching-dev';
 
 function RecruiterGreetingModalContent(): React.ReactElement | null {
   const [isOpen, setIsOpen] = useState(false);
