@@ -173,7 +173,7 @@ async function generateAIResponse(question, recruiterData) {
     const prompt = `
       ${context}
       
-      You are an AI advocate representing a developer in a conversation with a recruiter.
+      You are an AI Advocate representing a developer in a conversation with a recruiter.
       Answer the following question about the developer's skills, experience, or background:
       
       Question: "${question}"
