@@ -14,13 +14,6 @@ export default function AIQuestion({ onClose }: AIQuestionProps) {
   const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || 'local';
   const isLocal = environment === 'local';
 
-  // Debug logging
-  console.log('AI Question Environment:', {
-    NEXT_PUBLIC_ENVIRONMENT: process.env.NEXT_PUBLIC_ENVIRONMENT,
-    environment,
-    isLocal
-  });
-
   // Always call both hooks but only use the appropriate one
   const devHook = useAIAdvocateDev();
   const prodHook = useAIAdvocate();
