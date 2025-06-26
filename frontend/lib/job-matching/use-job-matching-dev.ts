@@ -2,7 +2,7 @@
 
 import { useQuery, gql } from '@apollo/client';
 import { useSearchParams } from 'next/navigation';
-import { GET_JOB_MATCHING } from '../../queries/job-matching';
+import { GET_JOB_MATCHING } from '@/queries/job-matching';
 import { JobMatchingData } from './job-matching-service';
 import { cookieAuth } from '../auth/cookie-auth';
 

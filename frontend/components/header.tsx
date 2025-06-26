@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Bot } from 'lucide-react';
-import { DeveloperType } from '../shared/types';
+import { DeveloperType } from '@/shared/types';
 
 function Header({ developer }: { developer: DeveloperType }) {
   const [activeSection, setActiveSection] = useState('about');

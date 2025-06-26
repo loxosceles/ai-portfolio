@@ -1,6 +1,6 @@
 import { Mail } from 'lucide-react';
 import Link from 'next/link';
-import IconWrapper from '../components/icon-wrapper';
+import IconWrapper from '@/components/icon-wrapper';
 
 function MainContent({
   developer

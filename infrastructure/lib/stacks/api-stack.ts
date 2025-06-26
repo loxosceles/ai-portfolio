@@ -3,7 +3,7 @@ import * as appsync from 'aws-cdk-lib/aws-appsync';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { DynamoDBResolverConstruct } from '../resolvers/dynamodb-resolver-construct';
-import { JobMatchingResolverConstruct } from '../resolvers/job-matching-resolver-construct';
+import { AIAdvocateResolverConstruct } from '../resolvers/ai-advocate-resolver-construct';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { addStackOutputs } from '../utils/stack-outputs';
