@@ -3,7 +3,7 @@ import * as appsync from 'aws-cdk-lib/aws-appsync';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { DynamoDBResolverConstruct } from '../resolvers/dynamodb-resolver-construct';
-import { JobMatchingResolverConstruct } from '../resolvers/job-matching-resolver-construct';
+import { AIAdvocateResolverConstruct } from '../resolvers/ai-advocate-resolver-construct';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { addStackOutputs } from '../utils/stack-outputs';
@@ -12,6 +12,7 @@ interface ApiStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
   stage: 'dev' | 'prod';
   jobMatchingTable?: dynamodb.ITable;
+  bedrockModelId?: string;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -40,14 +41,8 @@ export class ApiStack extends cdk.Stack {
     // Add resolvers
     this.createResolvers(dataSources);
 
-    // Create job matching resolver if table is provided
-    if (jobMatchingTable) {
-      new JobMatchingResolverConstruct(this, 'JobMatchingResolver', {
-        api: this.api,
-        jobMatchingTable,
-        stage
-      });
-    }
+    // Create AI-powered resolvers (separate from basic CRUD operations)
+    this.createAIResolvers(jobMatchingTable, props.bedrockModelId);
 
     // Add API outputs
     addStackOutputs(this, stage, [
@@ -239,5 +234,23 @@ export class ApiStack extends cdk.Stack {
       requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem('id', 'developerId'),
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem()
     });
+  }
+
+  /**
+   * Creates AI-powered resolvers that use Lambda functions with external services.
+   * These are separate from basic CRUD operations as they:
+   * - Depend on external tables from other stacks
+   * - Use Lambda data sources with complex logic (Bedrock AI)
+   * - Are conditionally created based on feature availability
+   */
+  private createAIResolvers(jobMatchingTable?: dynamodb.ITable, bedrockModelId?: string) {
+    if (jobMatchingTable) {
+      new AIAdvocateResolverConstruct(this, 'AIAdvocateResolver', {
+        api: this.api,
+        jobMatchingTable,
+        stage: this.stage,
+        bedrockModelId
+      });
+    }
   }
 }

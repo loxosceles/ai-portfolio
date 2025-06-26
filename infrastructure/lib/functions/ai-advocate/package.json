@@ -1,0 +1,12 @@
+{
+  "name": "ai-advocate",
+  "version": "1.0.0",
+  "description": "AI advocate Lambda function for job matching and AI questions",
+  "main": "index.mjs",
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.830.0",
+    "@aws-sdk/lib-dynamodb": "^3.830.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.525.0"
+  }
+}

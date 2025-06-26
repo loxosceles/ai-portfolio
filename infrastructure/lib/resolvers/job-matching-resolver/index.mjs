@@ -16,28 +16,34 @@ const createDefaultResponse = (linkId = 'unknown') => ({
 });
 
 export const handler = async (event) => {
-  console.log('Event:', JSON.stringify(event, null, 2));
+  // Log the incoming event for debugging
+  // console.log('Event:', JSON.stringify(event, null, 2));
 
   try {
-    // Extract linkId from JWT claims (AppSync context)
-    const claims = event.requestContext?.identity?.claims || event.identity?.claims;
-    // Safely extract linkId with defensive checks
-    let linkId = claims?.['custom:linkId'] || claims?.sub;
-    
-    // Only try to split if email/username exists and is a string
-    if (!linkId && typeof claims?.email === 'string') {
-      linkId = claims.email.split('@')[0];
-    }
-    
-    if (!linkId && typeof claims?.username === 'string') {
-      linkId = claims.username.split('@')[0];
-    }
+    let linkId;
 
-    console.log('Claims:', claims);
-    console.log('Extracted linkId:', linkId);
+    // Check if this is a direct linkId query
+    if (event.arguments && event.arguments.linkId) {
+      // Direct query with linkId parameter
+      linkId = event.arguments.linkId;
+    } else {
+      // Extract linkId from JWT claims (AppSync context)
+      const claims = event.requestContext?.identity?.claims || event.identity?.claims;
+      // Safely extract linkId with defensive checks
+      linkId = claims?.['custom:linkId'] || claims?.sub;
+
+      // Only try to split if email/username exists and is a string
+      if (!linkId && typeof claims?.email === 'string') {
+        linkId = claims.email.split('@')[0];
+      }
+
+      if (!linkId && typeof claims?.username === 'string') {
+        linkId = claims.username.split('@')[0];
+      }
+    }
 
     if (!linkId) {
-      console.log('No linkId found in claims');
+      console.error('No linkId found');
       return createDefaultResponse();
     }
 

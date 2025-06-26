@@ -48,9 +48,11 @@ Our application uses non-HttpOnly cookies for authentication tokens due to the s
    - **Short expiration times**: Tokens have limited validity periods
    - **Content Security Policy**: Implemented via Next.js middleware to mitigate XSS risks
 
-### Content Security Policy
+### Security Headers via CloudFront
 
-We implement a strict Content Security Policy through Next.js middleware with the following directives:
+Since the application uses static export for S3 deployment, security headers are implemented at the CloudFront level using a Response Headers Policy. This approach provides better performance and compatibility with static hosting.
+
+**Content Security Policy**:
 
 ```
 default-src 'self';
@@ -65,21 +67,18 @@ base-uri 'self';
 object-src 'none';
 ```
 
-This policy:
-
-- Restricts resource loading to same-origin by default
-- Allows connections only to AWS endpoints
-- Prevents clickjacking with `frame-ancestors 'none'`
-- Limits form submissions to same-origin
-
-### Additional Security Headers
-
-The application sets the following security headers:
+**Additional Security Headers**:
 
 - **X-Content-Type-Options: nosniff**: Prevents MIME type sniffing
 - **X-Frame-Options: DENY**: Prevents the page from being displayed in an iframe
 - **Referrer-Policy: strict-origin-when-cross-origin**: Limits referrer information
-- **Permissions-Policy**: Restricts access to browser features like camera and microphone
+- **Strict-Transport-Security**: Enforces HTTPS with 1-year max-age and includeSubDomains
+
+These headers are applied at the edge, providing:
+
+- Better performance (headers added at CloudFront edge locations)
+- Compatibility with static exports
+- Consistent security policy across all responses
 
 ### API Security
 
@@ -132,7 +131,9 @@ The application makes the following security trade-offs:
 
 1. **Non-HttpOnly Cookies**: As explained above, this is necessary for the static frontend architecture but is mitigated with other security measures.
 
-2. **'unsafe-inline' in CSP**: Required for certain Next.js functionality, mitigated by strict CSP for other directives.
+2. **'unsafe-inline' in CSP**: Required for Next.js static export functionality, mitigated by strict CSP for other directives.
+
+3. **CloudFront vs Middleware**: Security headers are implemented at CloudFront level instead of Next.js middleware due to static export requirements, providing equivalent protection with better performance.
 
 ## Future Security Enhancements
 
