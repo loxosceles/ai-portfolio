@@ -52,6 +52,9 @@ function updateFrontendEnv() {
     frontendParams['NEXT_PUBLIC_JOB_MATCHING_API_URL'] =
       jobMatchingParams['NEXT_PUBLIC_JOB_MATCHING_API_URL'];
   }
+  
+  // Always set NEXT_PUBLIC_ENVIRONMENT to 'local' for local development
+  frontendParams['NEXT_PUBLIC_ENVIRONMENT'] = 'local';
 
   const envPath = path.join(process.cwd(), 'frontend', '.env.local');
   const envContent = Object.entries(frontendParams)
