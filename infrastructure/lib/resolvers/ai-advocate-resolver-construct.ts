@@ -21,7 +21,7 @@ export class AIAdvocateResolverConstruct extends Construct {
     super(scope, id);
 
     // Create Lambda function
-    this.function = new lambda.Function(this, 'Function', {
+    this.function = new lambda.Function(this, 'AIAdvocateFunction', {
       functionName: `ai-advocate-${props.stage}`,
       runtime: lambda.Runtime.NODEJS_18_X,
       handler: 'index.handler',
@@ -38,10 +38,16 @@ export class AIAdvocateResolverConstruct extends Construct {
     props.jobMatchingTable.grantReadData(this.function);
 
     // Grant Bedrock access for AI functionality
+    const modelId = props.bedrockModelId || 'amazon.titan-text-express-v1';
+    const isProd = props.stage === 'prod';
+
+    // In production, scope down to specific model; in dev allow broader access
+    const resources = isProd ? [`arn:aws:bedrock:us-east-1::foundation-model/${modelId}`] : ['*'];
+
     this.function.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ['bedrock:InvokeModel'],
-        resources: ['*'] // Scope this down to specific models in production
+        resources: resources
       })
     );
 
