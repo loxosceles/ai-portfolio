@@ -11,14 +11,13 @@ function IconWrapper({
   width?: number;
   icon?: string;
 }) {
+  if (!icon) {
+    return null;
+  }
+
   return (
     <div className={className ? `${className} invert` : 'invert'}>
-      <Image
-        src={`/${icon}.svg`}
-        alt={icon ? `${icon} icon` : 'Icon'}
-        width={width}
-        height={height}
-      />
+      <Image src={`/${icon}.svg`} alt={`${icon} icon`} width={width} height={height} />
     </div>
   );
 }
