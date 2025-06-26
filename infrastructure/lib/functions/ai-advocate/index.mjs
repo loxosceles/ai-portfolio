@@ -1,0 +1,220 @@
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
+
+// Initialize DynamoDB client
+const dynamodb = new DynamoDBClient({ region: 'eu-central-1' });
+const docClient = DynamoDBDocumentClient.from(dynamodb);
+
+// Initialize Bedrock client for AI functionality
+const bedrockClient = new BedrockRuntimeClient({ region: 'us-east-1' }); // Bedrock is available in us-east-1
+
+// Default response object for job matching
+const createDefaultResponse = (linkId = 'unknown') => ({
+  linkId,
+  companyName: null,
+  recruiterName: null,
+  context: null,
+  greeting: null,
+  message: null,
+  skills: null
+});
+
+export const handler = async (event) => {
+  console.log('Event:', JSON.stringify(event, null, 2));
+  
+  // Extract field name to determine which operation to perform
+  const fieldName = event.info.fieldName;
+  
+  try {
+    switch (fieldName) {
+      case 'getJobMatching':
+        return await handleGetJobMatching(event);
+      
+      case 'getJobMatchingByLinkId':
+        return await handleGetJobMatchingByLinkId(event);
+        
+      case 'askAIQuestion':
+        return await handleAskAIQuestion(event);
+        
+      default:
+        throw new Error(`Unhandled field: ${fieldName}`);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    
+    if (fieldName === 'askAIQuestion') {
+      return {
+        answer: 'Sorry, I encountered an error while processing your question.',
+        context: error.message
+      };
+    }
+    
+    return createDefaultResponse('error');
+  }
+};
+
+async function handleGetJobMatching(event) {
+  // Extract linkId from JWT claims (AppSync context)
+  const claims = event.identity?.claims;
+  
+  // Safely extract linkId with defensive checks
+  let linkId = claims?.['custom:linkId'] || claims?.sub;
+  
+  // Only try to split if email/username exists and is a string
+  if (!linkId && typeof claims?.email === 'string') {
+    linkId = claims.email.split('@')[0];
+  }
+  
+  if (!linkId && typeof claims?.username === 'string') {
+    linkId = claims.username.split('@')[0];
+  }
+
+  console.log('Claims:', claims);
+  console.log('Extracted linkId:', linkId);
+
+  if (!linkId) {
+    console.log('No linkId found in claims');
+    return createDefaultResponse();
+  }
+
+  // Get matching data from DynamoDB
+  const tableName = process.env.MATCHING_TABLE_NAME;
+  const result = await getMatchingData(tableName, linkId);
+
+  // Return the result or a default response with the linkId
+  return result || createDefaultResponse(linkId);
+}
+
+async function handleGetJobMatchingByLinkId(event) {
+  const linkId = event.arguments?.linkId;
+  
+  console.log('Received linkId:', linkId);
+
+  if (!linkId) {
+    console.log('No linkId provided in arguments');
+    return createDefaultResponse();
+  }
+
+  // Get matching data from DynamoDB
+  const tableName = process.env.MATCHING_TABLE_NAME;
+  const result = await getMatchingData(tableName, linkId);
+
+  // Return the result or a default response with the linkId
+  return result || createDefaultResponse(linkId);
+}
+
+async function handleAskAIQuestion(event) {
+  const question = event.arguments?.question;
+  
+  if (!question) {
+    return {
+      answer: 'No question was provided.',
+      context: 'Please provide a question to get a response.'
+    };
+  }
+  
+  // Extract linkId from JWT claims for context
+  const claims = event.identity?.claims;
+  let linkId = claims?.['custom:linkId'] || claims?.sub;
+  
+  if (!linkId && typeof claims?.email === 'string') {
+    linkId = claims.email.split('@')[0];
+  }
+  
+  if (!linkId && typeof claims?.username === 'string') {
+    linkId = claims.username.split('@')[0];
+  }
+  
+  // Get recruiter data for context
+  let recruiterData = null;
+  if (linkId) {
+    const tableName = process.env.MATCHING_TABLE_NAME;
+    recruiterData = await getMatchingData(tableName, linkId);
+  }
+  
+  // Generate AI response
+  const answer = await generateAIResponse(question, recruiterData);
+  
+  return {
+    answer,
+    context: recruiterData ? `Response for ${recruiterData.recruiterName} from ${recruiterData.companyName}` : null
+  };
+}
+
+// Get matching data from DynamoDB
+async function getMatchingData(tableName, linkId) {
+  try {
+    const command = new GetCommand({
+      TableName: tableName,
+      Key: { linkId }
+    });
+
+    const response = await docClient.send(command);
+    return response.Item;
+  } catch (error) {
+    console.error('DynamoDB error:', error);
+    return null;
+  }
+}
+
+// Generate AI response using Amazon Bedrock
+async function generateAIResponse(question, recruiterData) {
+  try {
+    // Create context for the AI based on recruiter data
+    let context = '';
+    if (recruiterData) {
+      context = `
+        You are responding to ${recruiterData.recruiterName} from ${recruiterData.companyName}.
+        Their context is: ${recruiterData.context || 'Not specified'}
+        Skills they might be interested in: ${recruiterData.skills?.join(', ') || 'Not specified'}
+      `;
+    }
+    
+    // Using configurable AI model
+    const modelId = process.env.BEDROCK_MODEL_ID || 'amazon.titan-text-express-v1';
+    console.log('Using Bedrock model:', modelId);
+    
+    const prompt = `
+      ${context}
+      
+      You are an AI advocate representing a developer in a conversation with a recruiter.
+      Answer the following question about the developer's skills, experience, or background:
+      
+      Question: "${question}"
+      
+      Use the following information about the developer to provide an accurate, helpful response:
+      - Full-stack developer with experience in React, Node.js, and AWS
+      - 5+ years of experience building web applications
+      - Experience with cloud architecture, particularly with AWS services
+      - Strong background in serverless architectures and microservices
+      - Passionate about clean code, performance optimization, and user experience
+      
+      Keep your response professional, concise (around 150 words), and focused on the question asked.
+    `;
+    
+    const payload = {
+      inputText: prompt,
+      textGenerationConfig: {
+        maxTokenCount: 300,
+        temperature: 0.7,
+        topP: 0.9
+      }
+    };
+
+    const command = new InvokeModelCommand({
+      modelId,
+      body: JSON.stringify(payload),
+      contentType: 'application/json',
+      accept: 'application/json',
+    });
+
+    const response = await bedrockClient.send(command);
+    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+    
+    return responseBody.results?.[0]?.outputText || 'Sorry, I could not generate a response at this time.';
+  } catch (error) {
+    console.error('AI generation error:', error);
+    return 'Sorry, I could not generate a response at this time. Please try again later.';
+  }
+}

@@ -63,7 +63,8 @@ const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
   stage: stage as 'dev' | 'prod',
   env,
   userPool: sharedStack.userPool,
-  jobMatchingTable: jobMatchingStack.matchingTable
+  jobMatchingTable: jobMatchingStack.matchingTable,
+  bedrockModelId: process.env.BEDROCK_MODEL_ID || 'amazon.titan-text-lite-v1'
 });
 
 // Add dependencies
