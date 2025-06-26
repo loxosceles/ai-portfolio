@@ -63,10 +63,10 @@ async function getLinkIds() {
     });
 
     const response = await linkDocClient.send(command);
-    const linkIds = response.Items?.map(item => item.linkId) || [];
-    
+    const linkIds = response.Items?.map((item) => item.linkId) || [];
+
     console.log(`Found ${linkIds.length} real linkIds in the link table`);
-    
+
     // If we found real linkIds, use them; otherwise use fallbacks
     return linkIds.length > 0 ? linkIds : fallbackLinkIds;
   } catch (error) {
@@ -82,10 +82,10 @@ async function seedTable() {
   try {
     // Get real linkIds from the link table
     const linkIds = await getLinkIds();
-    
+
     // Create job matching data using real linkIds
     const jobMatchingData = [];
-    
+
     // Assign templates to linkIds
     for (let i = 0; i < linkIds.length; i++) {
       const template = sampleTemplates[i % sampleTemplates.length];
@@ -94,7 +94,7 @@ async function seedTable() {
         ...template
       });
     }
-    
+
     // Add data to the job matching table
     for (const item of jobMatchingData) {
       console.log(`Adding item for ${item.companyName} with linkId ${item.linkId}...`);

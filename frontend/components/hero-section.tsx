@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import ProjectPreview from '../components/project-preview';
+import ProjectPreview from '@/components/project-preview';
 import { MessageCircle } from 'lucide-react';
 import IconWrapper from '@/components/icon-wrapper';
-import { DeveloperType } from '../shared/types';
+import { DeveloperType } from '@/shared/types';
+import AIQuestion from '@/components/ai-question';
 
 function HeroSection({ developer }: { developer: DeveloperType }) {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showAIQuestion, setShowAIQuestion] = useState(false);
   const { name } = developer;
   const firstName = name.split(' ')[0];
 
@@ -33,12 +35,18 @@ function HeroSection({ developer }: { developer: DeveloperType }) {
             <IconWrapper icon="github" className="h-5 w-5" />
             <span>View Work</span>
           </Link>
-          <Link href="#" className="flex items-center space-x-2 btn-outline px-6 py-3 rounded-lg">
+          <button
+            onClick={() => setShowAIQuestion(!showAIQuestion)}
+            className="flex items-center space-x-2 btn-outline px-6 py-3 rounded-lg"
+          >
             <MessageCircle className="h-5 w-5" />
             <span>Ask AI About Me</span>
-          </Link>
+          </button>
         </div>
       </div>
+      {/* AI Question Modal */}
+      {showAIQuestion && <AIQuestion onClose={() => setShowAIQuestion(false)} />}
+
       {/* AI System Preview */}
       <ProjectPreview />
     </div>
