@@ -7,22 +7,13 @@ import { DeveloperType } from '@/shared/types';
 import AIQuestion from '@/components/ai-question';
 
 function HeroSection({ developer }: { developer: DeveloperType }) {
-  const [isLoaded, setIsLoaded] = useState(false);
   const [showAIQuestion, setShowAIQuestion] = useState(false);
   const { name } = developer;
   const firstName = name.split(' ')[0];
 
-  useEffect(() => {
-    setIsLoaded(true);
-  }, []);
-
   return (
     <div className="container mx-auto text-center">
-      <div
-        className={`transform transition-all duration-1000 ${
-          isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-        }`}
-      >
+      <div className="transform transition-all duration-1000 translate-y-0 opacity-100 animate-fadeIn">
         <h1 className="text-5xl md:text-7xl font-bold text-primary mb-6">
           Hi, I&apos;m <span className="text-brand-accent">{firstName}</span>
         </h1>

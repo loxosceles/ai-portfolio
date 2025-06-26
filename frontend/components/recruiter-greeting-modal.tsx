@@ -8,6 +8,7 @@ function RecruiterGreetingModalContent(): React.ReactElement | null {
   const [isOpen, setIsOpen] = useState(false);
   const [hasShown, setHasShown] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // Get visitor param for better name display in dev mode
   const searchParams = useSearchParams();
@@ -16,9 +17,14 @@ function RecruiterGreetingModalContent(): React.ReactElement | null {
   // Use development-friendly job matching hook
   const { matchingData, isLoading, isAuthenticated } = useJobMatchingDev();
 
+  // Ensure component is mounted before showing modal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Show modal when data is loaded and user is authenticated
   useEffect(() => {
-    if (!isLoading && isAuthenticated && matchingData && !hasShown) {
+    if (mounted && !isLoading && isAuthenticated && matchingData && !hasShown) {
       // Delay modal appearance slightly for better UX
       const timer = setTimeout(() => {
         setIsOpen(true);
@@ -29,10 +35,10 @@ function RecruiterGreetingModalContent(): React.ReactElement | null {
 
       return () => clearTimeout(timer);
     }
-  }, [isLoading, isAuthenticated, matchingData, hasShown]);
+  }, [mounted, isLoading, isAuthenticated, matchingData, hasShown]);
 
-  // If not authenticated or no data, don't render anything
-  if (!isAuthenticated || !matchingData || !isOpen) {
+  // If not mounted, authenticated, or no data, don't render anything
+  if (!mounted || !isAuthenticated || !matchingData || !isOpen) {
     return null;
   }
 
@@ -60,11 +66,12 @@ function RecruiterGreetingModalContent(): React.ReactElement | null {
       style={{ backgroundColor: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(3px)' }}
     >
       <div
-        className={`bg-white dark:bg-surface-medium rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden transform transition-all ${fadeIn ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
-        style={{ transitionProperty: 'opacity, transform', transitionDuration: '300ms' }}
+        className={`bg-surface-medium rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden transform transition-all duration-300 ${
+          fadeIn ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        }`}
       >
         {/* Modal header */}
-        <div className="bg-brand-primary text-white px-6 py-4 flex justify-between items-center">
+        <div className="bg-brand-primary text-primary px-6 py-4 flex justify-between items-center">
           <h3 className="text-lg font-medium">Welcome, {displayName}!</h3>
           <button
             onClick={handleClose}
@@ -76,7 +83,7 @@ function RecruiterGreetingModalContent(): React.ReactElement | null {
         </div>
 
         {/* Modal body */}
-        <div className="px-6 py-4 text-gray-800 dark:text-gray-200">
+        <div className="px-6 py-4 text-primary">
           {matchingData.companyName && (
             <div className="mb-4">
               <span className="font-semibold">Company:</span> {matchingData.companyName}
@@ -112,7 +119,7 @@ function RecruiterGreetingModalContent(): React.ReactElement | null {
         </div>
 
         {/* Modal footer */}
-        <div className="bg-gray-100 dark:bg-surface-light px-6 py-3 flex justify-end">
+        <div className="bg-surface-light px-6 py-3 flex justify-end">
           <button
             onClick={handleClose}
             className="btn-primary font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-brand-accent"

@@ -27,10 +27,11 @@ function FeaturedProjects({ developer }: { developer: DeveloperType }) {
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-semibold text-primary">{project.title}</h3>
               <span
-                className={`px-2 py-1 rounded text-xs ${
-                  project.status === 'Active' ? 'status-badge-dev' : 'status-badge-complete'
+                className={
+                  project.status === 'Active'
+                    ? 'px-2 py-1 rounded text-xs status-badge-dev'
+                    : 'px-2 py-1 rounded text-xs status-badge-complete'
                 }
-            `}
               >
                 {project.status}
               </span>
