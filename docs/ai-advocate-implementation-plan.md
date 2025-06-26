@@ -99,7 +99,7 @@ extend type Query {
 
 1. **Create Modal Component**
 
-   - File: `/frontend/components/RecruiterGreetingModal.tsx`
+   - File: `/frontend/components/recruiter-greeting-modal.tsx`
    - Convert existing banner to a modal
    - Extract recruiter data from existing source
    - Display personalized greeting with name and company
