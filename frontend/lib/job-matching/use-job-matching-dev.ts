@@ -4,7 +4,7 @@ import { useQuery, gql } from '@apollo/client';
 import { useSearchParams } from 'next/navigation';
 import { GET_JOB_MATCHING } from '@/queries/job-matching';
 import { JobMatchingData } from './job-matching-service';
-import { cookieAuth } from '../auth/cookie-auth';
+import { cookieAuth } from '@/lib/auth/cookie-auth';
 
 // Mock data for development fallback
 const DEV_MOCK_DATA: JobMatchingData = {
@@ -82,8 +82,8 @@ export function useJobMatchingDev() {
 
     // If we got an error or no data from direct query, log it and use mock data
     if (directQuery.error || (directQuery.called && !directQuery.loading && !matchingData)) {
-      console.log('Error or no data from direct query:', directQuery.error);
-      console.log('Falling back to mock data');
+      console.error('Error or no data from direct query:', directQuery.error);
+      console.error('Falling back to mock data');
       matchingData =
         visitorParam === 'dev'
           ? DEV_MOCK_DATA

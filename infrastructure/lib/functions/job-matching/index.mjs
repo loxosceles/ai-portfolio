@@ -6,7 +6,8 @@ const dynamodb = new DynamoDBClient({ region: 'eu-central-1' });
 const docClient = DynamoDBDocumentClient.from(dynamodb);
 
 export const handler = async (event) => {
-  console.log('Event:', JSON.stringify(event, null, 2));
+  // Log the incoming event for debugging
+  // console.log('Event:', JSON.stringify(event, null, 2));
 
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
@@ -18,23 +19,19 @@ export const handler = async (event) => {
   }
 
   try {
-    console.log('Request context:', JSON.stringify(event.requestContext, null, 2));
-    
     // Extract linkId from JWT claims or query parameters
     const claims = event.requestContext?.authorizer?.claims;
-    const linkId = claims?.['custom:linkId'] || 
-                   claims?.email?.split('@')[0] || // Extract from email like '296850ee-5f11-4a5f-910a-a6c2dff8f52e@visitor.temporary.com'
-                   claims?.username?.split('@')[0] || // Fallback to username
-                   event.queryStringParameters?.linkId;
-
-    console.log('Claims:', claims);
-    console.log('Extracted linkId:', linkId);
+    const linkId =
+      claims?.['custom:linkId'] ||
+      claims?.email?.split('@')[0] || // Extract from email like '296850ee-5f11-4a5f-910a-a6c2dff8f52e@visitor.temporary.com'
+      claims?.username?.split('@')[0] || // Fallback to username
+      event.queryStringParameters?.linkId;
 
     if (!linkId) {
       return {
         statusCode: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           message: 'Missing linkId parameter',
           debug: {
             claims: claims,

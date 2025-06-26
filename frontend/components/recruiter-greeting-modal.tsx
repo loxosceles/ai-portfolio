@@ -31,8 +31,6 @@ function RecruiterGreetingModalContent(): React.ReactElement | null {
     }
   }, [isLoading, isAuthenticated, matchingData, hasShown]);
 
-  // Skip loading state - it's not visible due to caching
-
   // If not authenticated or no data, don't render anything
   if (!isAuthenticated || !matchingData || !isOpen) {
     return null;

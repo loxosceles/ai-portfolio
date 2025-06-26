@@ -20,7 +20,6 @@ async function getConfig(request) {
 
   // Extract stage from CloudFront custom header
   const stage = request.headers['x-portfolio-stage']?.[0]?.value || 'dev';
-  console.log(`Using stage from custom header: ${stage}`);
 
   // Fetch main app config from eu-central-1
   const mainConfigCommand = new GetParametersCommand({
@@ -33,9 +32,7 @@ async function getConfig(request) {
 
   // Fetch edge-specific config from us-east-1
   const edgeConfigCommand = new GetParametersCommand({
-    Names: [
-      `/portfolio/${stage}/edge/visitor-table-name`
-    ],
+    Names: [`/portfolio/${stage}/edge/visitor-table-name`],
     WithDecryption: true
   });
 
@@ -48,7 +45,8 @@ async function getConfig(request) {
 
   config = {
     clientId: allParameters.find((p) => p.Name.endsWith('NEXT_PUBLIC_COGNITO_CLIENT_ID')).Value,
-    userPoolId: allParameters.find((p) => p.Name.endsWith('NEXT_PUBLIC_COGNITO_USER_POOL_ID')).Value,
+    userPoolId: allParameters.find((p) => p.Name.endsWith('NEXT_PUBLIC_COGNITO_USER_POOL_ID'))
+      .Value,
     tableName: allParameters.find((p) => p.Name.endsWith('visitor-table-name')).Value
   };
 
@@ -118,7 +116,7 @@ async function handleViewerRequest(request) {
     const linkData = await getLinkData(tableName, linkId);
 
     if (!linkData || !linkData.password) {
-      console.log('No valid link data found');
+      console.error('No valid link data found');
       return request;
     }
 
@@ -129,7 +127,7 @@ async function handleViewerRequest(request) {
     const tokens = await getCognitoToken(username, linkData.password, userPoolId, clientId);
 
     if (!tokens) {
-      console.log('Failed to obtain Cognito tokens');
+      console.error('Failed to obtain Cognito tokens');
       return request;
     }
 
@@ -218,8 +216,6 @@ async function handleViewerResponse(request, response) {
 export const handler = async (event) => {
   const { request, response } = event.Records[0].cf;
   const eventType = event.Records[0].cf.config.eventType;
-
-  console.log(`Processing ${eventType} event`);
 
   try {
     if (eventType === 'viewer-request') {
