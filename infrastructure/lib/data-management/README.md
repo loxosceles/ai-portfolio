@@ -17,6 +17,7 @@ The data management system handles:
   create-bucket.mjs       - Create S3 bucket
   upload-data.mjs         - Upload data to S3
   validate-data.mjs       - Shared data validation logic
+  update-env.mjs          - Update environment variables from SSM
   /data/                  - Data files for different environments
     /dev/                 - Development data
       projects.json
@@ -59,10 +60,10 @@ Creates an S3 bucket for storing environment data:
 
 ```bash
 # Create development bucket
-pnpm run create-dev-bucket
+pnpm run create-bucket:dev
 
 # Create production bucket
-pnpm run create-prod-bucket
+pnpm run create-bucket:prod
 ```
 
 ### Upload Data
@@ -71,10 +72,10 @@ Uploads environment data to S3:
 
 ```bash
 # Upload development data
-pnpm run upload-dev-data
+pnpm run upload-data:dev
 
 # Upload production data
-pnpm run upload-prod-data
+pnpm run upload-data:prod
 ```
 
 ### Complete Setup
@@ -83,10 +84,28 @@ Performs both bucket creation and data upload:
 
 ```bash
 # Setup development environment
-pnpm run setup-dev-data
+pnpm run setup-data:dev
 
 # Setup production environment
-pnpm run setup-prod-data
+pnpm run setup-data:prod
+```
+
+### Update Environment Variables
+
+Retrieves environment variables from SSM Parameter Store and updates local files:
+
+```bash
+# Update all environment files
+pnpm run update-env:dev
+pnpm run update-env:prod
+
+# Update only frontend environment
+pnpm run update-env:frontend:dev
+pnpm run update-env:frontend:prod
+
+# Update only link generator environment
+pnpm run update-env:link-generator:dev
+pnpm run update-env:link-generator:prod
 ```
 
 ## Data Management
