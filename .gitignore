@@ -42,6 +42,3 @@ apollo.config.js
 .vscode/ 
 !.vscode/launch.json
 ai-portfolio-frontend.code-workspace
-
-# Production data for upload
-/production-data/
