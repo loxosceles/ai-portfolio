@@ -61,10 +61,9 @@ export class JobMatchingStack extends cdk.Stack {
   }
 
   private createMatchingFunction(table: dynamodb.Table, cloudfrontDomain: string): lambda.Function {
-    // Create Lambda function
     const fn = new lambda.Function(this, 'JobMatchingFunction', {
       functionName: `job-matching-${this.stage}`,
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../functions/job-matching')),
       environment: {

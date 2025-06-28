@@ -82,14 +82,15 @@ export class WebStack extends cdk.Stack {
       ]
     });
 
-    // Add permissions for SSM Parameter Store in both regions
+    // Add permissions for SSM Parameter Store in both regions for this environment only
     edgeFunctionRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['ssm:GetParameter', 'ssm:GetParameters'],
         resources: [
-          `arn:aws:ssm:${this.region}:${this.account}:parameter/portfolio/${props.stage}/*`,
-          `arn:aws:ssm:eu-central-1:${this.account}:parameter/portfolio/${props.stage}/*`
+          // Only allow access to this environment's parameters
+          `arn:aws:ssm:${this.region}:${this.account}:parameter/portfolio/${this.stage}/*`,
+          `arn:aws:ssm:eu-central-1:${this.account}:parameter/portfolio/${this.stage}/*`
         ]
       })
     );
@@ -132,29 +133,29 @@ export class WebStack extends cdk.Stack {
       })
     );
 
-    // Create the Lambda@Edge function
+    // Create the Lambda@Edge function using environment-specific directory
     const visitorContextFunction = new cloudfront.experimental.EdgeFunction(
       this,
       'VisitorContextFunction',
       {
         runtime: lambda.Runtime.NODEJS_20_X,
         handler: 'index.handler',
-        code: lambda.Code.fromAsset(path.join(__dirname, '../../lib/functions/visitor-context')),
+        code: lambda.Code.fromAsset(
+          path.join(__dirname, `../../lib/functions/visitor-context/${this.stage}`)
+        ),
         role: edgeFunctionRole,
-        stackId: `${this.stackName}-visitor-context-edge`,
+        stackId: `${this.stackName}-visitor-context-${this.stage}-edge`,
+        functionName: `visitor-context-${this.stage}`,
         timeout: cdk.Duration.seconds(5),
         memorySize: 128,
-        description: 'Adds visitor context headers based on query parameters',
+        description: `Adds visitor context headers for ${this.stage} environment`,
         logRetention: cdk.aws_logs.RetentionDays.ONE_WEEK
       }
     );
 
     // Create the S3 origin using the provided bucket and OAC
     const s3Origin = origins.S3BucketOrigin.withOriginAccessControl(this.websiteBucket, {
-      originAccessLevels: [cloudfront.AccessLevel.READ, cloudfront.AccessLevel.LIST],
-      customHeaders: {
-        'X-Portfolio-Stage': this.stage
-      }
+      originAccessLevels: [cloudfront.AccessLevel.READ, cloudfront.AccessLevel.LIST]
     });
 
     // Create security headers policy
