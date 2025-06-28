@@ -40,7 +40,7 @@ export const handler = async (event) => {
     
     // Return success for CloudFormation custom resource
     return {
-      PhysicalResourceId: `DataLoader-${environment}-${new Date().toISOString()}`,
+      PhysicalResourceId: `DataLoader-${environment}`,
       Data: {
         Message: `Successfully loaded data for ${environment} environment`,
         DevelopersCount: developersData.length,
