@@ -31,8 +31,9 @@ The system uses personalized links containing tokens that authenticate visitors 
    - Sets authentication cookies for the browser session
 
 4. **Apollo GraphQL Client**
-   - Uses authentication tokens from cookies for API requests
+   - Uses centralized auth context for all API requests
    - Provides personalized data based on the visitor's identity
+   - Environment-aware authentication (API key vs Cognito tokens)
 
 ## Authentication Flow
 
@@ -83,55 +84,99 @@ This is by design - the system expects visitors to use personalized links for th
 
 The authentication flow is implemented across several components:
 
-1. **Link Generator**:
+### Architecture Overview
 
-   ```typescript
-   // Creates a virtual user and generates a personalized link
-   async function generateLink(visitorInfo) {
-     // Create virtual Cognito user
-     // Generate and store tokens
-     // Return personalized URL with embedded token
-   }
-   ```
+```
+┌─────────────────────────────────────┐
+│           Auth Context              │
+│  - Centralized token management     │
+│  - Environment detection            │
+│  - Auth header generation           │
+└─────────────────┬───────────────────┘
+                  │
+    ┌─────────────┼─────────────┐
+    │             │             │
+┌───▼───┐    ┌───▼───┐    ┌───▼───┐
+│Local  │    │Job    │    │AI     │
+│Inter- │    │Match  │    │Advo-  │
+│ceptor │    │Hooks  │    │cate   │
+│(Mock) │    │       │    │Hooks  │
+└───────┘    └───────┘    └───────┘
+```
 
-2. **Lambda@Edge**:
+### 1. **Centralized Auth Context**:
 
-   ```typescript
-   // Intercepts requests and sets authentication cookies
-   exports.handler = async (event) => {
-     // Extract token from URL parameters
-     // Validate token against Cognito
-     // Set authentication cookies in response
-   };
-   ```
+```typescript
+// Single source of truth for authentication state
+export function useAuth() {
+  return {
+    isAuthenticated,
+    environment,
+    tokens,
+    visitorParam,
+    getAuthHeaders: (routeType) => ({
+      /* headers */
+    }),
+    getQueryContext: (routeType) => ({ headers: getAuthHeaders(routeType) })
+  };
+}
+```
 
-3. **Cookie Authentication**:
+### 2. **Environment-Aware Authentication**:
 
-   ```typescript
-   // Extracts tokens from cookies for API requests
-   const cookieAuth = {
-     getTokens() {
-       // Read AccessToken and IdToken from cookies
-       return { accessToken, idToken };
-     }
-   };
-   ```
+```typescript
+// Different auth strategies per environment
+const getAuthHeaders = (routeType: RouteType) => {
+  if (environment === 'local') {
+    return { 'x-api-key': process.env.NEXT_PUBLIC_APPSYNC_API_KEY };
+  }
 
-4. **Apollo Client**:
-   ```typescript
-   // Uses tokens for authenticated GraphQL requests
-   const authLink = setContext(async (_, { headers }) => {
-     const { accessToken } = cookieAuth.getTokens();
-     if (!accessToken) {
-       // Handle unauthenticated state
-     }
-     return {
-       headers: {
-         ...headers,
-         Authorization: `Bearer ${accessToken}`
-       }
-     };
-   });
-   ```
+  if (routeType === 'public') {
+    return { 'x-api-key': process.env.NEXT_PUBLIC_APPSYNC_API_KEY };
+  }
+
+  if (tokens.accessToken) {
+    return { Authorization: `Bearer ${tokens.accessToken}` };
+  }
+};
+```
+
+### 3. **Local Development Interceptor**:
+
+```typescript
+// Generic interceptor for local development
+export function useLocalRequestInterceptor() {
+  const shouldIntercept = environment === 'local' && !!visitorParam;
+
+  return {
+    shouldIntercept,
+    getJobMatchingMock: () => ({
+      /* mock data */
+    }),
+    getAIAdvocateMock: (question) => ({
+      /* mock response */
+    })
+  };
+}
+```
+
+### 4. **Hook-Based Data Fetching**:
+
+```typescript
+// All data fetching uses centralized auth
+export function useJobMatching() {
+  const { getQueryContext } = useAuth();
+
+  return useQuery(GET_JOB_MATCHING, {
+    context: getQueryContext('protected')
+  });
+}
+```
+
+### 5. **Environment Management**:
+
+- **Local**: `NEXT_PUBLIC_ENVIRONMENT=local` (set in dev script)
+- **Deployed Dev**: `NEXT_PUBLIC_ENVIRONMENT=dev` (set in deploy script)
+- **Production**: `NEXT_PUBLIC_ENVIRONMENT=prod` (set in deploy script)
 
 This authentication flow provides a seamless, secure experience for visitors while maintaining strict access control and personalization capabilities.

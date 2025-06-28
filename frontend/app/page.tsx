@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Cookies from 'js-cookie';
 import HeroSection from '@/components/hero-section';
 import FeaturedProjects from '@/components/featured-projects';
 import SkillsSection from '@/components/skills-section';
@@ -9,23 +8,23 @@ import Footer from '@/components/footer';
 import Header from '@/components/header';
 import { setDevelopmentCookies } from '@/utils/dev-cookies';
 import MainContent from '@/components/main-content';
+import AuthDebug from '@/components/auth-debug';
 import { GET_DEVELOPER_WITH_PROJECTS } from '@/queries/developers';
 import { useQuery } from '@apollo/client';
+import { useAuth } from '@/lib/auth/auth-context';
 import { cookieAuth } from '@/lib/auth/cookie-auth';
+import { isLocalEnvironment } from '@/lib/auth/auth-utils';
 
 const Portfolio = () => {
   const developerId = 'dev-1';
   const [isChecking, setIsChecking] = useState(true);
+  const { getQueryContext } = useAuth();
 
   const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
     variables: { id: developerId },
-    context: {
-      headers: {
-        'x-api-key': process.env.NEXT_PUBLIC_APPSYNC_API_KEY
-      }
-    },
+    context: getQueryContext('public'),
     onCompleted: (data: { getDeveloper: { name: string } }) => {
-      if (process.env.ENVIRONMENT === 'development') {
+      if (isLocalEnvironment()) {
         // eslint-disable-next-line no-console
         console.log('Developer data:', data);
       }
@@ -39,8 +38,8 @@ const Portfolio = () => {
     const params = new URLSearchParams(window.location.search);
     const visitorQParam = params.get('visitor');
 
-    if (process.env.NODE_ENV === 'development' && visitorQParam) {
-      // Set cookies directly in development
+    if (isLocalEnvironment() && visitorQParam) {
+      // Set cookies directly in local development
       console.log('Setting development cookies for visitor:', visitorQParam);
       setDevelopmentCookies(visitorQParam);
     } else if (!visitorQParam) {
@@ -62,6 +61,7 @@ const Portfolio = () => {
 
   return (
     <div className="min-h-screen gradient-bg">
+      <AuthDebug />
       {/* Header */}
       <header className="fixed top-0 w-full bg-surface-medium bg-opacity-80 backdrop-blur-sm border-b border-subtle z-50">
         <Header developer={developer} />

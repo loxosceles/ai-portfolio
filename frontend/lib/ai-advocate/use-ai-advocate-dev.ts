@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { AIResponse } from './use-ai-advocate';
 
 // Mock responses for development
@@ -23,7 +23,7 @@ export function useAIAdvocateDev() {
   const [error, setError] = useState<string | null>(null);
 
   // Function to simulate asking a question
-  const ask = useCallback((question: string) => {
+  const ask = (question: string) => {
     setIsLoading(true);
     setError(null);
 
@@ -63,7 +63,7 @@ export function useAIAdvocateDev() {
         setIsLoading(false);
       }
     }, 1000);
-  }, []);
+  };
 
   return {
     ask,

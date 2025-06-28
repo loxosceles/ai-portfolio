@@ -13,7 +13,9 @@ The project follows a modern cloud-native architecture with these key components
 - **Next.js Application**: Built with React 19 and TypeScript
 - **Apollo Client**: For GraphQL data fetching and state management
 - **TailwindCSS**: For responsive, utility-first styling
-- **Authentication**: OIDC integration with Cognito
+- **Centralized Auth Context**: Single source of truth for authentication state
+- **Local Development Interceptor**: Generic mocking system for local development
+- **Environment-Aware Authentication**: Different auth strategies per environment
 
 ### Backend Architecture
 
@@ -89,6 +91,16 @@ The API is built with AWS AppSync and includes these main types:
 
 ### Authentication & Security
 
+#### Centralized Authentication Architecture
+
+The application uses a centralized auth context that provides:
+
+- **Single Source of Truth**: All components use the same auth state
+- **Environment Detection**: Automatic detection of local/dev/prod environments
+- **Smart Header Generation**: Appropriate auth headers based on route type and environment
+- **Token Caching**: Efficient token management with periodic refresh
+- **Local Development Mocking**: Generic interceptor for offline development
+
 #### Authentication Methods
 
 Multiple authentication methods are supported:
@@ -96,6 +108,7 @@ Multiple authentication methods are supported:
 - **API Key**: For public, read-only access to general portfolio content
 - **Cognito User Pools**: For authenticated access with JWT tokens
 - **IAM**: For secure backend-to-backend communication
+- **Local Interceptor**: Mock responses for local development
 
 #### Secure Personalization
 
