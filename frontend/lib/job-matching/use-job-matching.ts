@@ -3,27 +3,15 @@
 import { useQuery } from '@apollo/client';
 import { GET_JOB_MATCHING } from '@/queries/job-matching';
 import { JobMatchingData } from './job-matching-service';
-import { cookieAuth } from '@/lib/auth/cookie-auth';
+import { useAuth } from '@/lib/auth/auth-context';
 
 export function useJobMatching() {
-  const { accessToken } = cookieAuth.getTokens();
-  const isAuthenticated = !!accessToken;
+  const { isAuthenticated, getQueryContext } = useAuth();
 
   const { data, loading, error } = useQuery(GET_JOB_MATCHING, {
     skip: !isAuthenticated,
     fetchPolicy: 'cache-and-network',
-    context: () => {
-      const { accessToken: currentToken } = cookieAuth.getTokens();
-      if (!currentToken) {
-        console.error('❌ JOB MATCHING: accessToken is null/undefined when executing query');
-        console.error('❌ cookieAuth.getTokens():', cookieAuth.getTokens());
-      }
-      return {
-        headers: {
-          Authorization: `Bearer ${currentToken}`
-        }
-      };
-    }
+    context: getQueryContext('protected')
   });
 
   return {

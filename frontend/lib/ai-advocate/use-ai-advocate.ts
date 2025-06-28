@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useLazyQuery, gql } from '@apollo/client';
 import { cookieAuth } from '@/lib/auth/cookie-auth';
 
