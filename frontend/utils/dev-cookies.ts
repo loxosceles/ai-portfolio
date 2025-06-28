@@ -1,7 +1,8 @@
 import Cookies from 'js-cookie';
+import { getEnvironment } from '@/lib/auth/auth-utils';
 
 export const setDevelopmentCookies = (visitorQParam: string) => {
-  if (process.env.NODE_ENV === 'development' && visitorQParam === 'test123') {
+  if (getEnvironment() === 'dev' && visitorQParam === 'test123') {
     Cookies.set('visitor_company', 'Test Company', {
       path: '/',
       secure: true,

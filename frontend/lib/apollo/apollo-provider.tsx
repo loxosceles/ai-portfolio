@@ -3,11 +3,12 @@
 import React, { useEffect } from 'react';
 import { ApolloProvider } from '@apollo/client';
 import { client } from './apollo-client';
+import { getEnvironment } from '@/lib/auth/auth-utils';
 
 export default function GraphQLProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Connect to VSCode DevTools in development
-    if (process.env.ENVIRONMENT === 'development') {
+    if (getEnvironment() === 'local') {
       import('@apollo/client-devtools-vscode')
         .then(({ connectApolloClientToVSCodeDevTools }) => {
           connectApolloClientToVSCodeDevTools(client, 'ws://localhost:7095');
