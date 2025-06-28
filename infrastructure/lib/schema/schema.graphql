@@ -59,7 +59,7 @@ type Query {
   getProject(id: ID!): Project @aws_iam @aws_api_key @aws_cognito_user_pools
   listProjects: [Project] @aws_iam @aws_api_key @aws_cognito_user_pools
   getJobMatching: JobMatching @aws_cognito_user_pools
-  getJobMatchingByLinkId(linkId: String!): JobMatching @aws_api_key
+  getJobMatchingByLinkId(linkId: String!): JobMatching @aws_cognito_user_pools
   askAIQuestion(question: String!): AIResponse @aws_cognito_user_pools
 }
 

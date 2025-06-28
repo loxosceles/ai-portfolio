@@ -1,6 +1,5 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
-import { cookieAuth } from '@/lib/auth/cookie-auth';
 
 const appsyncUrl = process.env.NEXT_PUBLIC_APPSYNC_URL;
 const appsyncApiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
@@ -37,28 +36,10 @@ const authLink = setContext(async (_, { headers }) => {
     return { headers };
   }
 
-  // In local development only, use API key for simplified auth
-  if (isLocal) {
-    return {
-      headers: {
-        ...headers,
-        'x-api-key': appsyncApiKey,
-        'Content-Type': 'application/json'
-      }
-    };
-  }
-
-  // In dev and prod environments, use Cognito tokens for proper auth flow testing
-  const { accessToken } = cookieAuth.getTokens();
-  if (!accessToken) {
-    console.error('No access token available in deployed environment');
-    throw new Error('Authentication required');
-  }
-
+  // No default headers - each query specifies its own auth via context
   return {
     headers: {
       ...headers,
-      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json'
     }
   };

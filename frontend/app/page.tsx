@@ -11,6 +11,7 @@ import { setDevelopmentCookies } from '@/utils/dev-cookies';
 import MainContent from '@/components/main-content';
 import { GET_DEVELOPER_WITH_PROJECTS } from '@/queries/developers';
 import { useQuery } from '@apollo/client';
+import { cookieAuth } from '@/lib/auth/cookie-auth';
 
 const Portfolio = () => {
   const developerId = 'dev-1';
@@ -18,6 +19,11 @@ const Portfolio = () => {
 
   const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
     variables: { id: developerId },
+    context: {
+      headers: {
+        'x-api-key': process.env.NEXT_PUBLIC_APPSYNC_API_KEY
+      }
+    },
     onCompleted: (data: { getDeveloper: { name: string } }) => {
       if (process.env.ENVIRONMENT === 'development') {
         // eslint-disable-next-line no-console
@@ -38,13 +44,8 @@ const Portfolio = () => {
       console.log('Setting development cookies for visitor:', visitorQParam);
       setDevelopmentCookies(visitorQParam);
     } else if (!visitorQParam) {
-      // Clean up cookies if no visitor parameter
-      const visitorCookies = ['visitor_company', 'visitor_name', 'visitor_context'];
-      visitorCookies.forEach((cookieName) => {
-        if (Cookies.get(cookieName)) {
-          Cookies.remove(cookieName);
-        }
-      });
+      // Clean up all authentication cookies if no visitor parameter
+      cookieAuth.clearTokens();
     }
 
     setIsChecking(false);
