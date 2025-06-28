@@ -50,7 +50,12 @@ export function useJobMatchingDev() {
   // Use the standard query if authenticated
   const standardQuery = useQuery(GET_JOB_MATCHING, {
     skip: !isAuthenticated || localDevMode, // Skip if not authenticated or in local dev mode
-    fetchPolicy: 'cache-and-network'
+    fetchPolicy: 'cache-and-network',
+    context: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    }
   });
 
   // Use direct linkId query if in local dev mode with a visitor parameter
@@ -103,6 +108,6 @@ export function useJobMatchingDev() {
     matchingData: matchingData as JobMatchingData | null,
     isLoading,
     error: errorMessage,
-    isAuthenticated: isAuthenticated || localDevMode // Consider local dev mode as "authenticated"
+    isAuthenticated: isAuthenticated || localDevMode // Local dev mode OR valid tokens
   };
 }

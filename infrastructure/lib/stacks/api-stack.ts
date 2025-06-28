@@ -86,38 +86,22 @@ export class ApiStack extends cdk.Stack {
       ),
       authorizationConfig: {
         defaultAuthorization: {
-          // Use IAM (public) as default for queries
-          authorizationType: appsync.AuthorizationType.IAM
+          // Use API_KEY as default for public queries
+          authorizationType: appsync.AuthorizationType.API_KEY,
+          apiKeyConfig: {
+            expires: cdk.Expiration.after(cdk.Duration.days(365))
+          }
         },
         additionalAuthorizationModes: [
-          // For mutations in prod: USER_POOL
+          // For authenticated queries: USER_POOL only
           {
             authorizationType: appsync.AuthorizationType.USER_POOL,
             userPoolConfig: { userPool }
-          },
-          // For mutations in dev: API_KEY
-          {
-            authorizationType: appsync.AuthorizationType.API_KEY,
-            apiKeyConfig: {
-              expires: cdk.Expiration.after(cdk.Duration.days(365))
-            }
           }
         ]
       },
       // Enable X-Ray for tracing
       xrayEnabled: true
-    });
-
-    // Create IAM policy to allow public access to queries
-    const publicAccessPolicy = new cdk.aws_iam.PolicyStatement({
-      effect: cdk.aws_iam.Effect.ALLOW,
-      actions: ['appsync:GraphQL'],
-      resources: [`${api.arn}/types/Query/*`]
-    });
-
-    // Add policy to allow unauthenticated access to queries
-    new cdk.aws_iam.Policy(this, 'PublicQueryAccess', {
-      statements: [publicAccessPolicy]
     });
 
     return api;
@@ -163,7 +147,7 @@ export class ApiStack extends cdk.Stack {
     developerDS: appsync.DynamoDbDataSource;
     projectDS: appsync.DynamoDbDataSource;
   }) {
-    // Developer Resolvers
+    // Developer Resolvers (Public - API key)
     new DynamoDBResolverConstruct(this, 'GetDeveloper', {
       dataSource: dataSources.developerDS,
       typeName: 'Query',
@@ -199,7 +183,7 @@ export class ApiStack extends cdk.Stack {
       operation: 'delete'
     });
 
-    // Project Resolvers
+    // Project Resolvers (Public - API key)
     new DynamoDBResolverConstruct(this, 'GetProject', {
       dataSource: dataSources.projectDS,
       typeName: 'Query',
@@ -214,7 +198,7 @@ export class ApiStack extends cdk.Stack {
       operation: 'list'
     });
 
-    // For Developer.projects relationship
+    // For Developer.projects relationship (Public - no auth required)
     dataSources.projectDS.createResolver('DeveloperProjectsResolver', {
       typeName: 'Developer',
       fieldName: 'projects',
@@ -234,7 +218,7 @@ export class ApiStack extends cdk.Stack {
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultList()
     });
 
-    // For Project.developers relationship
+    // For Project.developers relationship (Public - no auth required)
     dataSources.developerDS.createResolver('ProjectDeveloperResolver', {
       typeName: 'Project',
       fieldName: 'developer',

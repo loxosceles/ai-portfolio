@@ -10,8 +10,20 @@ export function useJobMatching() {
   const isAuthenticated = !!accessToken;
 
   const { data, loading, error } = useQuery(GET_JOB_MATCHING, {
-    skip: !isAuthenticated, // Don't run query if no ID token
-    fetchPolicy: 'cache-and-network'
+    skip: !isAuthenticated,
+    fetchPolicy: 'cache-and-network',
+    context: () => {
+      const { accessToken: currentToken } = cookieAuth.getTokens();
+      if (!currentToken) {
+        console.error('❌ JOB MATCHING: accessToken is null/undefined when executing query');
+        console.error('❌ cookieAuth.getTokens():', cookieAuth.getTokens());
+      }
+      return {
+        headers: {
+          Authorization: `Bearer ${currentToken}`
+        }
+      };
+    }
   });
 
   return {

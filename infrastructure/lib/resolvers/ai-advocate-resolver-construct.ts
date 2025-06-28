@@ -54,7 +54,6 @@ export class AIAdvocateResolverConstruct extends Construct {
     // Create data source
     this.dataSource = props.api.addLambdaDataSource('AIAdvocateDataSource', this.function);
 
-    // Create resolvers
     this.dataSource.createResolver('GetJobMatchingResolver', {
       typeName: 'Query',
       fieldName: 'getJobMatching'
