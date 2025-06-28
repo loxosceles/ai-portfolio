@@ -1,5 +1,6 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
+import { getEnvironment, isLocalEnvironment } from '@/lib/auth/auth-utils';
 
 const appsyncUrl = process.env.NEXT_PUBLIC_APPSYNC_URL;
 const appsyncApiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
@@ -8,8 +9,8 @@ const appsyncApiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
 // - 'local': API key auth for local development
 // - 'dev': Cognito auth for deployed development environment
 // - 'prod': Cognito auth for production
-const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || 'local';
-const isLocal = environment === 'local';
+const environment = getEnvironment();
+const isLocal = isLocalEnvironment();
 
 if (!appsyncUrl) {
   console.error('NEXT_PUBLIC_APPSYNC_URL is not defined in environment variables');
@@ -65,5 +66,5 @@ export const client = new ApolloClient({
   name: 'portfolio-client',
   version: '1.0',
   assumeImmutableResults: true,
-  connectToDevTools: (isLocal || environment === 'dev') && typeof window !== 'undefined'
+  connectToDevTools: isLocal && typeof window !== 'undefined' && !!appsyncApiKey
 });
