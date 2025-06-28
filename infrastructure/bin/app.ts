@@ -79,7 +79,7 @@ if (stage === 'dev') {
     env, // Uses eu-central-1 from main env
     githubOwner: process.env.GITHUB_OWNER,
     githubRepo: process.env.GITHUB_REPO,
-    githubBranch: stage === 'prod' ? 'main' : 'develop'
+    githubBranch: stage === 'prod' ? 'main' : 'feat/create-production-content'
   });
 }
 

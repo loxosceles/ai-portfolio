@@ -57,8 +57,8 @@ function updateFrontendEnv() {
       jobMatchingParams['NEXT_PUBLIC_JOB_MATCHING_API_URL'];
   }
   
-  // Set NEXT_PUBLIC_ENVIRONMENT based on the current environment
-  frontendParams['NEXT_PUBLIC_ENVIRONMENT'] = environment;
+  // Don't set NEXT_PUBLIC_ENVIRONMENT in file - it's handled by deploy scripts
+  // frontendParams['NEXT_PUBLIC_ENVIRONMENT'] = environment;
 
   const envPath = path.join(projectRoot, 'frontend', '.env.local');
   const envContent = Object.entries(frontendParams)
@@ -66,7 +66,7 @@ function updateFrontendEnv() {
     .join('\n');
 
   fs.writeFileSync(envPath, envContent);
-  console.log(`✅ Frontend env updated: ${Object.keys(frontendParams).length} variables`);
+  console.log(`✅ Frontend env updated: ${Object.keys(frontendParams).length} variables (NEXT_PUBLIC_ENVIRONMENT handled by deploy scripts)`);
 }
 
 function updateLinkGeneratorEnv() {
