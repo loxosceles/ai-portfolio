@@ -1,7 +1,8 @@
 import { DeveloperType } from '@/shared/types';
+import { isLocalEnvironment } from '@/lib/auth/auth-utils';
 
 function FeaturedProjects({ developer }: { developer: DeveloperType }) {
-  if (process.env.ENVIRONMENT === 'development') {
+  if (isLocalEnvironment()) {
     // eslint-disable-next-line no-console
     console.log("Developer's project:", developer.projects);
   }

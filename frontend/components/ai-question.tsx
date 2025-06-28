@@ -3,6 +3,9 @@
 import React, { useState } from 'react';
 import { useAIAdvocate } from '@/lib/ai-advocate/use-ai-advocate';
 import { useAIAdvocateDev } from '@/lib/ai-advocate/use-ai-advocate-dev';
+import { useAuth } from '@/lib/auth/auth-context';
+import { useLocalRequestInterceptor } from '@/lib/local/use-local-request-interceptor';
+import { AIResponse } from '@/lib/ai-advocate/use-ai-advocate';
 
 interface AIQuestionProps {
   onClose: () => void;
@@ -10,15 +13,43 @@ interface AIQuestionProps {
 
 export default function AIQuestion({ onClose }: AIQuestionProps) {
   const [question, setQuestion] = useState('');
-  // For client components, we need to use NEXT_PUBLIC_ prefixed variables
-  const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || 'local';
+  // Check for local interception first
+  const interceptor = useLocalRequestInterceptor();
+  const { environment } = useAuth();
   const isLocal = environment === 'local';
 
   // Always call both hooks but only use the appropriate one
   const devHook = useAIAdvocateDev();
   const prodHook = useAIAdvocate();
 
-  const { ask, response, isLoading, error } = isLocal ? devHook : prodHook;
+  // Use interceptor if available, otherwise use real hooks
+  const realHook = isLocal ? devHook : prodHook;
+  const {
+    ask: realAsk,
+    response: realResponse,
+    isLoading: realIsLoading,
+    error: realError
+  } = realHook;
+
+  // Create intercepted ask function
+  const [interceptedResponse, setInterceptedResponse] = useState<AIResponse | null>(null);
+  const [interceptedLoading, setInterceptedLoading] = useState(false);
+
+  const ask = interceptor.shouldIntercept
+    ? (question: string) => {
+        setInterceptedLoading(true);
+        // Simulate network delay
+        setTimeout(() => {
+          const mockResponse = interceptor.getAIAdvocateMock(question);
+          setInterceptedResponse(mockResponse);
+          setInterceptedLoading(false);
+        }, 1000);
+      }
+    : realAsk;
+
+  const response = interceptor.shouldIntercept ? interceptedResponse : realResponse;
+  const isLoading = interceptor.shouldIntercept ? interceptedLoading : realIsLoading;
+  const error = interceptor.shouldIntercept ? null : realError;
 
   // Add keyboard event listener to close modal with Escape key
   React.useEffect(() => {
