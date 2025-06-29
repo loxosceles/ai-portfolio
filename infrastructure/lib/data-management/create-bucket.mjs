@@ -1,12 +1,16 @@
 import { S3Client, CreateBucketCommand, HeadBucketCommand, PutBucketVersioningCommand, PutPublicAccessBlockCommand, PutBucketPolicyCommand } from '@aws-sdk/client-s3';
+import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Load environment variables
+// Load environment variables (fallback to .env for local development)
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '../../..');
-dotenv.config({ path: path.join(projectRoot, '.env') });
+if (!process.env.CODEBUILD_BUILD_ID) {
+  // Only load .env in local development
+  dotenv.config({ path: path.join(projectRoot, '.env') });
+}
 
 // Get environment from command line args
 const environment = process.argv[2] || 'dev';
@@ -17,13 +21,35 @@ if (environment !== 'dev' && environment !== 'prod') {
   process.exit(1);
 }
 
-// Check required environment variables
-const requiredEnvVars = ['AWS_ACCOUNT_ID', 'AWS_ADMIN_ARN', 'AWS_REGION'];
-for (const envVar of requiredEnvVars) {
-  if (!process.env[envVar]) {
-    console.error(`Error: ${envVar} is required in .env file`);
+// Initialize AWS clients
+const region = process.env.AWS_DEFAULT_REGION || 'eu-central-1';
+const ssmClient = new SSMClient({ region });
+
+// Get configuration from SSM Parameter Store
+async function getSSMParameter(parameterName) {
+  try {
+    const command = new GetParameterCommand({ Name: parameterName });
+    const response = await ssmClient.send(command);
+    return response.Parameter.Value;
+  } catch (error) {
+    if (error.name === 'ParameterNotFound') {
+      return null;
+    }
+    throw error;
+  }
+}
+
+async function getConfiguration() {
+  const awsAccountId = await getSSMParameter(`/portfolio/${environment}/AWS_ACCOUNT_ID`) || process.env.AWS_ACCOUNT_ID;
+  const awsAdminArn = await getSSMParameter(`/portfolio/${environment}/AWS_ADMIN_ARN`) || process.env.AWS_ADMIN_ARN;
+  
+  if (!awsAccountId || !awsAdminArn) {
+    console.error('Error: Required configuration not found in SSM Parameter Store or environment variables');
+    console.error(`Please ensure /portfolio/${environment}/AWS_ACCOUNT_ID and /portfolio/${environment}/AWS_ADMIN_ARN parameters exist`);
     process.exit(1);
   }
+  
+  return { awsAccountId, awsAdminArn };
 }
 
 // Set bucket name based on environment
@@ -31,14 +57,15 @@ const bucketName = environment === 'prod'
   ? process.env.PROD_DATA_BUCKET_NAME || 'portfolio-production-data'
   : process.env.DEV_DATA_BUCKET_NAME || 'portfolio-development-data';
 
-const region = process.env.AWS_REGION || 'eu-central-1';
-
 // Initialize S3 client
 const s3Client = new S3Client({ region });
 
 async function createBucket() {
   try {
     console.log(`Creating bucket ${bucketName} in ${region} for ${environment} environment...`);
+    
+    // Get configuration from SSM
+    const { awsAccountId, awsAdminArn } = await getConfiguration();
 
     // Check if bucket already exists
     try {
@@ -105,7 +132,7 @@ async function createBucket() {
           ],
           Condition: {
             StringNotEquals: {
-              'aws:PrincipalArn': process.env.AWS_ADMIN_ARN
+              'aws:PrincipalArn': awsAdminArn
             }
           }
         }

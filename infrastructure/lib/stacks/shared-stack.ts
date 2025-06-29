@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 import { addStackOutputs } from '../utils/stack-outputs';
 
@@ -66,6 +67,20 @@ export class SharedStack extends cdk.Stack {
         description: 'OAuth Redirect URI',
         exportName: 'redirect-uri',
         paramName: 'NEXT_PUBLIC_REDIRECT_URI'
+      },
+      {
+        id: 'AWSAccountId',
+        value: this.account,
+        description: 'AWS Account ID',
+        exportName: 'aws-account-id',
+        paramName: 'AWS_ACCOUNT_ID'
+      },
+      {
+        id: 'AWSAdminArn',
+        value: process.env.AWS_ADMIN_ARN || `arn:aws:iam::${this.account}:user/loxosceles`,
+        description: 'AWS Admin ARN',
+        exportName: 'aws-admin-arn',
+        paramName: 'AWS_ADMIN_ARN'
       }
     ]);
   }
