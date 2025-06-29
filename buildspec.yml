@@ -1,0 +1,49 @@
+version: 0.2
+
+env:
+  variables:
+    ENVIRONMENT: dev # Default, will be overridden by pipeline parameter
+    DEV_DATA_BUCKET_NAME: portfolio-development-data
+    PROD_DATA_BUCKET_NAME: portfolio-production-data
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Preparing build environment..."
+      # Clean up any existing node_modules
+      - rm -rf node_modules
+      - find . -name "node_modules" -type f -delete
+      # Install pnpm
+      - npm install -g pnpm
+      # Install dependencies with modified flags
+      - pnpm install --frozen-lockfile
+
+  pre_build:
+    commands:
+      - echo "Deploying infrastructure for $ENVIRONMENT environment"
+      - pnpm run deploy:infra:$ENVIRONMENT
+
+  build:
+    commands:
+      - echo "Setting up data for $ENVIRONMENT environment"
+      - pnpm run setup:data:$ENVIRONMENT
+      - echo "Updating environment variables"
+      - pnpm run update:env:$ENVIRONMENT
+      - echo "Deploying frontend for $ENVIRONMENT environment"
+      - pnpm run deploy:frontend:$ENVIRONMENT
+
+  post_build:
+    commands:
+      - echo "Invalidating CloudFront cache"
+      # Get CloudFront distribution ID from SSM Parameter Store
+      - DISTRIBUTION_ID=$(aws ssm get-parameter --name "/portfolio/${ENVIRONMENT}/WEB_CLOUDFRONT_DISTRIBUTION_ID" --region us-east-1 --query 'Parameter.Value' --output text)
+      - aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*" --region us-east-1
+      # Get domain from SSM Parameter Store
+      - DOMAIN=$(aws ssm get-parameter --name "/portfolio/${ENVIRONMENT}/WEB_CLOUDFRONT_DOMAIN" --region us-east-1 --query 'Parameter.Value' --output text)
+      - echo "Deployment complete. Website available at https://$DOMAIN"
+
+cache:
+  paths:
+    - '.pnpm-store/**/*'
