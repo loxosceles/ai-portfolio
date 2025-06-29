@@ -13,7 +13,7 @@ import { GET_DEVELOPER_WITH_PROJECTS } from '@/queries/developers';
 import { useQuery } from '@apollo/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cookieAuth } from '@/lib/auth/cookie-auth';
-import { isLocalEnvironment } from '@/lib/auth/auth-utils';
+import { isLocalEnvironment, getEnvironment } from '@/lib/auth/auth-utils';
 
 const Portfolio = () => {
   const developerId = 'dev-1';
@@ -61,7 +61,7 @@ const Portfolio = () => {
 
   return (
     <div className="min-h-screen gradient-bg">
-      <AuthDebug />
+      {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />}
       {/* Header */}
       <header className="fixed top-0 w-full bg-surface-medium bg-opacity-80 backdrop-blur-sm border-b border-subtle z-50">
         <Header developer={developer} />
