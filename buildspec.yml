@@ -23,16 +23,17 @@ phases:
   pre_build:
     commands:
       - echo "Deploying infrastructure for $ENVIRONMENT environment"
-      - pnpm run deploy:infra:$ENVIRONMENT
+      - pushd infrastructure && pnpm run deploy:$ENVIRONMENT && popd
 
   build:
     commands:
       - echo "Setting up data for $ENVIRONMENT environment"
-      - pnpm run setup:data:$ENVIRONMENT
+      - node infrastructure/lib/data-management/create-bucket.mjs $ENVIRONMENT
+      - node infrastructure/lib/data-management/download-static-data.mjs $ENVIRONMENT
       - echo "Updating environment variables"
-      - pnpm run update:env:$ENVIRONMENT
+      - ENVIRONMENT=$ENVIRONMENT node infrastructure/lib/data-management/update-env.mjs
       - echo "Deploying frontend for $ENVIRONMENT environment"
-      - pnpm run deploy:frontend:$ENVIRONMENT
+      - pushd infrastructure && pnpm run deploy:frontend:$ENVIRONMENT && popd
 
   post_build:
     commands:
