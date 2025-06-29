@@ -70,17 +70,23 @@ const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
 
 // Create pipeline stack (only for dev environment initially)
 if (stage === 'dev') {
-  if (!process.env.GITHUB_OWNER || !process.env.GITHUB_REPO) {
-    throw new Error('GITHUB_OWNER and GITHUB_REPO must be set in environment variables');
-  }
+  // Get GitHub info from environment or CodeBuild context
+  const githubOwner = process.env.GITHUB_OWNER || 'loxosceles';
+  const githubRepo = process.env.GITHUB_REPO || 'ai-portfolio-frontend';
 
-  new PipelineStack(app, `PortfolioPipelineStack-${stage}`, {
-    stage,
-    env, // Uses eu-central-1 from main env
-    githubOwner: process.env.GITHUB_OWNER,
-    githubRepo: process.env.GITHUB_REPO,
-    githubBranch: stage === 'prod' ? 'main' : 'feat/create-production-content'
-  });
+  // Only create pipeline stack if we're not in a deployment context
+  // (pipeline stack should be deployed separately, not during application deployment)
+  const skipPipeline = process.env.CODEBUILD_BUILD_ID || process.env.SKIP_PIPELINE;
+
+  if (!skipPipeline) {
+    new PipelineStack(app, `PortfolioPipelineStack-${stage}`, {
+      stage,
+      env, // Uses eu-central-1 from main env
+      githubOwner,
+      githubRepo,
+      githubBranch: stage === 'prod' ? 'main' : 'feat/optimize-frontend-authentication'
+    });
+  }
 }
 
 // Add dependencies

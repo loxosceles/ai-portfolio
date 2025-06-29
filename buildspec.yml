@@ -3,26 +3,34 @@ version: 0.2
 env:
   variables:
     ENVIRONMENT: dev # Default, will be overridden by pipeline parameter
+    DEV_DATA_BUCKET_NAME: portfolio-development-data
+    PROD_DATA_BUCKET_NAME: portfolio-production-data
 
 phases:
   install:
     runtime-versions:
       nodejs: 20
     commands:
+      - echo "Preparing build environment..."
+      # Clean up any existing node_modules
+      - rm -rf node_modules
+      - find . -name "node_modules" -type f -delete
+      # Install pnpm
       - npm install -g pnpm
-      - pnpm install
+      # Install dependencies with modified flags
+      - pnpm install --no-frozen-lockfile
 
   pre_build:
     commands:
-      - echo "Setting up data for $ENVIRONMENT environment"
-      - pnpm run setup:data:$ENVIRONMENT
+      - echo "Deploying infrastructure for $ENVIRONMENT environment"
+      - pnpm run deploy:infra:$ENVIRONMENT
 
   build:
     commands:
-      - echo "Deploying infrastructure for $ENVIRONMENT environment"
-      - pnpm run deploy:infra:$ENVIRONMENT
+      - echo "Setting up data for $ENVIRONMENT environment"
+      - pnpm run setup:data:$ENVIRONMENT
       - echo "Updating environment variables"
-      - pnpm run update:env
+      - pnpm run update:env:$ENVIRONMENT
       - echo "Deploying frontend for $ENVIRONMENT environment"
       - pnpm run deploy:frontend:$ENVIRONMENT
 
@@ -38,5 +46,4 @@ phases:
 
 cache:
   paths:
-    - 'node_modules/**/*'
     - '.pnpm-store/**/*'
