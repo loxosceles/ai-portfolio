@@ -61,17 +61,12 @@ export class PipelineStack extends cdk.Stack {
     const buildProject = new codebuild.Project(this, 'BuildProject', {
       projectName: `portfolio-build-${stage}`,
       role: buildRole,
-      source: codebuild.Source.gitHub({
-        owner: githubOwner,
-        repo: githubRepo,
-        webhook: false
-      }),
       environment: {
         buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
         computeType: codebuild.ComputeType.SMALL,
         privileged: true
       },
-      buildSpec: codebuild.BuildSpec.fromSourceFilename('buildspec.yml'),
+      buildSpec: codebuild.BuildSpec.fromAsset(path.join(__dirname, '../../../buildspec.yml')),
       environmentVariables: {
         ENVIRONMENT: {
           value: stage
