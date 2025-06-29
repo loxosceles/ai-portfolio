@@ -28,8 +28,12 @@ node infrastructure/lib/data-management/download-static-data.mjs $ENVIRONMENT
 echo "🔧 Updating environment variables..."
 ENVIRONMENT=$ENVIRONMENT node infrastructure/lib/data-management/update-env.mjs
 
-# Step 4: Deploy frontend
-echo "🌐 Deploying frontend..."
+# Step 4: Build and deploy frontend
+echo "🌐 Building and deploying frontend..."
+pushd frontend && pnpm run deploy:$ENVIRONMENT && popd
+
+# Step 5: Deploy frontend infrastructure
+echo "📦 Deploying frontend infrastructure..."
 pushd infrastructure && pnpm run deploy:frontend:$ENVIRONMENT && popd
 
 # Step 5: Invalidate CloudFront cache
