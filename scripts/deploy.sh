@@ -35,7 +35,7 @@ run "pnpm run setup:data:${ENVIRONMENT}" "Setting up data in S3"
 if [[ "$ENVIRONMENT" == "prod" ]]; then
   echo -e "\n🔄 Infrastructure deployment (production)..."
   echo -e "\nProduction deployment requires manual approval for security-sensitive changes."
-  echo -e "Running with --require-approval=broadening..."
+  echo -e "Running with --require-approval=never..."
   
   if cd infrastructure && ENVIRONMENT=prod npx cdk deploy --all --context stage=prod --require-approval=never --force; then
     cd ..
