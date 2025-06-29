@@ -68,18 +68,28 @@ const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
   bedrockModelId: process.env.BEDROCK_MODEL_ID || 'amazon.titan-text-lite-v1'
 });
 
-// Create pipeline stack (only for dev environment initially)
-if (stage === 'dev') {
-  if (!process.env.GITHUB_OWNER || !process.env.GITHUB_REPO) {
-    throw new Error('GITHUB_OWNER and GITHUB_REPO must be set in environment variables');
-  }
+// Create pipeline stacks (separate from application deployment)
+const skipPipeline = process.env.CODEBUILD_BUILD_ID || process.env.SKIP_PIPELINE;
+if (!skipPipeline) {
+  const githubOwner = process.env.GITHUB_OWNER || 'loxosceles';
+  const githubRepo = process.env.GITHUB_REPO || 'ai-portfolio-frontend';
 
-  new PipelineStack(app, `PortfolioPipelineStack-${stage}`, {
-    stage,
-    env, // Uses eu-central-1 from main env
-    githubOwner: process.env.GITHUB_OWNER,
-    githubRepo: process.env.GITHUB_REPO,
-    githubBranch: stage === 'prod' ? 'main' : 'feat/create-production-content'
+  // Create dev pipeline
+  new PipelineStack(app, 'PortfolioPipelineStack-dev', {
+    stage: 'dev',
+    env,
+    githubOwner,
+    githubRepo,
+    githubBranch: 'dev'
+  });
+
+  // Create prod pipeline
+  new PipelineStack(app, 'PortfolioPipelineStack-prod', {
+    stage: 'prod',
+    env,
+    githubOwner,
+    githubRepo,
+    githubBranch: 'main'
   });
 }
 
