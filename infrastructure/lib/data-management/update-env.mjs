@@ -1,7 +1,11 @@
 #!/usr/bin/env node
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(__dirname, '../../..');
 
 const environment = process.env.ENVIRONMENT || 'dev';
 const mainRegion = 'eu-central-1';
@@ -53,16 +57,16 @@ function updateFrontendEnv() {
       jobMatchingParams['NEXT_PUBLIC_JOB_MATCHING_API_URL'];
   }
   
-  // Set NEXT_PUBLIC_ENVIRONMENT based on the current environment
-  frontendParams['NEXT_PUBLIC_ENVIRONMENT'] = environment;
+  // Don't set NEXT_PUBLIC_ENVIRONMENT in file - it's handled by deploy scripts
+  // frontendParams['NEXT_PUBLIC_ENVIRONMENT'] = environment;
 
-  const envPath = path.join(process.cwd(), 'frontend', '.env.local');
+  const envPath = path.join(projectRoot, 'frontend', '.env.local');
   const envContent = Object.entries(frontendParams)
     .map(([key, value]) => `${key}=${value}`)
     .join('\n');
 
   fs.writeFileSync(envPath, envContent);
-  console.log(`✅ Frontend env updated: ${Object.keys(frontendParams).length} variables`);
+  console.log(`✅ Frontend env updated: ${Object.keys(frontendParams).length} variables (NEXT_PUBLIC_ENVIRONMENT handled by deploy scripts)`);
 }
 
 function updateLinkGeneratorEnv() {
@@ -81,13 +85,14 @@ function updateLinkGeneratorEnv() {
     `DOMAIN_URL=https://${edgeParams['WEB_CLOUDFRONT_DOMAIN']}/`
   ].join('\n');
 
-  const envPath = path.join(process.cwd(), 'link-generator', '.env');
+  const envPath = path.join(projectRoot, 'link-generator', '.env');
   fs.writeFileSync(envPath, envContent);
   console.log('✅ Link-generator env updated');
 }
 
 function main() {
-  const target = process.argv[2] || '--all';
+  const args = process.argv.slice(2);
+  const target = args[0] || '--all';
 
   console.log(`🔄 Updating environment files for: ${environment}`);
 
@@ -112,8 +117,9 @@ function main() {
   }
 }
 
-if (require.main === module) {
+// Run if called directly
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main();
 }
 
-module.exports = { updateFrontendEnv, updateLinkGeneratorEnv };
+export { updateFrontendEnv, updateLinkGeneratorEnv };

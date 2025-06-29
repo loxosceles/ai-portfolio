@@ -47,5 +47,23 @@ export const cookieAuth = {
   isAuthenticated(): boolean {
     const { accessToken } = this.getTokens();
     return !!accessToken;
+  },
+
+  clearTokens(): void {
+    if (typeof document === 'undefined') return;
+
+    // Clear all authentication cookies with matching attributes
+    const authCookies = [
+      'AccessToken',
+      'IdToken',
+      'LinkId',
+      'visitor_company',
+      'visitor_name',
+      'visitor_context'
+    ];
+    authCookies.forEach((cookieName) => {
+      // Match the exact attributes used by Lambda@Edge
+      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict;`;
+    });
   }
 };

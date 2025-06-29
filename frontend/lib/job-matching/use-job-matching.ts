@@ -3,15 +3,15 @@
 import { useQuery } from '@apollo/client';
 import { GET_JOB_MATCHING } from '@/queries/job-matching';
 import { JobMatchingData } from './job-matching-service';
-import { cookieAuth } from '@/lib/auth/cookie-auth';
+import { useAuth } from '@/lib/auth/auth-context';
 
 export function useJobMatching() {
-  const { accessToken } = cookieAuth.getTokens();
-  const isAuthenticated = !!accessToken;
+  const { isAuthenticated, getQueryContext } = useAuth();
 
   const { data, loading, error } = useQuery(GET_JOB_MATCHING, {
-    skip: !isAuthenticated, // Don't run query if no ID token
-    fetchPolicy: 'cache-and-network'
+    skip: !isAuthenticated,
+    fetchPolicy: 'cache-and-network',
+    context: getQueryContext('protected')
   });
 
   return {
