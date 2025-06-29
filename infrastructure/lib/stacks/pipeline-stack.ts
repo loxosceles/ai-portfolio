@@ -93,7 +93,7 @@ export class PipelineStack extends cdk.Stack {
       branch: githubBranch,
       oauthToken: cdk.SecretValue.secretsManager('github-token-ai-portfolio'),
       output: sourceOutput,
-      trigger: codepipeline_actions.GitHubTrigger.POLL
+      trigger: codepipeline_actions.GitHubTrigger.WEBHOOK
     });
 
     // Build action
