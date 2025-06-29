@@ -10,6 +10,7 @@ export interface DynamoDBResolverProps {
   operation: DynamoDBOperation;
   partitionKey?: string;
   sortKey?: string;
+  authorizationType?: appsync.AuthorizationType;
 }
 
 export class DynamoDBResolverConstruct extends Construct {
@@ -18,12 +19,21 @@ export class DynamoDBResolverConstruct extends Construct {
 
     const resolverConfig = this.getResolverConfig(props);
 
-    props.dataSource.createResolver(`${props.typeName}${props.fieldName}Resolver`, {
+    const resolverProps: any = {
       typeName: props.typeName,
       fieldName: props.fieldName,
       requestMappingTemplate: resolverConfig.request,
       responseMappingTemplate: resolverConfig.response
-    });
+    };
+
+    // Add authorization if specified
+    if (props.authorizationType) {
+      resolverProps.authorizationConfig = {
+        authorizationType: props.authorizationType
+      };
+    }
+
+    props.dataSource.createResolver(`${props.typeName}${props.fieldName}Resolver`, resolverProps);
   }
 
   private getResolverConfig(props: DynamoDBResolverProps) {

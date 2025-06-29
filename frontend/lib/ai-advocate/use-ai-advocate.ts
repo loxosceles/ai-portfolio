@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useLazyQuery, gql } from '@apollo/client';
+import { cookieAuth } from '@/lib/auth/cookie-auth';
 
 // GraphQL query for asking AI questions
 export const ASK_AI_QUESTION = gql`
@@ -47,14 +48,25 @@ export function useAIAdvocate() {
   });
 
   // Function to ask a question
-  const ask = useCallback(
-    (question: string) => {
-      setIsLoading(true);
-      setError(null);
-      askQuestion({ variables: { question } });
-    },
-    [askQuestion]
-  );
+  const ask = (question: string) => {
+    const { accessToken: currentToken } = cookieAuth.getTokens();
+    if (!currentToken) {
+      console.error('❌ AI ADVOCATE: accessToken is null/undefined when executing query');
+      console.error('❌ cookieAuth.getTokens():', cookieAuth.getTokens());
+      setError('Authentication token not available');
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    askQuestion({
+      variables: { question },
+      context: {
+        headers: {
+          Authorization: `Bearer ${currentToken}`
+        }
+      }
+    });
+  };
 
   return {
     ask,

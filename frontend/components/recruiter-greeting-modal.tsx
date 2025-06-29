@@ -3,6 +3,8 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useJobMatchingDev } from '@/lib/job-matching/use-job-matching-dev';
+import { useAuth } from '@/lib/auth/auth-context';
+import { useLocalRequestInterceptor } from '@/lib/local/use-local-request-interceptor';
 
 function RecruiterGreetingModalContent(): React.ReactElement | null {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,8 +16,18 @@ function RecruiterGreetingModalContent(): React.ReactElement | null {
   const searchParams = useSearchParams();
   const visitorParam = searchParams?.get('visitor');
 
+  // Check for local interception first
+  const interceptor = useLocalRequestInterceptor();
+
   // Use development-friendly job matching hook
-  const { matchingData, isLoading, isAuthenticated } = useJobMatchingDev();
+  const { matchingData: realMatchingData, isLoading: realIsLoading } = useJobMatchingDev();
+  const { isAuthenticated } = useAuth();
+
+  // Use interceptor data if available, otherwise use real data
+  const matchingData = interceptor.shouldIntercept
+    ? interceptor.getJobMatchingMock()
+    : realMatchingData;
+  const isLoading = interceptor.shouldIntercept ? false : realIsLoading;
 
   // Ensure component is mounted before showing modal
   useEffect(() => {

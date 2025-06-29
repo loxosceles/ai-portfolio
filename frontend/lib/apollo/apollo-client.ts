@@ -1,6 +1,6 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
-import { cookieAuth } from '@/lib/auth/cookie-auth';
+import { getEnvironment, isLocalEnvironment } from '@/lib/auth/auth-utils';
 
 const appsyncUrl = process.env.NEXT_PUBLIC_APPSYNC_URL;
 const appsyncApiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
@@ -9,8 +9,8 @@ const appsyncApiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
 // - 'local': API key auth for local development
 // - 'dev': Cognito auth for deployed development environment
 // - 'prod': Cognito auth for production
-const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || 'local';
-const isLocal = environment === 'local';
+const environment = getEnvironment();
+const isLocal = isLocalEnvironment();
 
 if (!appsyncUrl) {
   console.error('NEXT_PUBLIC_APPSYNC_URL is not defined in environment variables');
@@ -37,28 +37,10 @@ const authLink = setContext(async (_, { headers }) => {
     return { headers };
   }
 
-  // In local development only, use API key for simplified auth
-  if (isLocal) {
-    return {
-      headers: {
-        ...headers,
-        'x-api-key': appsyncApiKey,
-        'Content-Type': 'application/json'
-      }
-    };
-  }
-
-  // In dev and prod environments, use Cognito tokens for proper auth flow testing
-  const { accessToken } = cookieAuth.getTokens();
-  if (!accessToken) {
-    console.error('No access token available in deployed environment');
-    throw new Error('Authentication required');
-  }
-
+  // No default headers - each query specifies its own auth via context
   return {
     headers: {
       ...headers,
-      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json'
     }
   };
@@ -84,5 +66,5 @@ export const client = new ApolloClient({
   name: 'portfolio-client',
   version: '1.0',
   assumeImmutableResults: true,
-  connectToDevTools: (isLocal || environment === 'dev') && typeof window !== 'undefined'
+  connectToDevTools: isLocal && typeof window !== 'undefined' && !!appsyncApiKey
 });

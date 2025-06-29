@@ -15,7 +15,7 @@ export const addStackOutputs = (stack: cdk.Stack, stage: string, outputs: StackO
     new cdk.CfnOutput(stack, output.id, {
       value: output.value,
       description: output.description,
-      exportName: output.exportName
+      exportName: `${output.exportName}-${stage}`
     });
 
     // SSM Parameters

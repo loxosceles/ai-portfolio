@@ -1,3 +1,4 @@
+// Version 1.1 - Environment-specific Lambda@Edge function
 import { SSMClient, GetParametersCommand } from '@aws-sdk/client-ssm';
 import {
   CognitoIdentityProviderClient,
@@ -18,21 +19,18 @@ let config = null;
 async function getConfig(request) {
   if (config) return config;
 
-  // Extract stage from CloudFront custom header
-  const stage = request.headers['x-portfolio-stage']?.[0]?.value || 'dev';
-
   // Fetch main app config from eu-central-1
   const mainConfigCommand = new GetParametersCommand({
     Names: [
-      `/portfolio/${stage}/NEXT_PUBLIC_COGNITO_CLIENT_ID`,
-      `/portfolio/${stage}/NEXT_PUBLIC_COGNITO_USER_POOL_ID`
+      '/portfolio/dev/NEXT_PUBLIC_COGNITO_CLIENT_ID',
+      '/portfolio/dev/NEXT_PUBLIC_COGNITO_USER_POOL_ID'
     ],
     WithDecryption: true
   });
 
   // Fetch edge-specific config from us-east-1
   const edgeConfigCommand = new GetParametersCommand({
-    Names: [`/portfolio/${stage}/edge/visitor-table-name`],
+    Names: ['/portfolio/dev/edge/visitor-table-name'],
     WithDecryption: true
   });
 

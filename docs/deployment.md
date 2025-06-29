@@ -3,29 +3,37 @@
 ## Quick Deploy (Recommended)
 
 ```bash
-# Deploy everything in correct order
-ENVIRONMENT=dev pnpm deploy
+# Deploy to development environment
+pnpm deploy:dev
+
+# Deploy to production environment
+pnpm deploy:prod
 ```
 
-This single command:
+These commands:
 
-1. ✅ Deploys infrastructure (API + Shared + Web stacks)
-2. ✅ Updates local environment files from SSM
-3. ✅ Builds and deploys frontend with correct env vars
-4. ✅ Invalidates CloudFront cache
-5. ✅ Shows deployment URL
+1. ✅ Set up data in S3 buckets
+2. ✅ Deploy infrastructure (API + Shared + Web stacks)
+3. ✅ Update local environment files from SSM
+4. ✅ Build and deploy frontend with correct env vars
+5. ✅ Seed data (dev environment only)
+6. ✅ Invalidate CloudFront cache
+7. ✅ Show deployment URL
 
-## Manual Steps (if needed)
+## Component Deployment (if needed)
 
 ```bash
-# 1. Deploy infrastructure only
-pnpm deploy:infra
+# 1. Set up data in S3 buckets
+pnpm run setup:data:dev  # or setup:data:prod
 
-# 2. Update environment files only
-pnpm postdeploy
+# 2. Deploy infrastructure only
+pnpm run deploy:infra:dev  # or deploy:infra:prod
 
-# 3. Deploy frontend only
-pnpm deploy:frontend
+# 3. Update environment files only
+pnpm run update:env:dev  # or update:env:prod
+
+# 4. Deploy frontend only
+pnpm run deploy:frontend:dev  # or deploy:frontend:prod
 ```
 
 ## Environment Variables

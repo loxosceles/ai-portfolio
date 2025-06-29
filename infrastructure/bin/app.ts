@@ -7,6 +7,7 @@ import { WebStack } from '../lib/stacks/web-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { SharedStack } from '../lib/stacks/shared-stack';
 import { JobMatchingStack } from '../lib/stacks/job-matching-stack';
+import { PipelineStack } from '../lib/stacks/pipeline-stack';
 
 // Load environment variables from .env file
 dotenv.config({
@@ -66,6 +67,21 @@ const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
   jobMatchingTable: jobMatchingStack.matchingTable,
   bedrockModelId: process.env.BEDROCK_MODEL_ID || 'amazon.titan-text-lite-v1'
 });
+
+// Create pipeline stack (only for dev environment initially)
+if (stage === 'dev') {
+  if (!process.env.GITHUB_OWNER || !process.env.GITHUB_REPO) {
+    throw new Error('GITHUB_OWNER and GITHUB_REPO must be set in environment variables');
+  }
+
+  new PipelineStack(app, `PortfolioPipelineStack-${stage}`, {
+    stage,
+    env, // Uses eu-central-1 from main env
+    githubOwner: process.env.GITHUB_OWNER,
+    githubRepo: process.env.GITHUB_REPO,
+    githubBranch: stage === 'prod' ? 'main' : 'feat/create-production-content'
+  });
+}
 
 // Add dependencies
 webStack.addDependency(sharedStack);
