@@ -18,7 +18,7 @@ if (environment !== 'dev' && environment !== 'prod') {
   process.exit(1);
 }
 
-// Set bucket name and data directory based on environment
+// Set bucket name based on environment
 const bucketName = environment === 'prod'
   ? process.env.PROD_DATA_BUCKET_NAME || 'portfolio-production-data'
   : process.env.DEV_DATA_BUCKET_NAME || 'portfolio-development-data';
@@ -35,7 +35,6 @@ async function uploadData() {
   try {
     console.log(`Uploading ${environment} data to S3 bucket ${bucketName} in ${region}...`);
 
-    // Check if data files exist
     const files = ['projects.json', 'developer.json'];
     
     for (const file of files) {
