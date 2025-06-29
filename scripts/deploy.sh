@@ -17,7 +17,7 @@ echo "🚀 Starting full deployment for $ENVIRONMENT environment..."
 
 # Step 1: Deploy infrastructure
 echo "📦 Deploying infrastructure..."
-cd infrastructure && pnpm run deploy:$ENVIRONMENT && cd ..
+pushd infrastructure && pnpm run deploy:$ENVIRONMENT && popd
 
 # Step 2: Setup data
 echo "📊 Setting up data..."
@@ -30,7 +30,7 @@ ENVIRONMENT=$ENVIRONMENT node infrastructure/lib/data-management/update-env.mjs
 
 # Step 4: Deploy frontend
 echo "🌐 Deploying frontend..."
-cd infrastructure && pnpm run deploy:frontend:$ENVIRONMENT && cd ..
+pushd infrastructure && pnpm run deploy:frontend:$ENVIRONMENT && popd
 
 # Step 5: Invalidate CloudFront cache
 echo "🔄 Invalidating CloudFront cache..."

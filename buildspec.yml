@@ -23,7 +23,7 @@ phases:
   pre_build:
     commands:
       - echo "Deploying infrastructure for $ENVIRONMENT environment"
-      - cd infrastructure && pnpm run deploy:$ENVIRONMENT && cd ..
+      - pushd infrastructure && pnpm run deploy:$ENVIRONMENT && popd
 
   build:
     commands:
@@ -33,7 +33,7 @@ phases:
       - echo "Updating environment variables"
       - ENVIRONMENT=$ENVIRONMENT node infrastructure/lib/data-management/update-env.mjs
       - echo "Deploying frontend for $ENVIRONMENT environment"
-      - cd infrastructure && pnpm run deploy:frontend:$ENVIRONMENT && cd ..
+      - pushd infrastructure && pnpm run deploy:frontend:$ENVIRONMENT && popd
 
   post_build:
     commands:
