@@ -11,7 +11,7 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
-      - echo "Preparing build environment..."
+      - echo "Preparing build $ENVIRONMENT environment..."
       # Clean up any existing node_modules
       - rm -rf node_modules
       - find . -name "node_modules" -type f -delete
@@ -32,7 +32,9 @@ phases:
       - node infrastructure/lib/data-management/download-static-data.mjs $ENVIRONMENT
       - echo "Updating environment variables"
       - ENVIRONMENT=$ENVIRONMENT node infrastructure/lib/data-management/update-env.mjs
-      - echo "Deploying frontend for $ENVIRONMENT environment"
+      - echo "Building and uploading frontend for $ENVIRONMENT environment"
+      - cd frontend && pnpm run deploy:$ENVIRONMENT && cd ..
+      - echo "Deploying frontend infrastructure for $ENVIRONMENT environment"
       - cd infrastructure && pnpm run deploy:frontend:$ENVIRONMENT && cd ..
 
   post_build:
