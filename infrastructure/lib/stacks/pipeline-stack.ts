@@ -51,6 +51,22 @@ export class PipelineStack extends cdk.Stack {
                 'iam:ListAttachedRolePolicies'
               ],
               resources: ['*']
+            }),
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: [
+                's3:GetObject',
+                's3:HeadObject',
+                's3:ListBucket',
+                's3:CreateBucket',
+                's3:PutBucketVersioning'
+              ],
+              resources: [
+                'arn:aws:s3:::portfolio-development-data',
+                'arn:aws:s3:::portfolio-development-data/*',
+                'arn:aws:s3:::portfolio-production-data',
+                'arn:aws:s3:::portfolio-production-data/*'
+              ]
             })
           ]
         })
