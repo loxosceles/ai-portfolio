@@ -38,6 +38,32 @@ const sharedStack = new SharedStack(app, `PortfolioSharedStack-${stage}`, {
   env
 });
 
+// Get domain name for production with validation
+let domainName: string | undefined;
+if (stage === 'prod') {
+  try {
+    // Try SSM parameter first, fallback to environment variable
+    domainName = cdk.aws_ssm.StringParameter.valueFromLookup(
+      app,
+      '/portfolio/prod/PROD_DOMAIN_NAME'
+    );
+  } catch (error) {
+    domainName = process.env.PROD_DOMAIN_NAME;
+  }
+
+  if (!domainName || domainName === 'dummy-value-for-/portfolio/prod/PROD_DOMAIN_NAME') {
+    console.error('\n❌ PRODUCTION DEPLOYMENT FAILED');
+    console.error('Missing required PROD_DOMAIN_NAME for production deployment.');
+    console.error('\n📋 To fix this, create the SSM parameter:');
+    console.error(
+      `aws ssm put-parameter --name "/portfolio/prod/PROD_DOMAIN_NAME" --value "your-domain.com" --type "String" --region us-east-1`
+    );
+    console.error('\n💡 Replace "your-domain.com" with your actual domain name.');
+    console.error('\nAlternatively, set PROD_DOMAIN_NAME environment variable in your pipeline.');
+    throw new Error('PROD_DOMAIN_NAME is required for production deployment');
+  }
+}
+
 // Create combined website stack in us-east-1 first to get the CloudFront domain
 const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
   stage,
@@ -48,7 +74,7 @@ const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
     region: 'us-east-1' // Lambda@Edge must be in us-east-1
   },
   crossRegionReferences: true,
-  ...(stage === 'prod' ? { domainName: process.env.PROD_DOMAIN_NAME } : {})
+  domainName
 });
 
 // Create Job Matching stack with CloudFront domain
