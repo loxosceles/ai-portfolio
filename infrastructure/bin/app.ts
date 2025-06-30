@@ -47,7 +47,8 @@ const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
     account: env.account,
     region: 'us-east-1' // Lambda@Edge must be in us-east-1
   },
-  crossRegionReferences: true
+  crossRegionReferences: true,
+  ...(stage === 'prod' ? { domainName: process.env.PROD_DOMAIN_NAME } : {})
 });
 
 // Create Job Matching stack with CloudFront domain
