@@ -6,6 +6,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
 import { addStackOutputs } from '../utils/stack-outputs';
 import * as path from 'path';
@@ -14,6 +15,7 @@ interface WebStackProps extends cdk.StackProps {
   stage: 'dev' | 'prod';
   userPool: cognito.UserPool;
   userPoolClient: cognito.UserPoolClient;
+  domainName?: string;
 }
 
 /**
@@ -180,6 +182,18 @@ export class WebStack extends cdk.Stack {
       }
     });
 
+    // Create certificate and domain configuration for production only
+    let certificate: acm.Certificate | undefined;
+    let domainNames: string[] | undefined;
+
+    if (isProd && props.domainName) {
+      certificate = new acm.Certificate(this, 'Certificate', {
+        domainName: props.domainName,
+        validation: acm.CertificateValidation.fromDns()
+      });
+      domainNames = [props.domainName];
+    }
+
     // Create CloudFront distribution
     this.distribution = new cloudfront.Distribution(this, 'Distribution', {
       defaultBehavior: {
@@ -210,7 +224,13 @@ export class WebStack extends cdk.Stack {
           responseHttpStatus: 200,
           responsePagePath: '/index.html'
         }
-      ]
+      ],
+      ...(isProd && certificate && domainNames
+        ? {
+            certificate,
+            domainNames
+          }
+        : {})
     });
 
     // Add bucket policy for CloudFront access
