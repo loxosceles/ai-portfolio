@@ -197,16 +197,28 @@ export class WebStack extends cdk.Stack {
       }
     }
 
-    // Create certificate and domain configuration for production only
-    let certificate: acm.Certificate | undefined;
+    // Use existing certificate for production
+    let certificate: acm.ICertificate | undefined;
     let domainNames: string[] | undefined;
 
     if (isProd && domainName) {
-      certificate = new acm.Certificate(this, 'Certificate', {
-        domainName: domainName,
-        validation: acm.CertificateValidation.fromDns()
-      });
-      domainNames = [domainName];
+      // Get certificate ARN from environment variable
+      const certificateArn = process.env.PROD_CERTIFICATE_ARN;
+
+      if (certificateArn) {
+        // Use the existing certificate that has been manually validated
+        certificate = acm.Certificate.fromCertificateArn(
+          this,
+          'ImportedCertificate',
+          certificateArn
+        );
+        domainNames = [domainName];
+        // eslint-disable-next-line no-console
+        console.log(`Using existing certificate: ${certificateArn}`);
+      } else {
+        // eslint-disable-next-line no-console
+        console.log('No certificate ARN provided. Cannot set up custom domain.');
+      }
     }
 
     // Create CloudFront distribution

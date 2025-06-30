@@ -23,17 +23,25 @@ phases:
   pre_build:
     commands:
       - echo "Deploying infrastructure for $ENVIRONMENT environment"
-      # Fetch domain name from SSM if in production environment
+      # Fetch domain name and certificate ARN from SSM if in production environment
       - |
         if [ "$ENVIRONMENT" = "prod" ]; then
-          # Run script and capture the output directly (stderr goes to console, stdout to variable)
-          PROD_DOMAIN_NAME=$(node infrastructure/lib/pipeline-helpers/fetch-domain.mjs)
-          # Export it so it's available to subsequent commands
+          # Run script and capture both values (format: DOMAIN_NAME|CERTIFICATE_ARN)
+          DOMAIN_INFO=$(node infrastructure/lib/pipeline-helpers/fetch-domain.mjs)
+          
+          # Parse the output to get domain name and certificate ARN
+          PROD_DOMAIN_NAME=$(echo $DOMAIN_INFO | cut -d'|' -f1)
+          PROD_CERTIFICATE_ARN=$(echo $DOMAIN_INFO | cut -d'|' -f2)
+          
+          # Export variables for use in subsequent commands
           export PROD_DOMAIN_NAME
+          export PROD_CERTIFICATE_ARN
+          
           echo "Domain name set to: $PROD_DOMAIN_NAME"
+          echo "Certificate ARN set to: $PROD_CERTIFICATE_ARN"
         fi
-      # Pass the environment variable to the CDK command
-      - cd infrastructure && PROD_DOMAIN_NAME=$PROD_DOMAIN_NAME pnpm run deploy:$ENVIRONMENT && cd ..
+      # Pass the environment variables to the CDK command
+      - cd infrastructure && PROD_DOMAIN_NAME=$PROD_DOMAIN_NAME PROD_CERTIFICATE_ARN=$PROD_CERTIFICATE_ARN pnpm run deploy:$ENVIRONMENT && cd ..
 
   build:
     commands:
