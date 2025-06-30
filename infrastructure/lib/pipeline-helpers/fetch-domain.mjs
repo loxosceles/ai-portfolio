@@ -12,11 +12,11 @@ async function fetchDomainName() {
   
   // Only fetch domain for production
   if (environment !== 'prod') {
-    console.log('Not in production environment, skipping domain name fetch');
+    console.error('Not in production environment, skipping domain name fetch');
     return;
   }
 
-  console.log('Fetching domain name from SSM parameter store in us-east-1...');
+  console.error('Fetching domain name from SSM parameter store in us-east-1...');
   
   try {
     // Create SSM client in us-east-1 region
@@ -34,10 +34,8 @@ async function fetchDomainName() {
       throw new Error('Parameter exists but has no value');
     }
     
-    console.log(`✅ Found domain name: ${domainName}`);
-    
-    // Export as environment variable for CDK
-    console.log(`export PROD_DOMAIN_NAME=${domainName}`);
+    // Just output the domain name value (for capture by buildspec)
+    console.log(domainName);
     
     // Also write to process.env for immediate use
     process.env.PROD_DOMAIN_NAME = domainName;
