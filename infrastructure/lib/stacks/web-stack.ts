@@ -182,26 +182,18 @@ export class WebStack extends cdk.Stack {
       }
     });
 
-    // Get domain name for production from SSM parameter
+    // Get domain name for production from environment variable
+    // This is set by the pipeline-helpers/fetch-domain.mjs script
     let domainName: string | undefined;
     if (isProd) {
-      domainName = cdk.aws_ssm.StringParameter.valueFromLookup(
-        this,
-        '/portfolio/prod/PROD_DOMAIN_NAME'
-      );
+      domainName = process.env.PROD_DOMAIN_NAME;
 
-      // CDK returns a placeholder when parameter doesn't exist
-      if (!domainName || domainName.startsWith('dummy-value-for-')) {
-        const errorMessage = [
-          '\n❌ PRODUCTION DEPLOYMENT FAILED',
-          'Missing required PROD_DOMAIN_NAME SSM parameter.',
-          '\n📋 To fix this, create the SSM parameter:',
-          'aws ssm put-parameter --name "/portfolio/prod/PROD_DOMAIN_NAME" --value "your-domain.com" --type "String" --region us-east-1',
-          '\n💡 Replace "your-domain.com" with your actual domain name.'
-        ].join('\n');
-
-        console.error(errorMessage);
-        throw new Error('PROD_DOMAIN_NAME SSM parameter is required for production deployment');
+      if (domainName) {
+        // eslint-disable-next-line no-console
+        console.log(`Using custom domain: ${domainName}`);
+      } else {
+        // eslint-disable-next-line no-console
+        console.log('No domain name provided. Using CloudFront domain only.');
       }
     }
 
