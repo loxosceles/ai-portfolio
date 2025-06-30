@@ -23,6 +23,8 @@ phases:
   pre_build:
     commands:
       - echo "Deploying infrastructure for $ENVIRONMENT environment"
+      # Fetch domain name from SSM if in production environment
+      - if [ "$ENVIRONMENT" = "prod" ]; then node infrastructure/lib/pipeline-helpers/fetch-domain.mjs; fi
       - cd infrastructure && pnpm run deploy:$ENVIRONMENT && cd ..
 
   build:
