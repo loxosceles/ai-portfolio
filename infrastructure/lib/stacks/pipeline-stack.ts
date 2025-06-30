@@ -5,7 +5,6 @@ import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
-import * as path from 'path';
 
 interface PipelineStackProps extends cdk.StackProps {
   stage: string;
@@ -66,6 +65,13 @@ export class PipelineStack extends cdk.Stack {
                 'arn:aws:s3:::portfolio-development-data/*',
                 'arn:aws:s3:::portfolio-production-data',
                 'arn:aws:s3:::portfolio-production-data/*'
+              ]
+            }),
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: ['ssm:GetParameter', 'ssm:GetParameters'],
+              resources: [
+                `arn:aws:ssm:us-east-1:${this.account}:parameter/portfolio/prod/PROD_DOMAIN_NAME`
               ]
             })
           ]

@@ -182,16 +182,39 @@ export class WebStack extends cdk.Stack {
       }
     });
 
+    // Get domain name for production from SSM parameter
+    let domainName: string | undefined;
+    if (isProd) {
+      domainName = cdk.aws_ssm.StringParameter.valueFromLookup(
+        this,
+        '/portfolio/prod/PROD_DOMAIN_NAME'
+      );
+
+      // CDK returns a placeholder when parameter doesn't exist
+      if (!domainName || domainName.startsWith('dummy-value-for-')) {
+        const errorMessage = [
+          '\n❌ PRODUCTION DEPLOYMENT FAILED',
+          'Missing required PROD_DOMAIN_NAME SSM parameter.',
+          '\n📋 To fix this, create the SSM parameter:',
+          'aws ssm put-parameter --name "/portfolio/prod/PROD_DOMAIN_NAME" --value "your-domain.com" --type "String" --region us-east-1',
+          '\n💡 Replace "your-domain.com" with your actual domain name.'
+        ].join('\n');
+
+        console.error(errorMessage);
+        throw new Error('PROD_DOMAIN_NAME SSM parameter is required for production deployment');
+      }
+    }
+
     // Create certificate and domain configuration for production only
     let certificate: acm.Certificate | undefined;
     let domainNames: string[] | undefined;
 
-    if (isProd && props.domainName) {
+    if (isProd && domainName) {
       certificate = new acm.Certificate(this, 'Certificate', {
-        domainName: props.domainName,
+        domainName: domainName,
         validation: acm.CertificateValidation.fromDns()
       });
-      domainNames = [props.domainName];
+      domainNames = [domainName];
     }
 
     // Create CloudFront distribution
