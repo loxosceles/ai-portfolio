@@ -24,8 +24,16 @@ phases:
     commands:
       - echo "Deploying infrastructure for $ENVIRONMENT environment"
       # Fetch domain name from SSM if in production environment
-      - if [ "$ENVIRONMENT" = "prod" ]; then node infrastructure/lib/pipeline-helpers/fetch-domain.mjs; fi
-      - cd infrastructure && pnpm run deploy:$ENVIRONMENT && cd ..
+      - |
+        if [ "$ENVIRONMENT" = "prod" ]; then
+          # Run script and capture the output directly (stderr goes to console, stdout to variable)
+          PROD_DOMAIN_NAME=$(node infrastructure/lib/pipeline-helpers/fetch-domain.mjs)
+          # Export it so it's available to subsequent commands
+          export PROD_DOMAIN_NAME
+          echo "Domain name set to: $PROD_DOMAIN_NAME"
+        fi
+      # Pass the environment variable to the CDK command
+      - cd infrastructure && PROD_DOMAIN_NAME=$PROD_DOMAIN_NAME pnpm run deploy:$ENVIRONMENT && cd ..
 
   build:
     commands:
