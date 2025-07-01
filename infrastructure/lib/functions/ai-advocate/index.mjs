@@ -8,7 +8,7 @@ const dynamodb = new DynamoDBClient({ region: 'eu-central-1' });
 const docClient = DynamoDBDocumentClient.from(dynamodb);
 
 // Initialize Bedrock client for AI functionality
-const bedrockClient = new BedrockRuntimeClient({ region: 'us-east-1' }); // Bedrock is available in us-east-1
+const bedrockClient = new BedrockRuntimeClient({ region: 'eu-central-1' }); // Using Bedrock in the same region as other backend services
 
 // Default response object for job matching
 const createDefaultResponse = (linkId = 'unknown') => ({

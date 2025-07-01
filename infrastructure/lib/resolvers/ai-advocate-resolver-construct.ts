@@ -79,7 +79,7 @@ export class AIAdvocateResolverConstruct extends Construct {
 
     // In production, scope down to specific model; in dev allow broader access
     const resources = isProd
-      ? [`arn:aws:bedrock:us-east-1::foundation-model/${props.bedrockModelId}`]
+      ? [`arn:aws:bedrock:eu-central-1::foundation-model/${props.bedrockModelId}`]
       : ['*'];
 
     this.function.addToRolePolicy(
