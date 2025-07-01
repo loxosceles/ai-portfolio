@@ -16,6 +16,7 @@ interface JobMatchingStackProps extends cdk.StackProps {
 
 export class JobMatchingStack extends cdk.Stack {
   public readonly matchingTable: dynamodb.Table;
+  public readonly recruiterProfilesTable: dynamodb.Table; // New table for recruiter profiles
   public readonly api: apigateway.RestApi;
   private readonly stage: string;
 
@@ -28,11 +29,16 @@ export class JobMatchingStack extends cdk.Stack {
       throw new Error('Stage must be either "dev" or "prod"');
     }
 
-    // Create DynamoDB table for job matching data
+    // Create DynamoDB tables for job matching data
     this.matchingTable = this.createMatchingTable(stage === 'prod');
+    this.recruiterProfilesTable = this.createRecruiterProfilesTable(stage === 'prod');
 
     // Create Lambda function for job matching
-    const matchingFunction = this.createMatchingFunction(this.matchingTable, cloudfrontDomain);
+    const matchingFunction = this.createMatchingFunction(
+      this.matchingTable,
+      this.recruiterProfilesTable,
+      cloudfrontDomain
+    );
 
     // Create API Gateway logging role
     const apiGatewayLoggingRole = this.createApiGatewayLoggingRole();
@@ -60,22 +66,44 @@ export class JobMatchingStack extends cdk.Stack {
     });
   }
 
-  private createMatchingFunction(table: dynamodb.Table, cloudfrontDomain: string): lambda.Function {
+  /**
+   * Creates the RecruiterProfiles table with enhanced schema
+   * @param isProd Whether this is a production deployment
+   * @returns The created DynamoDB table
+   */
+  private createRecruiterProfilesTable(isProd: boolean): dynamodb.Table {
+    return new dynamodb.Table(this, 'RecruiterProfilesTable', {
+      tableName: `RecruiterProfiles-${this.stage}`,
+      partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+      deletionProtection: isProd,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: isProd }
+    });
+  }
+
+  private createMatchingFunction(
+    matchingTable: dynamodb.Table,
+    recruiterProfilesTable: dynamodb.Table,
+    cloudfrontDomain: string
+  ): lambda.Function {
     const fn = new lambda.Function(this, 'JobMatchingFunction', {
       functionName: `job-matching-${this.stage}`,
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X, // Updated to Node.js 22
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../functions/job-matching')),
       environment: {
-        MATCHING_TABLE_NAME: table.tableName,
+        MATCHING_TABLE_NAME: matchingTable.tableName,
+        RECRUITER_PROFILES_TABLE_NAME: recruiterProfilesTable.tableName,
         ALLOWED_ORIGIN: cloudfrontDomain
       },
       timeout: cdk.Duration.seconds(10),
       memorySize: 256
     });
 
-    // Grant Lambda function read access to DynamoDB table
-    table.grantReadData(fn);
+    // Grant Lambda function read access to DynamoDB tables
+    matchingTable.grantReadData(fn);
+    recruiterProfilesTable.grantReadWriteData(fn); // Grant read/write access to the new table
 
     return fn;
   }

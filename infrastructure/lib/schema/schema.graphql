@@ -66,7 +66,7 @@ type Query {
   listProjects: [Project] @aws_iam @aws_api_key @aws_cognito_user_pools
   getJobMatching: JobMatching @aws_cognito_user_pools
   getJobMatchingByLinkId(linkId: String!): JobMatching @aws_cognito_user_pools
-  askAIQuestion(question: String!): AIResponse @aws_cognito_user_pools
+  askAIQuestion(question: String!): AIResponse @aws_api_key @aws_cognito_user_pools
   testPromptGeneration(question: String): PromptTestResponse @aws_api_key @aws_cognito_user_pools
 }
 
