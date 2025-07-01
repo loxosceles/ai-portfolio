@@ -1,6 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
+import { ModelRegistry } from './adapters/model-registry.mjs';
 
 // Initialize DynamoDB client
 const dynamodb = new DynamoDBClient({ region: 'eu-central-1' });
@@ -167,8 +168,14 @@ async function generateAIResponse(question, recruiterData) {
       `;
     }
 
-    // Using configurable AI model
-    const modelId = process.env.BEDROCK_MODEL_ID || 'amazon.titan-text-express-v1';
+    // Get model ID from environment variables
+    const modelId = process.env.BEDROCK_MODEL_ID;
+    if (!modelId) {
+      throw new Error('BEDROCK_MODEL_ID environment variable is not set');
+    }
+
+    // Get the appropriate adapter for this model
+    const adapter = ModelRegistry.getAdapter(modelId);
 
     const prompt = `
       ${context}
@@ -188,14 +195,12 @@ async function generateAIResponse(question, recruiterData) {
       Keep your response professional, concise (around 150 words), and focused on the question asked.
     `;
 
-    const payload = {
-      inputText: prompt,
-      textGenerationConfig: {
-        maxTokenCount: 300,
-        temperature: 0.7,
-        topP: 0.9
-      }
-    };
+    // Format the payload using the adapter
+    const payload = adapter.formatPrompt(prompt, {
+      maxTokens: 300,
+      temperature: 0.7,
+      topP: 0.9
+    });
 
     const command = new InvokeModelCommand({
       modelId,
@@ -207,12 +212,17 @@ async function generateAIResponse(question, recruiterData) {
     const response = await bedrockClient.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
 
-    return (
-      responseBody.results?.[0]?.outputText ||
-      'Sorry, I could not generate a response at this time.'
-    );
+    // Parse the response using the adapter
+    return adapter.parseResponse(responseBody);
   } catch (error) {
     console.error('AI generation error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      stack: error.stack,
+      metadata: error.$metadata
+    });
     return 'Sorry, I could not generate a response at this time. Please try again later.';
   }
 }
