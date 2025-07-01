@@ -20,6 +20,36 @@ export class AIAdvocateResolverConstruct extends Construct {
   constructor(scope: Construct, id: string, props: AIAdvocateResolverProps) {
     super(scope, id);
 
+    // Validate Bedrock model ID
+    if (!props.bedrockModelId) {
+      throw new Error('bedrockModelId is required for AI Advocate resolver');
+    }
+    const modelIdForValidation = props.bedrockModelId;
+
+    // Import the ModelRegistry bridge to validate the model ID
+    // This is more robust than parsing the file with regex
+    try {
+      // Use the bridge file which exposes ES module functionality to CommonJS
+      const modelRegistryBridgePath = path.join(
+        __dirname,
+        '../functions/ai-advocate/adapters/model-registry-bridge.js'
+      );
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const modelRegistryBridge = require(modelRegistryBridgePath);
+
+      // Get the list of supported models directly from the bridge
+      const supportedModels = modelRegistryBridge.getSupportedModels();
+
+      if (!supportedModels.includes(modelIdForValidation)) {
+        throw new Error(
+          `Unsupported model: ${modelIdForValidation}. Supported models: ${supportedModels.join(', ')}`
+        );
+      }
+    } catch (error) {
+      throw new Error(`Failed to validate model ID: ${error.message}`);
+    }
+
     // Create Lambda function
     this.function = new lambda.Function(this, 'AIAdvocateFunction', {
       functionName: `ai-advocate-${props.stage}`,
@@ -28,7 +58,7 @@ export class AIAdvocateResolverConstruct extends Construct {
       code: lambda.Code.fromAsset(path.join(__dirname, '../functions/ai-advocate')),
       environment: {
         MATCHING_TABLE_NAME: props.jobMatchingTable.tableName,
-        BEDROCK_MODEL_ID: props.bedrockModelId || 'amazon.titan-text-express-v1'
+        BEDROCK_MODEL_ID: props.bedrockModelId
       },
       timeout: cdk.Duration.seconds(30), // Increased timeout for AI operations
       memorySize: 512 // Increased memory for AI operations
@@ -38,11 +68,12 @@ export class AIAdvocateResolverConstruct extends Construct {
     props.jobMatchingTable.grantReadData(this.function);
 
     // Grant Bedrock access for AI functionality
-    const modelId = props.bedrockModelId || 'amazon.titan-text-express-v1';
     const isProd = props.stage === 'prod';
 
     // In production, scope down to specific model; in dev allow broader access
-    const resources = isProd ? [`arn:aws:bedrock:us-east-1::foundation-model/${modelId}`] : ['*'];
+    const resources = isProd
+      ? [`arn:aws:bedrock:eu-central-1::foundation-model/${props.bedrockModelId}`]
+      : ['*'];
 
     this.function.addToRolePolicy(
       new iam.PolicyStatement({
