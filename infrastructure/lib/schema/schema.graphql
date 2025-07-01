@@ -53,6 +53,12 @@ type AIResponse @aws_iam @aws_cognito_user_pools @aws_api_key {
   context: String
 }
 
+type PromptTestResponse @aws_iam @aws_cognito_user_pools @aws_api_key {
+  success: Boolean!
+  message: String!
+  details: AWSJSON
+}
+
 type Query {
   getDeveloper(id: ID!): Developer @aws_iam @aws_api_key @aws_cognito_user_pools
   listDevelopers: [Developer] @aws_iam @aws_api_key @aws_cognito_user_pools
@@ -61,6 +67,7 @@ type Query {
   getJobMatching: JobMatching @aws_cognito_user_pools
   getJobMatchingByLinkId(linkId: String!): JobMatching @aws_cognito_user_pools
   askAIQuestion(question: String!): AIResponse @aws_cognito_user_pools
+  testPromptGeneration(question: String): PromptTestResponse @aws_api_key @aws_cognito_user_pools
 }
 
 type Mutation {
