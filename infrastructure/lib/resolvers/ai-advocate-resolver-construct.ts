@@ -5,7 +5,6 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as path from 'path';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as fs from 'fs';
 
 export interface AIAdvocateResolverProps {
   api: appsync.GraphqlApi;
@@ -27,34 +26,28 @@ export class AIAdvocateResolverConstruct extends Construct {
     }
     const modelIdForValidation = props.bedrockModelId;
 
-    // Get the list of supported models from the model registry
-    // This is a simple approach - in a real-world scenario, you might want to
-    // import the actual ModelRegistry class, but for simplicity we'll parse the file
-    const modelRegistryPath = path.join(
-      __dirname,
-      '../functions/ai-advocate/adapters/model-registry.mjs'
-    );
-    const modelRegistryContent = fs.readFileSync(modelRegistryPath, 'utf8');
-
-    // Extract supported models using regex
-    const supportedModelsMatch = modelRegistryContent.match(/static adapters = \{([^}]*)\}/s);
-    if (!supportedModelsMatch) {
-      throw new Error('Could not determine supported models from model registry');
-    }
-
-    const supportedModelsStr = supportedModelsMatch[1];
-    const modelRegex = /'([^']+)'/g;
-    const supportedModels: string[] = [];
-    let match;
-
-    while ((match = modelRegex.exec(supportedModelsStr)) !== null) {
-      supportedModels.push(match[1]);
-    }
-
-    if (!supportedModels.includes(modelIdForValidation)) {
-      throw new Error(
-        `Unsupported model: ${modelIdForValidation}. Supported models: ${supportedModels.join(', ')}`
+    // Import the ModelRegistry bridge to validate the model ID
+    // This is more robust than parsing the file with regex
+    try {
+      // Use the bridge file which exposes ES module functionality to CommonJS
+      const modelRegistryBridgePath = path.join(
+        __dirname,
+        '../functions/ai-advocate/adapters/model-registry-bridge.js'
       );
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const modelRegistryBridge = require(modelRegistryBridgePath);
+
+      // Get the list of supported models directly from the bridge
+      const supportedModels = modelRegistryBridge.getSupportedModels();
+
+      if (!supportedModels.includes(modelIdForValidation)) {
+        throw new Error(
+          `Unsupported model: ${modelIdForValidation}. Supported models: ${supportedModels.join(', ')}`
+        );
+      }
+    } catch (error) {
+      throw new Error(`Failed to validate model ID: ${error.message}`);
     }
 
     // Create Lambda function
