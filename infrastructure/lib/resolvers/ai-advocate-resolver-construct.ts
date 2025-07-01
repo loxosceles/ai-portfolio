@@ -5,6 +5,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as path from 'path';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { getSupportedModels } from './supported-models';
 
 export interface AIAdvocateResolverProps {
   api: appsync.GraphqlApi;
@@ -26,20 +27,9 @@ export class AIAdvocateResolverConstruct extends Construct {
     }
     const modelIdForValidation = props.bedrockModelId;
 
-    // Import the ModelRegistry bridge to validate the model ID
-    // This is more robust than parsing the file with regex
+    // Validate the model ID using our TypeScript adapter
     try {
-      // Use the bridge file which exposes ES module functionality to CommonJS
-      const modelRegistryBridgePath = path.join(
-        __dirname,
-        '../functions/ai-advocate/adapters/model-registry-bridge.js'
-      );
-
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const modelRegistryBridge = require(modelRegistryBridgePath);
-
-      // Get the list of supported models directly from the bridge
-      const supportedModels = modelRegistryBridge.getSupportedModels();
+      const supportedModels = getSupportedModels();
 
       if (!supportedModels.includes(modelIdForValidation)) {
         throw new Error(
@@ -47,7 +37,8 @@ export class AIAdvocateResolverConstruct extends Construct {
         );
       }
     } catch (error) {
-      throw new Error(`Failed to validate model ID: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to validate model ID: ${errorMessage}`);
     }
 
     // Create Lambda function

@@ -20,6 +20,7 @@ The adapter pattern consists of the following components:
 - **ModelAdapter**: An abstract class that defines the interface for all adapters
 - **Concrete Adapters**: Implementations for specific models (e.g., TitanExpressAdapter)
 - **ModelRegistry**: A registry of all supported models and their adapters
+- **Supported Models List**: A separate TypeScript implementation for infrastructure validation
 
 ## Supported Models
 
@@ -40,6 +41,10 @@ The adapters are implemented using ES modules in the following files:
 - `titan-lite-adapter.mjs`: Adapter for Amazon Titan Text Lite model
 - `ollama-adapter.mjs`: Adapter for Ollama models
 - `model-registry.mjs`: Registry of all supported models
+
+Additionally, for infrastructure code (CDK), we use:
+
+- `supported-models.ts`: TypeScript list of supported models for infrastructure validation
 
 ## Adding a New Model
 
@@ -117,3 +122,27 @@ throw new Error(
 ## Configuration
 
 The model ID is specified in the environment variable `BEDROCK_MODEL_ID`. This is validated during deployment to ensure only supported models are used.
+
+## Module System Separation
+
+The project uses two different module systems:
+
+1. **CommonJS (TypeScript)**: Used for infrastructure code (CDK)
+2. **ES Modules (.mjs)**: Used for Lambda functions
+
+To handle this separation cleanly, we maintain two separate implementations of the model registry:
+
+1. **model-registry.mjs**: Full ES module implementation with adapters used by Lambda functions
+2. **supported-models.ts**: Simple list of supported models used by infrastructure code for validation
+
+When adding new models, you must update both files to keep them in sync. See [Model Management Guide](./model-management.md) for detailed instructions.
+
+### Why Two Implementations?
+
+This separation follows clean architecture principles by:
+
+1. Respecting layer boundaries between infrastructure and function code
+2. Avoiding module system conflicts (CommonJS vs ES Modules)
+3. Keeping each implementation focused on its specific needs
+
+The infrastructure code only needs to know which models are valid, while the Lambda functions need the full implementation details of how to work with each model.
