@@ -126,11 +126,14 @@ async function handleAskAIQuestion(event) {
     linkId = claims.username.split('@')[0];
   }
 
-  // Get recruiter data for context
+  // Get recruiter data for context - use only RecruiterProfiles table
   let recruiterData = null;
   if (linkId) {
-    const tableName = process.env.MATCHING_TABLE_NAME;
-    recruiterData = await getMatchingData(tableName, linkId);
+    recruiterData = await getRecruiterProfile(linkId);
+    
+    if (recruiterData) {
+      console.log('Using recruiter profile data for linkId:', linkId);
+    }
   }
 
   // Generate AI response
@@ -163,11 +166,29 @@ async function handleTestPromptGeneration(event) {
     linkId = claims.username.split('@')[0];
   }
   
-  // Get recruiter data for context
+  // Get recruiter data for context - use only RecruiterProfiles table
   let recruiterData = null;
   if (linkId) {
-    const tableName = process.env.MATCHING_TABLE_NAME;
-    recruiterData = await getMatchingData(tableName, linkId);
+    recruiterData = await getRecruiterProfile(linkId);
+    
+    if (recruiterData) {
+      console.log('Using recruiter profile data for linkId:', linkId);
+    } else {
+      // For testing, create a sample recruiter profile if none exists
+      recruiterData = {
+        linkId: 'test-link',
+        recruiterName: 'Test Recruiter',
+        companyName: 'Test Company',
+        jobTitle: 'Senior Cloud Developer',
+        jobDescription: 'Looking for an experienced developer with strong AWS skills',
+        requiredSkills: ['AWS', 'React', 'Node.js', 'TypeScript'],
+        preferredSkills: ['CDK', 'Serverless', 'DynamoDB', 'Lambda'],
+        companyIndustry: 'Technology',
+        companySize: 'Medium (100-500 employees)',
+        context: 'Expanding the development team for a new cloud project'
+      };
+      console.log('Using sample recruiter profile for testing');
+    }
   }
   
   // Run the test
@@ -192,6 +213,29 @@ async function getMatchingData(tableName, linkId) {
     return response.Item;
   } catch (error) {
     console.error('DynamoDB error:', error);
+    return null;
+  }
+}
+
+// Get recruiter profile data from DynamoDB
+async function getRecruiterProfile(linkId) {
+  try {
+    // Check if the recruiter profiles table name is set
+    const tableName = process.env.RECRUITER_PROFILES_TABLE_NAME;
+    if (!tableName) {
+      console.log('RECRUITER_PROFILES_TABLE_NAME not set, skipping recruiter profile lookup');
+      return null;
+    }
+    
+    const command = new GetCommand({
+      TableName: tableName,
+      Key: { linkId }
+    });
+
+    const response = await docClient.send(command);
+    return response.Item;
+  } catch (error) {
+    console.error('DynamoDB error when fetching recruiter profile:', error);
     return null;
   }
 }

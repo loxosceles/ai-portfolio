@@ -10,7 +10,8 @@ import { getSupportedModels } from './supported-models';
 export interface AIAdvocateResolverProps {
   api: appsync.GraphqlApi;
   jobMatchingTable: dynamodb.ITable;
-  developerTable: dynamodb.ITable; // Added developer table
+  recruiterProfilesTable?: dynamodb.ITable;
+  developerTable: dynamodb.ITable;
   stage: string;
   bedrockModelId?: string;
 }
@@ -45,7 +46,8 @@ export class AIAdvocateResolverConstruct extends Construct {
       code: lambda.Code.fromAsset(path.join(__dirname, '../functions/ai-advocate')),
       environment: {
         MATCHING_TABLE_NAME: props.jobMatchingTable.tableName,
-        DEVELOPER_TABLE_NAME: props.developerTable.tableName, // Added developer table name
+        DEVELOPER_TABLE_NAME: props.developerTable.tableName,
+        RECRUITER_PROFILES_TABLE_NAME: props.recruiterProfilesTable?.tableName || '',
         BEDROCK_MODEL_ID: props.bedrockModelId
       },
       timeout: cdk.Duration.seconds(30), // Increased timeout for AI operations
@@ -54,7 +56,12 @@ export class AIAdvocateResolverConstruct extends Construct {
 
     // Grant DynamoDB read access
     props.jobMatchingTable.grantReadData(this.function);
-    props.developerTable.grantReadData(this.function); // Grant read access to developer table
+    props.developerTable.grantReadData(this.function);
+
+    // Grant read access to recruiter profiles table if provided
+    if (props.recruiterProfilesTable) {
+      props.recruiterProfilesTable.grantReadData(this.function);
+    }
 
     // Grant Bedrock access for AI functionality
     const isProd = props.stage === 'prod';

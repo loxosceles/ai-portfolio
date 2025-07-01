@@ -1,0 +1,7 @@
+query TestPromptGeneration {
+  testPromptGeneration(question: "What experience do you have with AWS and cloud architecture?") {
+    success
+    message
+    details
+  }
+}
