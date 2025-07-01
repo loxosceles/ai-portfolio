@@ -215,14 +215,16 @@ async function generateAIResponse(question, recruiterData) {
     // Parse the response using the adapter
     return adapter.parseResponse(responseBody);
   } catch (error) {
-    console.error('AI generation error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      name: error.name,
-      stack: error.stack,
-      metadata: error.$metadata
-    });
+    console.error('AI generation error:', error.message);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        name: error.name,
+        stack: error.stack,
+        metadata: error.$metadata
+      });
+    }
     return 'Sorry, I could not generate a response at this time. Please try again later.';
   }
 }
