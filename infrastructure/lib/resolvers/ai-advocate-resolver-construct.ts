@@ -28,17 +28,12 @@ export class AIAdvocateResolverConstruct extends Construct {
     const modelIdForValidation = props.bedrockModelId;
 
     // Validate the model ID using our TypeScript adapter
-    try {
-      const supportedModels = getSupportedModels();
+    const supportedModels = getSupportedModels();
 
-      if (!supportedModels.includes(modelIdForValidation)) {
-        throw new Error(
-          `Unsupported model: ${modelIdForValidation}. Supported models: ${supportedModels.join(', ')}`
-        );
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to validate model ID: ${errorMessage}`);
+    if (!supportedModels.includes(modelIdForValidation)) {
+      throw new Error(
+        `Unsupported model: ${modelIdForValidation}. Supported models: ${supportedModels.join(', ')}`
+      );
     }
 
     // Create Lambda function
@@ -62,6 +57,7 @@ export class AIAdvocateResolverConstruct extends Construct {
     const isProd = props.stage === 'prod';
 
     // In production, scope down to specific model; in dev allow broader access
+    // Note: Bedrock availability varies by AWS account - ensure your account has access to Bedrock in eu-central-1
     const resources = isProd
       ? [`arn:aws:bedrock:eu-central-1::foundation-model/${props.bedrockModelId}`]
       : ['*'];
