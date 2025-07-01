@@ -125,9 +125,28 @@ graph TB
 
 ## Documentation
 
-- [Infrastructure (Backend)](docs/infrastructure.md)
-- [Frontend (Next.js)](docs/frontend.md)
-- [Deployment Guide](docs/deployment.md)
-- [Security Policy](docs/security-policy.md)
-- [Further Development Ideas](docs/further-development-ideas.md)
+### Architecture & Implementation
+
+- [AI Portfolio Detailed](docs/ai-portfolio-detailed.md)
 - [AI Advocate Implementation Plan](docs/ai-advocate-implementation-plan.md)
+- [Authentication Flow](docs/auth-flow.md)
+- [Model Adapters for AI Advocate](docs/model-adapters.md)
+
+### Features
+
+- [Image Processor Card](docs/image-processor-card.md)
+- [Image Processor Detailed](docs/image-processor-detailed.md)
+- [Web3 Snapshot Card](docs/web3snapshot-card.md)
+- [Web3 Snapshot Detailed](docs/web3snapshot-detailed.md)
+
+### Deployment & Operations
+
+- [Deployment Guide](docs/deployment.md)
+- [Deployment Pipeline](docs/deployment-pipeline.md)
+- [CodePipeline Deployment](docs/codepipeline-deployment.md)
+- [S3 Bucket Regions](docs/s3-bucket-regions.md)
+- [Security Policy](docs/security-policy.md)
+
+### Future Development
+
+- [Further Development Ideas](docs/further-development-ideas.md)
