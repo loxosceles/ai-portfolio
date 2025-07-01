@@ -2,6 +2,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import { ModelRegistry } from './adapters/model-registry.mjs';
+import { generateDynamicPrompt, testPromptGeneration } from './prompt-generator.mjs';
 
 // Initialize DynamoDB client
 const dynamodb = new DynamoDBClient({ region: 'eu-central-1' });
@@ -39,6 +40,9 @@ export const handler = async (event) => {
 
       case 'askAIQuestion':
         return await handleAskAIQuestion(event);
+        
+      case 'testPromptGeneration':
+        return await handleTestPromptGeneration(event);
 
       default:
         throw new Error(`Unhandled field: ${fieldName}`);
@@ -140,6 +144,42 @@ async function handleAskAIQuestion(event) {
   };
 }
 
+/**
+ * Handle test prompt generation request
+ * This is a special endpoint for testing the prompt generation functionality
+ */
+async function handleTestPromptGeneration(event) {
+  const question = event.arguments?.question || 'What are your skills?';
+  
+  // Extract linkId from JWT claims for context
+  const claims = event.identity?.claims;
+  let linkId = claims?.['custom:linkId'] || claims?.sub;
+  
+  if (!linkId && typeof claims?.email === 'string') {
+    linkId = claims.email.split('@')[0];
+  }
+  
+  if (!linkId && typeof claims?.username === 'string') {
+    linkId = claims.username.split('@')[0];
+  }
+  
+  // Get recruiter data for context
+  let recruiterData = null;
+  if (linkId) {
+    const tableName = process.env.MATCHING_TABLE_NAME;
+    recruiterData = await getMatchingData(tableName, linkId);
+  }
+  
+  // Run the test
+  const testResults = await testPromptGeneration(question, recruiterData);
+  
+  return {
+    success: testResults.success,
+    message: testResults.success ? 'Prompt generation test successful' : 'Prompt generation test failed',
+    details: testResults
+  };
+}
+
 // Get matching data from DynamoDB
 async function getMatchingData(tableName, linkId) {
   try {
@@ -159,16 +199,6 @@ async function getMatchingData(tableName, linkId) {
 // Generate AI response using Amazon Bedrock
 async function generateAIResponse(question, recruiterData) {
   try {
-    // Create context for the AI based on recruiter data
-    let context = '';
-    if (recruiterData) {
-      context = `
-        You are responding to ${recruiterData.recruiterName} from ${recruiterData.companyName}.
-        Their context is: ${recruiterData.context || 'Not specified'}
-        Skills they might be interested in: ${recruiterData.skills?.join(', ') || 'Not specified'}
-      `;
-    }
-
     // Get model ID from environment variables
     const modelId = process.env.BEDROCK_MODEL_ID;
     if (!modelId) {
@@ -177,24 +207,12 @@ async function generateAIResponse(question, recruiterData) {
 
     // Get the appropriate adapter for this model
     const adapter = ModelRegistry.getAdapter(modelId);
-
-    const prompt = `
-      ${context}
-      
-      You are an AI Advocate representing a developer in a conversation with a recruiter.
-      Answer the following question about the developer's skills, experience, or background:
-      
-      Question: "${question}"
-      
-      Use the following information about the developer to provide an accurate, helpful response:
-      - Full-stack developer with experience in React, Node.js, and AWS
-      - 5+ years of experience building web applications
-      - Experience with cloud architecture, particularly with AWS services
-      - Strong background in serverless architectures and microservices
-      - Passionate about clean code, performance optimization, and user experience
-      
-      Keep your response professional, concise (around 150 words), and focused on the question asked.
-    `;
+    
+    // Generate dynamic prompt based on developer profile and recruiter context
+    const prompt = await generateDynamicPrompt(question, recruiterData);
+    
+    // Log the prompt for debugging
+    console.log('Using prompt:', prompt);
 
     // Format the payload using the adapter
     const payload = adapter.formatPrompt(prompt, {

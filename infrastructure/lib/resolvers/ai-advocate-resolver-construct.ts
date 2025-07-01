@@ -10,6 +10,7 @@ import { getSupportedModels } from './supported-models';
 export interface AIAdvocateResolverProps {
   api: appsync.GraphqlApi;
   jobMatchingTable: dynamodb.ITable;
+  developerTable: dynamodb.ITable; // Added developer table
   stage: string;
   bedrockModelId?: string;
 }
@@ -39,11 +40,12 @@ export class AIAdvocateResolverConstruct extends Construct {
     // Create Lambda function
     this.function = new lambda.Function(this, 'AIAdvocateFunction', {
       functionName: `ai-advocate-${props.stage}`,
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_22_X, // Updated to Node.js 22
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../functions/ai-advocate')),
       environment: {
         MATCHING_TABLE_NAME: props.jobMatchingTable.tableName,
+        DEVELOPER_TABLE_NAME: props.developerTable.tableName, // Added developer table name
         BEDROCK_MODEL_ID: props.bedrockModelId
       },
       timeout: cdk.Duration.seconds(30), // Increased timeout for AI operations
@@ -52,6 +54,7 @@ export class AIAdvocateResolverConstruct extends Construct {
 
     // Grant DynamoDB read access
     props.jobMatchingTable.grantReadData(this.function);
+    props.developerTable.grantReadData(this.function); // Grant read access to developer table
 
     // Grant Bedrock access for AI functionality
     const isProd = props.stage === 'prod';
@@ -85,6 +88,12 @@ export class AIAdvocateResolverConstruct extends Construct {
     this.dataSource.createResolver('AskAIQuestionResolver', {
       typeName: 'Query',
       fieldName: 'askAIQuestion'
+    });
+
+    // Add test resolver for prompt generation
+    this.dataSource.createResolver('TestPromptGenerationResolver', {
+      typeName: 'Query',
+      fieldName: 'testPromptGeneration'
     });
   }
 }

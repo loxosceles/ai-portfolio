@@ -236,9 +236,17 @@ export class ApiStack extends cdk.Stack {
    */
   private createAIResolvers(jobMatchingTable?: dynamodb.ITable, bedrockModelId?: string) {
     if (jobMatchingTable) {
+      // Find the developer table that was created in createDynamoDBTables
+      const developerTable = this.node.findChild('DeveloperTable') as dynamodb.Table;
+
+      if (!developerTable) {
+        throw new Error('Developer table not found. Make sure it is created before AI resolvers.');
+      }
+
       new AIAdvocateResolverConstruct(this, 'AIAdvocateResolver', {
         api: this.api,
         jobMatchingTable,
+        developerTable, // Pass the developer table
         stage: this.stage,
         bedrockModelId
       });
