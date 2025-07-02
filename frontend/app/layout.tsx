@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import GraphQLProvider from '@/lib/apollo/apollo-provider';
 import { AuthProvider } from '@/lib/auth/auth-context';
-import RecruiterGreetingModal from '@/components/recruiter-greeting-modal';
+import AdvocateGreetingModal from '@/components/advocate-greeting-modal';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <AuthProvider>
           <GraphQLProvider>
-            <RecruiterGreetingModal />
+            <AdvocateGreetingModal />
             {children}
           </GraphQLProvider>
         </AuthProvider>
