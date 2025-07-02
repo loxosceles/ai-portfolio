@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
-export const GET_JOB_MATCHING = gql`
-  query GetJobMatching {
-    getJobMatching {
+export const GET_ADVOCATE_GREETING = gql`
+  query GetAdvocateGreeting {
+    getAdvocateGreeting {
       linkId
       companyName
       recruiterName
@@ -14,8 +14,8 @@ export const GET_JOB_MATCHING = gql`
   }
 `;
 
-export const GET_DEVELOPER_WITH_JOB_MATCHING = gql`
-  query GetDeveloperWithJobMatching($id: ID!) {
+export const GET_DEVELOPER_WITH_ADVOCATE_GREETING = gql`
+  query GetDeveloperWithAdvocateGreeting($id: ID!) {
     getDeveloper(id: $id) {
       id
       name
@@ -49,7 +49,7 @@ export const GET_DEVELOPER_WITH_JOB_MATCHING = gql`
         order
       }
     }
-    getJobMatching {
+    getAdvocateGreeting {
       linkId
       companyName
       recruiterName

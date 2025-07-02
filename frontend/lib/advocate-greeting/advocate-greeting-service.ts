@@ -1,6 +1,6 @@
 'use client';
 
-export interface JobMatchingData {
+export interface AdvocateGreetingData {
   linkId: string;
   companyName?: string;
   recruiterName?: string;
@@ -10,8 +10,8 @@ export interface JobMatchingData {
   skills?: string[];
 }
 
-export const jobMatchingService = {
-  async getJobMatchingData(): Promise<JobMatchingData | null> {
+export const advocateGreetingService = {
+  async getAdvocateGreetingData(): Promise<AdvocateGreetingData | null> {
     return null;
   }
 };
