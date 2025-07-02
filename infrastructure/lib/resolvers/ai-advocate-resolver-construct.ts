@@ -5,10 +5,13 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as path from 'path';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { getSupportedModels } from './supported-models';
 
 export interface AIAdvocateResolverProps {
   api: appsync.GraphqlApi;
   jobMatchingTable: dynamodb.ITable;
+  recruiterProfilesTable?: dynamodb.ITable;
+  developerTable: dynamodb.ITable;
   stage: string;
   bedrockModelId?: string;
 }
@@ -20,15 +23,32 @@ export class AIAdvocateResolverConstruct extends Construct {
   constructor(scope: Construct, id: string, props: AIAdvocateResolverProps) {
     super(scope, id);
 
+    // Validate Bedrock model ID
+    if (!props.bedrockModelId) {
+      throw new Error('bedrockModelId is required for AI Advocate resolver');
+    }
+    const modelIdForValidation = props.bedrockModelId;
+
+    // Validate the model ID using our TypeScript adapter
+    const supportedModels = getSupportedModels();
+
+    if (!supportedModels.includes(modelIdForValidation)) {
+      throw new Error(
+        `Unsupported model: ${modelIdForValidation}. Supported models: ${supportedModels.join(', ')}`
+      );
+    }
+
     // Create Lambda function
     this.function = new lambda.Function(this, 'AIAdvocateFunction', {
       functionName: `ai-advocate-${props.stage}`,
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_22_X, // Updated to Node.js 22
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../functions/ai-advocate')),
       environment: {
         MATCHING_TABLE_NAME: props.jobMatchingTable.tableName,
-        BEDROCK_MODEL_ID: props.bedrockModelId || 'amazon.titan-text-express-v1'
+        DEVELOPER_TABLE_NAME: props.developerTable.tableName,
+        RECRUITER_PROFILES_TABLE_NAME: props.recruiterProfilesTable?.tableName || '',
+        BEDROCK_MODEL_ID: props.bedrockModelId
       },
       timeout: cdk.Duration.seconds(30), // Increased timeout for AI operations
       memorySize: 512 // Increased memory for AI operations
@@ -36,13 +56,21 @@ export class AIAdvocateResolverConstruct extends Construct {
 
     // Grant DynamoDB read access
     props.jobMatchingTable.grantReadData(this.function);
+    props.developerTable.grantReadData(this.function);
+
+    // Grant read access to recruiter profiles table if provided
+    if (props.recruiterProfilesTable) {
+      props.recruiterProfilesTable.grantReadData(this.function);
+    }
 
     // Grant Bedrock access for AI functionality
-    const modelId = props.bedrockModelId || 'amazon.titan-text-express-v1';
     const isProd = props.stage === 'prod';
 
     // In production, scope down to specific model; in dev allow broader access
-    const resources = isProd ? [`arn:aws:bedrock:us-east-1::foundation-model/${modelId}`] : ['*'];
+    // Note: Bedrock availability varies by AWS account - ensure your account has access to Bedrock in eu-central-1
+    const resources = isProd
+      ? [`arn:aws:bedrock:eu-central-1::foundation-model/${props.bedrockModelId}`]
+      : ['*'];
 
     this.function.addToRolePolicy(
       new iam.PolicyStatement({
@@ -54,19 +82,25 @@ export class AIAdvocateResolverConstruct extends Construct {
     // Create data source
     this.dataSource = props.api.addLambdaDataSource('AIAdvocateDataSource', this.function);
 
-    this.dataSource.createResolver('GetJobMatchingResolver', {
+    this.dataSource.createResolver('GetAdvocateGreetingResolver', {
       typeName: 'Query',
-      fieldName: 'getJobMatching'
+      fieldName: 'getAdvocateGreeting'
     });
 
-    this.dataSource.createResolver('GetJobMatchingByLinkIdResolver', {
+    this.dataSource.createResolver('GetAdvocateGreetingByLinkIdResolver', {
       typeName: 'Query',
-      fieldName: 'getJobMatchingByLinkId'
+      fieldName: 'getAdvocateGreetingByLinkId'
     });
 
     this.dataSource.createResolver('AskAIQuestionResolver', {
       typeName: 'Query',
       fieldName: 'askAIQuestion'
+    });
+
+    // Add test resolver for prompt generation
+    this.dataSource.createResolver('TestPromptGenerationResolver', {
+      typeName: 'Query',
+      fieldName: 'testPromptGeneration'
     });
   }
 }

@@ -16,8 +16,22 @@ dotenv.config({
 
 const app = new cdk.App();
 
+// Validate required environment variables
 if (!process.env.CDK_DEFAULT_ACCOUNT || !process.env.CDK_DEFAULT_REGION) {
   throw new Error('CDK_DEFAULT_ACCOUNT and CDK_DEFAULT_REGION must be set');
+}
+
+if (!process.env.BEDROCK_MODEL_ID) {
+  // Check if we're running in CodeBuild (CI/CD pipeline)
+  if (process.env.CODEBUILD_BUILD_ID) {
+    throw new Error(
+      'BEDROCK_MODEL_ID environment variable is required. Make sure the parameter exists in SSM at /portfolio/{env}/BEDROCK_MODEL_ID'
+    );
+  } else {
+    throw new Error(
+      'BEDROCK_MODEL_ID environment variable is required. Please set it in the .env file.'
+    );
+  }
 }
 
 const env = {
@@ -59,13 +73,14 @@ const jobMatchingStack = new JobMatchingStack(app, `JobMatchingStack-${stage}`, 
   crossRegionReferences: true
 });
 
-// Create API stack with job matching table
+// Create API stack with job matching table and recruiter profiles table
 const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
   stage: stage as 'dev' | 'prod',
   env,
   userPool: sharedStack.userPool,
   jobMatchingTable: jobMatchingStack.matchingTable,
-  bedrockModelId: process.env.BEDROCK_MODEL_ID || 'amazon.titan-text-lite-v1'
+  recruiterProfilesTable: jobMatchingStack.recruiterProfilesTable,
+  bedrockModelId: process.env.BEDROCK_MODEL_ID
 });
 
 // Create pipeline stacks (separate from application deployment)
