@@ -41,8 +41,8 @@ const testProfile = {
   preferredSkills: ['CDK', 'Serverless', 'DynamoDB', 'Lambda'],
   companyIndustry: 'Technology',
   companySize: 'Medium (100-500 employees)',
-  greeting: 'Hello from Tech Innovations!',
-  message: 'We are impressed with your portfolio and would like to discuss opportunities.',
+  greeting: 'Welcome to the portfolio! I am the AI advocate for this developer.',
+  message: 'I can help answer any questions you might have about the developer\'s skills and experience.',
   createdAt: Date.now(),
   updatedAt: Date.now()
 };
