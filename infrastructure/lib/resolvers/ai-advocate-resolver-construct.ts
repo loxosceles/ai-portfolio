@@ -10,6 +10,8 @@ import { getSupportedModels } from './supported-models';
 export interface AIAdvocateResolverProps {
   api: appsync.GraphqlApi;
   jobMatchingTable: dynamodb.ITable;
+  recruiterProfilesTable?: dynamodb.ITable;
+  developerTable: dynamodb.ITable;
   stage: string;
   bedrockModelId?: string;
 }
@@ -39,11 +41,13 @@ export class AIAdvocateResolverConstruct extends Construct {
     // Create Lambda function
     this.function = new lambda.Function(this, 'AIAdvocateFunction', {
       functionName: `ai-advocate-${props.stage}`,
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_22_X, // Updated to Node.js 22
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../functions/ai-advocate')),
       environment: {
         MATCHING_TABLE_NAME: props.jobMatchingTable.tableName,
+        DEVELOPER_TABLE_NAME: props.developerTable.tableName,
+        RECRUITER_PROFILES_TABLE_NAME: props.recruiterProfilesTable?.tableName || '',
         BEDROCK_MODEL_ID: props.bedrockModelId
       },
       timeout: cdk.Duration.seconds(30), // Increased timeout for AI operations
@@ -52,6 +56,12 @@ export class AIAdvocateResolverConstruct extends Construct {
 
     // Grant DynamoDB read access
     props.jobMatchingTable.grantReadData(this.function);
+    props.developerTable.grantReadData(this.function);
+
+    // Grant read access to recruiter profiles table if provided
+    if (props.recruiterProfilesTable) {
+      props.recruiterProfilesTable.grantReadData(this.function);
+    }
 
     // Grant Bedrock access for AI functionality
     const isProd = props.stage === 'prod';
@@ -72,19 +82,25 @@ export class AIAdvocateResolverConstruct extends Construct {
     // Create data source
     this.dataSource = props.api.addLambdaDataSource('AIAdvocateDataSource', this.function);
 
-    this.dataSource.createResolver('GetJobMatchingResolver', {
+    this.dataSource.createResolver('GetAdvocateGreetingResolver', {
       typeName: 'Query',
-      fieldName: 'getJobMatching'
+      fieldName: 'getAdvocateGreeting'
     });
 
-    this.dataSource.createResolver('GetJobMatchingByLinkIdResolver', {
+    this.dataSource.createResolver('GetAdvocateGreetingByLinkIdResolver', {
       typeName: 'Query',
-      fieldName: 'getJobMatchingByLinkId'
+      fieldName: 'getAdvocateGreetingByLinkId'
     });
 
     this.dataSource.createResolver('AskAIQuestionResolver', {
       typeName: 'Query',
       fieldName: 'askAIQuestion'
+    });
+
+    // Add test resolver for prompt generation
+    this.dataSource.createResolver('TestPromptGenerationResolver', {
+      typeName: 'Query',
+      fieldName: 'testPromptGeneration'
     });
   }
 }

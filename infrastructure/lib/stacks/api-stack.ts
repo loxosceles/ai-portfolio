@@ -16,6 +16,7 @@ interface ApiStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
   stage: 'dev' | 'prod';
   jobMatchingTable?: dynamodb.ITable;
+  recruiterProfilesTable?: dynamodb.ITable;
   bedrockModelId?: string;
 }
 
@@ -25,7 +26,7 @@ export class ApiStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
-    const { stage, userPool, jobMatchingTable } = props;
+    const { stage, userPool, jobMatchingTable, recruiterProfilesTable } = props;
     this.stage = stage;
 
     if (!['dev', 'prod'].includes(this.stage)) {
@@ -46,7 +47,7 @@ export class ApiStack extends cdk.Stack {
     this.createResolvers(dataSources);
 
     // Create AI-powered resolvers (separate from basic CRUD operations)
-    this.createAIResolvers(jobMatchingTable, props.bedrockModelId);
+    this.createAIResolvers(jobMatchingTable, recruiterProfilesTable, props.bedrockModelId);
 
     // Create data loader to populate DynamoDB tables from S3
     this.createDataLoader(stage, developerTable, projectTable);
@@ -234,11 +235,24 @@ export class ApiStack extends cdk.Stack {
    * - Use Lambda data sources with complex logic (Bedrock AI)
    * - Are conditionally created based on feature availability
    */
-  private createAIResolvers(jobMatchingTable?: dynamodb.ITable, bedrockModelId?: string) {
+  private createAIResolvers(
+    jobMatchingTable?: dynamodb.ITable,
+    recruiterProfilesTable?: dynamodb.ITable,
+    bedrockModelId?: string
+  ) {
     if (jobMatchingTable) {
+      // Find the developer table that was created in createDynamoDBTables
+      const developerTable = this.node.findChild('DeveloperTable') as dynamodb.Table;
+
+      if (!developerTable) {
+        throw new Error('Developer table not found. Make sure it is created before AI resolvers.');
+      }
+
       new AIAdvocateResolverConstruct(this, 'AIAdvocateResolver', {
         api: this.api,
         jobMatchingTable,
+        recruiterProfilesTable,
+        developerTable,
         stage: this.stage,
         bedrockModelId
       });

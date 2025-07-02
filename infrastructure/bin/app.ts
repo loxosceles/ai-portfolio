@@ -73,12 +73,13 @@ const jobMatchingStack = new JobMatchingStack(app, `JobMatchingStack-${stage}`, 
   crossRegionReferences: true
 });
 
-// Create API stack with job matching table
+// Create API stack with job matching table and recruiter profiles table
 const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
   stage: stage as 'dev' | 'prod',
   env,
   userPool: sharedStack.userPool,
   jobMatchingTable: jobMatchingStack.matchingTable,
+  recruiterProfilesTable: jobMatchingStack.recruiterProfilesTable,
   bedrockModelId: process.env.BEDROCK_MODEL_ID
 });
 
