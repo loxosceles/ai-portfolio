@@ -2,11 +2,11 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
-import { JobMatchingData } from '@/lib/job-matching/job-matching-service';
+import { AdvocateGreetingData } from '@/lib/advocate-greeting/advocate-greeting-service';
 import { AIResponse } from '@/lib/ai-advocate/use-ai-advocate';
 
-// Mock data for job matching
-const JOB_MATCHING_MOCK: JobMatchingData = {
+// Mock data for advocate greeting
+const ADVOCATE_GREETING_MOCK: AdvocateGreetingData = {
   linkId: 'local-interceptor',
   companyName: 'Local Demo Company',
   recruiterName: 'Local Demo Recruiter',
@@ -42,12 +42,12 @@ export function useLocalRequestInterceptor() {
   // Should intercept if in local environment with visitor parameter
   const shouldIntercept = environment === 'local' && !!visitorParam;
 
-  // Generate visitor-specific job matching mock data
-  const getJobMatchingMock = (): JobMatchingData => {
-    if (!visitorParam) return JOB_MATCHING_MOCK;
+  // Generate visitor-specific advocate greeting mock data
+  const getAdvocateGreetingMock = (): AdvocateGreetingData => {
+    if (!visitorParam) return ADVOCATE_GREETING_MOCK;
 
     return {
-      ...JOB_MATCHING_MOCK,
+      ...ADVOCATE_GREETING_MOCK,
       linkId: visitorParam,
       recruiterName: `Local Visitor ${visitorParam.substring(0, 6)}`,
       message: `This is local development mock data for visitor ${visitorParam}. The interceptor is working!`
@@ -85,7 +85,7 @@ export function useLocalRequestInterceptor() {
 
   return {
     shouldIntercept,
-    getJobMatchingMock,
+    getAdvocateGreetingMock,
     getAIAdvocateMock
   };
 }
