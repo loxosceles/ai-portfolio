@@ -82,14 +82,14 @@ export class AIAdvocateResolverConstruct extends Construct {
     // Create data source
     this.dataSource = props.api.addLambdaDataSource('AIAdvocateDataSource', this.function);
 
-    this.dataSource.createResolver('GetJobMatchingResolver', {
+    this.dataSource.createResolver('GetAdvocateGreetingResolver', {
       typeName: 'Query',
-      fieldName: 'getJobMatching'
+      fieldName: 'getAdvocateGreeting'
     });
 
-    this.dataSource.createResolver('GetJobMatchingByLinkIdResolver', {
+    this.dataSource.createResolver('GetAdvocateGreetingByLinkIdResolver', {
       typeName: 'Query',
-      fieldName: 'getJobMatchingByLinkId'
+      fieldName: 'getAdvocateGreetingByLinkId'
     });
 
     this.dataSource.createResolver('AskAIQuestionResolver', {

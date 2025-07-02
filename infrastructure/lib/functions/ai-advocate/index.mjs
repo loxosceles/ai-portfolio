@@ -2,7 +2,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import { ModelRegistry } from './adapters/model-registry.mjs';
-import { generateDynamicPrompt, testPromptGeneration } from './prompt-generator.mjs';
+import { generateDynamicPrompt, testPromptGeneration, isAppropriateQuestion } from './prompt-generator.mjs';
 
 // Initialize DynamoDB client
 const dynamodb = new DynamoDBClient({ region: 'eu-central-1' });
@@ -32,11 +32,11 @@ export const handler = async (event) => {
 
   try {
     switch (fieldName) {
-      case 'getJobMatching':
-        return await handleGetJobMatching(event);
+      case 'getAdvocateGreeting':
+        return await handleGetAdvocateGreeting(event);
 
-      case 'getJobMatchingByLinkId':
-        return await handleGetJobMatchingByLinkId(event);
+      case 'getAdvocateGreetingByLinkId':
+        return await handleGetAdvocateGreetingByLinkId(event);
 
       case 'askAIQuestion':
         return await handleAskAIQuestion(event);
@@ -61,7 +61,7 @@ export const handler = async (event) => {
   }
 };
 
-async function handleGetJobMatching(event) {
+async function handleGetAdvocateGreeting(event) {
   // Extract linkId from JWT claims (AppSync context)
   const claims = event.identity?.claims;
 
@@ -81,27 +81,67 @@ async function handleGetJobMatching(event) {
     return createDefaultResponse();
   }
 
-  // Get matching data from DynamoDB
-  const tableName = process.env.MATCHING_TABLE_NAME;
-  const result = await getMatchingData(tableName, linkId);
-
-  // Return the result or a default response with the linkId
-  return result || createDefaultResponse(linkId);
+  // Get recruiter profile data from DynamoDB
+  const recruiterData = await getRecruiterProfile(linkId);
+  
+  // If no recruiter profile found, try the legacy table as fallback
+  if (!recruiterData) {
+    const tableName = process.env.MATCHING_TABLE_NAME;
+    if (tableName) {
+      const result = await getMatchingData(tableName, linkId);
+      if (result) {
+        console.log('Using legacy job matching data for greeting');
+        return result;
+      }
+    }
+    return createDefaultResponse(linkId);
+  }
+  
+  // Convert RecruiterProfile to JobMatching format for backward compatibility
+  return {
+    linkId: recruiterData.linkId,
+    companyName: recruiterData.companyName,
+    recruiterName: recruiterData.recruiterName,
+    context: recruiterData.context,
+    greeting: recruiterData.greeting,
+    message: recruiterData.message,
+    skills: recruiterData.requiredSkills || recruiterData.preferredSkills || []
+  };
 }
 
-async function handleGetJobMatchingByLinkId(event) {
+async function handleGetAdvocateGreetingByLinkId(event) {
   const linkId = event.arguments?.linkId;
 
   if (!linkId) {
     return createDefaultResponse();
   }
 
-  // Get matching data from DynamoDB
-  const tableName = process.env.MATCHING_TABLE_NAME;
-  const result = await getMatchingData(tableName, linkId);
-
-  // Return the result or a default response with the linkId
-  return result || createDefaultResponse(linkId);
+  // Get recruiter profile data from DynamoDB
+  const recruiterData = await getRecruiterProfile(linkId);
+  
+  // If no recruiter profile found, try the legacy table as fallback
+  if (!recruiterData) {
+    const tableName = process.env.MATCHING_TABLE_NAME;
+    if (tableName) {
+      const result = await getMatchingData(tableName, linkId);
+      if (result) {
+        console.log('Using legacy job matching data for greeting by linkId');
+        return result;
+      }
+    }
+    return createDefaultResponse(linkId);
+  }
+  
+  // Convert RecruiterProfile to JobMatching format for backward compatibility
+  return {
+    linkId: recruiterData.linkId,
+    companyName: recruiterData.companyName,
+    recruiterName: recruiterData.recruiterName,
+    context: recruiterData.context,
+    greeting: recruiterData.greeting,
+    message: recruiterData.message,
+    skills: recruiterData.requiredSkills || recruiterData.preferredSkills || []
+  };
 }
 
 async function handleAskAIQuestion(event) {
@@ -113,6 +153,9 @@ async function handleAskAIQuestion(event) {
       context: 'Please provide a question to get a response.'
     };
   }
+  
+  // We're no longer pre-filtering questions at the Lambda level
+  // The AI model will handle inappropriate questions with the instructions in the prompt
 
   // Extract linkId from JWT claims for context
   const claims = event.identity?.claims;
@@ -136,15 +179,24 @@ async function handleAskAIQuestion(event) {
     }
   }
 
-  // Generate AI response
-  const answer = await generateAIResponse(question, recruiterData);
+  try {
+    // Generate AI response
+    const answer = await generateAIResponse(question, recruiterData);
 
-  return {
-    answer,
-    context: recruiterData
-      ? `Response for ${recruiterData.recruiterName} from ${recruiterData.companyName}`
-      : null
-  };
+    return {
+      answer,
+      context: recruiterData
+        ? `Response for ${recruiterData.recruiterName} from ${recruiterData.companyName}`
+        : null
+    };
+  } catch (error) {
+    console.error('Error in handleAskAIQuestion:', error);
+    
+    return {
+      answer: 'I apologize, but the AI advocate service is currently unavailable. Please try again later or contact support if this issue persists.',
+      context: 'Service unavailable'
+    };
+  }
 }
 
 /**
@@ -153,6 +205,9 @@ async function handleAskAIQuestion(event) {
  */
 async function handleTestPromptGeneration(event) {
   const question = event.arguments?.question || 'What are your skills?';
+  
+  // We're no longer pre-filtering questions at the Lambda level
+  // The AI model will handle inappropriate questions with the instructions in the prompt
   
   // Extract linkId from JWT claims for context
   const claims = event.identity?.claims;
@@ -185,20 +240,36 @@ async function handleTestPromptGeneration(event) {
         preferredSkills: ['CDK', 'Serverless', 'DynamoDB', 'Lambda'],
         companyIndustry: 'Technology',
         companySize: 'Medium (100-500 employees)',
-        context: 'Expanding the development team for a new cloud project'
+        context: 'Expanding the development team for a new cloud project',
+        greeting: 'Welcome to my portfolio!',
+        message: 'Thank you for your interest in my work. I look forward to discussing how my skills align with your needs.'
       };
       console.log('Using sample recruiter profile for testing');
     }
   }
   
-  // Run the test
-  const testResults = await testPromptGeneration(question, recruiterData);
-  
-  return {
-    success: testResults.success,
-    message: testResults.success ? 'Prompt generation test successful' : 'Prompt generation test failed',
-    details: testResults
-  };
+  try {
+    // Run the test
+    const testResults = await testPromptGeneration(question, recruiterData);
+    
+    return {
+      success: testResults.success,
+      message: testResults.success ? 'Prompt generation test successful' : 'Prompt generation test failed',
+      details: testResults
+    };
+  } catch (error) {
+    console.error('Error in handleTestPromptGeneration:', error);
+    
+    return {
+      success: false,
+      message: 'AI advocate service is currently unavailable',
+      details: {
+        error: error.message,
+        serviceStatus: 'unavailable',
+        recommendation: 'Please check that the developer profile data is properly loaded in DynamoDB.'
+      }
+    };
+  }
 }
 
 // Get matching data from DynamoDB
@@ -288,6 +359,8 @@ async function generateAIResponse(question, recruiterData) {
         metadata: error.$metadata
       });
     }
-    return 'Sorry, I could not generate a response at this time. Please try again later.';
+    
+    // Provide a clear message that the AI service is currently unavailable
+    return 'I apologize, but the AI advocate service is currently unavailable. Our system couldn\'t access the necessary developer profile data to provide an accurate response. Please try again later or contact support if this issue persists.';
   }
 }
