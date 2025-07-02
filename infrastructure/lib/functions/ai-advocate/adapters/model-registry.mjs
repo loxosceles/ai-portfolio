@@ -1,5 +1,6 @@
 import { TitanExpressAdapter } from './titan-express-adapter.mjs';
 import { TitanLiteAdapter } from './titan-lite-adapter.mjs';
+import { ClaudeAdapter } from './claude-adapter.mjs';
 import { OllamaAdapter } from './ollama-adapter.mjs';
 
 /**
@@ -9,6 +10,9 @@ export class ModelRegistry {
   static adapters = {
     'amazon.titan-text-express-v1': new TitanExpressAdapter(),
     'amazon.titan-text-lite-v1': new TitanLiteAdapter(),
+    'anthropic.claude-3-haiku-20240307-v1:0': new ClaudeAdapter(),
+    'anthropic.claude-3-sonnet-20240229-v1:0': new ClaudeAdapter(),
+    'anthropic.claude-3-5-sonnet-20241022-v2:0': new ClaudeAdapter(),
     ollama: new OllamaAdapter()
   };
 
