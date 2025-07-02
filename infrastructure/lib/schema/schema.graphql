@@ -38,7 +38,7 @@ type SkillSet @aws_iam @aws_cognito_user_pools @aws_api_key {
   skills: [String]!
 }
 
-type JobMatching @aws_iam @aws_cognito_user_pools @aws_api_key {
+type AdvocateGreeting @aws_iam @aws_cognito_user_pools @aws_api_key {
   linkId: String!
   companyName: String
   recruiterName: String
@@ -64,9 +64,9 @@ type Query {
   listDevelopers: [Developer] @aws_iam @aws_api_key @aws_cognito_user_pools
   getProject(id: ID!): Project @aws_iam @aws_api_key @aws_cognito_user_pools
   listProjects: [Project] @aws_iam @aws_api_key @aws_cognito_user_pools
-  getJobMatching: JobMatching @aws_cognito_user_pools
-  getJobMatchingByLinkId(linkId: String!): JobMatching @aws_cognito_user_pools
-  askAIQuestion(question: String!): AIResponse @aws_api_key @aws_cognito_user_pools
+  getAdvocateGreeting: AdvocateGreeting @aws_cognito_user_pools
+  getAdvocateGreetingByLinkId(linkId: String!): AdvocateGreeting @aws_cognito_user_pools
+  askAIQuestion(question: String!): AIResponse @aws_cognito_user_pools
   testPromptGeneration(question: String): PromptTestResponse @aws_api_key @aws_cognito_user_pools
 }
 
