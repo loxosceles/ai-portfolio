@@ -11,7 +11,7 @@
     ],
     "tech": ["React", "AWS Lambda", "DynamoDB", "OpenAI API", "TypeScript"],
     "imageUrl": "https://example.com/portfolio-platform.jpg",
-    "developerId": "dev-1"
+    "developerId": "DEVELOPER_PROFILE"
   },
   {
     "id": "proj-2",
@@ -25,7 +25,7 @@
     ],
     "tech": ["Express.js", "JWT", "PostgreSQL", "Redis", "OAuth2.0"],
     "imageUrl": "https://example.com/auth-service.jpg",
-    "developerId": "dev-1"
+    "developerId": "DEVELOPER_PROFILE"
   },
   {
     "id": "proj-3",
@@ -39,6 +39,6 @@
     ],
     "tech": ["Vue.js", "D3.js", "GraphQL", "AWS AppSync", "Elasticsearch"],
     "imageUrl": "https://example.com/analytics-dashboard.jpg",
-    "developerId": "dev-1"
+    "developerId": "DEVELOPER_PROFILE"
   }
 ]

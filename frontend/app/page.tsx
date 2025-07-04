@@ -16,12 +16,10 @@ import { cookieAuth } from '@/lib/auth/cookie-auth';
 import { isLocalEnvironment, getEnvironment } from '@/lib/auth/auth-utils';
 
 const Portfolio = () => {
-  const developerId = 'dev-1';
   const [isChecking, setIsChecking] = useState(true);
   const { getQueryContext } = useAuth();
 
   const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
-    variables: { id: developerId },
     context: getQueryContext('public'),
     onCompleted: (data: { getDeveloper: { name: string } }) => {
       if (isLocalEnvironment()) {
