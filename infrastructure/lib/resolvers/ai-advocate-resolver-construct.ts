@@ -73,16 +73,12 @@ export class AIAdvocateResolverConstruct extends Construct {
       props.recruiterProfilesTable.grantReadWriteData(this.aiAdvocateLambdaFunction);
     }
 
-    // In production, scope down to specific model; in dev allow broader access
+    // Grant Bedrock permissions for the specific model ID
     // Note: Bedrock availability varies by AWS account - ensure your account has access to Bedrock in eu-central-1
-    const resources = isProd
-      ? [`arn:aws:bedrock:eu-central-1::foundation-model/${props.bedrockModelId}`]
-      : ['*'];
-
     this.aiAdvocateLambdaFunction.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ['bedrock:InvokeModel'],
-        resources: resources
+        resources: [`arn:aws:bedrock:eu-central-1::foundation-model/${props.bedrockModelId}`]
       })
     );
 
