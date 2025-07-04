@@ -4,11 +4,11 @@ const PROMPT_RULES = {
   accuracy: [
     {
       priority: 'high',
-      rule: "IMPORTANT: Never claim experience for technologies, frameworks, programming languages or tools which are not explicitly listed in the DEVELOPER_SKILLS section or mentioned in the DEVELOPER_PROJECTS section."
+      rule: 'IMPORTANT: Never claim experience for technologies, frameworks, programming languages or tools which are not explicitly listed in the DEVELOPER_SKILLS section or mentioned in the DEVELOPER_PROJECTS section.'
     },
     {
       priority: 'high',
-      rule: "For specific questions about technologies not listed in the DEVELOPER_SKILLS section, suggest asking [name] directly for the most accurate information."
+      rule: 'For specific questions about technologies not listed in the DEVELOPER_SKILLS section, suggest asking [name] directly for the most accurate information.'
     },
     {
       priority: 'high',
@@ -20,7 +20,7 @@ const PROMPT_RULES = {
   style: [
     {
       priority: 'medium',
-      rule: 'Use natural, conversational language with varied expressions.'
+      rule: 'Use natural, conversational language with varied expressions. Avoid list, bullet points, or overly formal language.'
     },
     {
       priority: 'medium',
@@ -28,7 +28,7 @@ const PROMPT_RULES = {
     },
     {
       priority: 'high',
-      rule: 'Keep answers concise - typically 2 to 4 short sentences, unless the question justifiably requires a more detailed response.'
+      rule: 'Keep answers concise - two to maximum four short sentences should suffice.'
     },
     {
       priority: 'medium',
