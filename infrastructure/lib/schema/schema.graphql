@@ -53,13 +53,7 @@ type AIResponse @aws_iam @aws_cognito_user_pools @aws_api_key {
   context: String
 }
 
-type PromptTestResponse @aws_iam @aws_cognito_user_pools @aws_api_key {
-  success: Boolean!
-  message: String!
-  details: AWSJSON
-}
 
-type Query {
   getDeveloper(id: ID!): Developer @aws_iam @aws_api_key @aws_cognito_user_pools
   listDevelopers: [Developer] @aws_iam @aws_api_key @aws_cognito_user_pools
   getProject(id: ID!): Project @aws_iam @aws_api_key @aws_cognito_user_pools
@@ -67,7 +61,6 @@ type Query {
   getAdvocateGreeting: AdvocateGreeting @aws_cognito_user_pools
   getAdvocateGreetingByLinkId(linkId: String!): AdvocateGreeting @aws_cognito_user_pools
   askAIQuestion(question: String!): AIResponse @aws_cognito_user_pools
-  testPromptGeneration(question: String): PromptTestResponse @aws_api_key @aws_cognito_user_pools
 }
 
 type Mutation {
@@ -77,6 +70,7 @@ type Mutation {
   createProject(input: CreateProjectInput!): Project @aws_api_key @aws_cognito_user_pools
   updateProject(input: UpdateProjectInput!): Project @aws_api_key @aws_cognito_user_pools
   deleteProject(id: ID!): Project @aws_api_key @aws_cognito_user_pools
+  resetConversation: Boolean @aws_cognito_user_pools
 }
 
 input CreateDeveloperInput {
