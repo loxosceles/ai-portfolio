@@ -23,7 +23,7 @@ const docClient = DynamoDBDocumentClient.from(dynamodb);
  * Generates a dynamic prompt based on developer profile and recruiter context
  * @param {string} question - The question asked by the recruiter
  * @param {object} recruiterData - Data about the recruiter from the recruiter profile table
- * @returns {string} - The generated prompt
+ * @returns {object} - Object with systemPrompt and userPrompt
  */
 export async function generateDynamicPrompt(question, recruiterData) {
   try {
@@ -97,17 +97,18 @@ Skills they might be interested in: ${recruiterSkills.join(', ') || 'Not specifi
     const developerName = developerData?.name?.split(' ')[0] || 'the developer';
     const developerFullName = developerData?.name || 'the developer';
 
-    // Build rules section
-    const rulesSection = buildRulesSection(developerName);
+    // Build system prompt (identity + rules)
+    const systemPrompt = `You are an AI Advocate named Alex representing ${developerFullName} in conversations with recruiters.
 
-    // Combine everything into a prompt with named blocks
-    const prompt = `${recruiterContext}
+${buildRulesSection(developerName)}`;
+
+    // Build user prompt (question + context)
+    const userPrompt = `${recruiterContext}
 ${conversationContext}
 
-You are an AI Advocate named Alex representing ${developerFullName} in a conversation with a recruiter.
-Your task is to answer the following question about ${developerName}'s skills, experience, or background in a conversational, helpful way. Answer ONLY this specific question:
-
 Question: "${question}"
+
+Here is the developer information for reference (only use what's relevant to answer the specific question above):
 
 ===DEVELOPER_SKILLS===
 ${skillsSection}
@@ -143,14 +144,13 @@ ${recruiterData.conversationHistory
 ===END_CONVERSATION_HISTORY===
 `
     : ''
-}
+}`;
 
-${rulesSection}`;
+    // For debugging
+    console.log('Generated system prompt:', systemPrompt);
+    console.log('Generated user prompt:', userPrompt);
 
-    // For debugging - log the generated prompt
-    console.log('Generated prompt:', prompt);
-
-    return prompt;
+    return { systemPrompt, userPrompt };
   } catch (error) {
     console.error('Error generating dynamic prompt:', error);
     // Re-throw with more specific error information
