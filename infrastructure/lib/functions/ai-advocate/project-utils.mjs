@@ -47,15 +47,12 @@ export async function getDeveloperProjects(docClient, developerId) {
  */
 export function formatProjectsSection(projects) {
   if (!projects || projects.length === 0) {
-    throw new Error('No projects available for the developer');
+    return '- No projects available';
   }
   
   // Extract and format project information
   return projects.map(project => {
-    const technologies = project.tech?.map(t => t.S || t).join(', ');
-    if (!technologies) {
-      throw new Error(`Project ${project.title || 'unknown'} has no technologies defined`);
-    }
+    const technologies = project.tech?.map(t => t.S || t).join(', ') || 'Various technologies';
     return `- ${project.title}: ${technologies}`;
   }).join('\n');
 }
