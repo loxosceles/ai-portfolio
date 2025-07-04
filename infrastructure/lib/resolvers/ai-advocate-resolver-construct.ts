@@ -18,19 +18,20 @@ export interface AIAdvocateResolverProps {
 
 export class AIAdvocateResolverConstruct extends Construct {
   public readonly dataSource: appsync.LambdaDataSource;
-  public readonly function: lambda.Function;
+  public readonly aiAdvocateLambdaFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: AIAdvocateResolverProps) {
     super(scope, id);
+    const isProd = props.stage === 'prod';
 
     // Validate Bedrock model ID
     if (!props.bedrockModelId) {
       throw new Error('bedrockModelId is required for AI Advocate resolver');
     }
-    const modelIdForValidation = props.bedrockModelId;
 
     // Validate the model ID using our TypeScript adapter
     const supportedModels = getSupportedModels();
+    const modelIdForValidation = props.bedrockModelId;
 
     if (!supportedModels.includes(modelIdForValidation)) {
       throw new Error(
@@ -39,7 +40,7 @@ export class AIAdvocateResolverConstruct extends Construct {
     }
 
     // Create Lambda function
-    this.function = new lambda.Function(this, 'AIAdvocateFunction', {
+    this.aiAdvocateLambdaFunction = new lambda.Function(this, 'AIAdvocateFunction', {
       functionName: `ai-advocate-${props.stage}`,
       runtime: lambda.Runtime.NODEJS_22_X, // Updated to Node.js 22
       handler: 'index.handler',
@@ -55,16 +56,22 @@ export class AIAdvocateResolverConstruct extends Construct {
     });
 
     // Grant DynamoDB read access
-    props.jobMatchingTable.grantReadData(this.function);
-    props.developerTable.grantReadData(this.function);
+    props.jobMatchingTable.grantReadData(this.aiAdvocateLambdaFunction);
+    props.developerTable.grantReadData(this.aiAdvocateLambdaFunction);
 
-    // Grant read access to recruiter profiles table if provided
+    // Grant access to projects table (needed for AI advocate to fetch developer projects)
+    const projectsTableArn = `arn:aws:dynamodb:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:table/PortfolioProjects-${props.stage}`;
+    this.aiAdvocateLambdaFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['dynamodb:Query', 'dynamodb:Scan'],
+        resources: [projectsTableArn]
+      })
+    );
+
+    // Grant read/write access to recruiter profiles table if provided
     if (props.recruiterProfilesTable) {
-      props.recruiterProfilesTable.grantReadData(this.function);
+      props.recruiterProfilesTable.grantReadWriteData(this.aiAdvocateLambdaFunction);
     }
-
-    // Grant Bedrock access for AI functionality
-    const isProd = props.stage === 'prod';
 
     // In production, scope down to specific model; in dev allow broader access
     // Note: Bedrock availability varies by AWS account - ensure your account has access to Bedrock in eu-central-1
@@ -72,7 +79,7 @@ export class AIAdvocateResolverConstruct extends Construct {
       ? [`arn:aws:bedrock:eu-central-1::foundation-model/${props.bedrockModelId}`]
       : ['*'];
 
-    this.function.addToRolePolicy(
+    this.aiAdvocateLambdaFunction.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ['bedrock:InvokeModel'],
         resources: resources
@@ -80,7 +87,10 @@ export class AIAdvocateResolverConstruct extends Construct {
     );
 
     // Create data source
-    this.dataSource = props.api.addLambdaDataSource('AIAdvocateDataSource', this.function);
+    this.dataSource = props.api.addLambdaDataSource(
+      'AIAdvocateDataSource',
+      this.aiAdvocateLambdaFunction
+    );
 
     this.dataSource.createResolver('GetAdvocateGreetingResolver', {
       typeName: 'Query',
@@ -97,10 +107,10 @@ export class AIAdvocateResolverConstruct extends Construct {
       fieldName: 'askAIQuestion'
     });
 
-    // Add test resolver for prompt generation
-    this.dataSource.createResolver('TestPromptGenerationResolver', {
-      typeName: 'Query',
-      fieldName: 'testPromptGeneration'
+    // Add resolver for conversation reset
+    this.dataSource.createResolver('ResetConversationResolver', {
+      typeName: 'Mutation',
+      fieldName: 'resetConversation'
     });
   }
 }
