@@ -12,7 +12,7 @@
 import PROMPT_RULES from './prompt-rules.mjs';
 
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { getDeveloperProjects, formatProjectsSection } from './project-utils.mjs';
 
 // Initialize DynamoDB client
@@ -171,22 +171,20 @@ async function getDeveloperData() {
       return null;
     }
 
-    // Scan the table to get all developer data
-    const command = new ScanCommand({
+    // Get the single developer profile using fixed key
+    const command = new GetCommand({
       TableName: tableName,
-      Limit: 10 // Assuming we have a small number of developer profiles
+      Key: { id: 'DEVELOPER_PROFILE' }
     });
 
     const response = await docClient.send(command);
 
-    if (!response.Items || response.Items.length === 0) {
-      console.warn('No developer profiles found in the table');
+    if (!response.Item) {
+      console.warn('No developer profile found');
       return null;
     }
 
-    // Return the first active developer profile or the first profile if none are marked active
-    const activeProfile = response.Items.find((item) => item.isActive === true);
-    return activeProfile || response.Items[0];
+    return response.Item;
   } catch (error) {
     console.error('Error fetching developer data:', error);
     return null;

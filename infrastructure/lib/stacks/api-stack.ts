@@ -148,26 +148,20 @@ export class ApiStack extends cdk.Stack {
     developerDS: appsync.DynamoDbDataSource;
     projectDS: appsync.DynamoDbDataSource;
   }) {
-    // Developer Resolvers (Public - API key)
-    new DynamoDBResolverConstruct(this, 'GetDeveloper', {
-      dataSource: dataSources.developerDS,
+    // Custom resolver for getDeveloper with fixed key
+    dataSources.developerDS.createResolver('GetDeveloperResolver', {
       typeName: 'Query',
       fieldName: 'getDeveloper',
-      operation: 'get'
-    });
-
-    new DynamoDBResolverConstruct(this, 'ListDevelopers', {
-      dataSource: dataSources.developerDS,
-      typeName: 'Query',
-      fieldName: 'listDevelopers',
-      operation: 'list'
-    });
-
-    new DynamoDBResolverConstruct(this, 'CreateDeveloper', {
-      dataSource: dataSources.developerDS,
-      typeName: 'Mutation',
-      fieldName: 'createDeveloper',
-      operation: 'create'
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        {
+          "version": "2018-05-29",
+          "operation": "GetItem",
+          "key": {
+            "id": $util.dynamodb.toDynamoDBJson("DEVELOPER_PROFILE")
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem()
     });
 
     new DynamoDBResolverConstruct(this, 'UpdateDeveloper', {
@@ -175,13 +169,6 @@ export class ApiStack extends cdk.Stack {
       typeName: 'Mutation',
       fieldName: 'updateDeveloper',
       operation: 'update'
-    });
-
-    new DynamoDBResolverConstruct(this, 'DeleteDeveloper', {
-      dataSource: dataSources.developerDS,
-      typeName: 'Mutation',
-      fieldName: 'deleteDeveloper',
-      operation: 'delete'
     });
 
     // Project Resolvers (Public - API key)
