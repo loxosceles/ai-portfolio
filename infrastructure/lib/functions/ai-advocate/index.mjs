@@ -294,13 +294,13 @@ async function generateAIResponse(question, recruiterData) {
     const adapter = ModelRegistry.getAdapter(modelId);
     
     // Generate dynamic prompt based on developer profile and recruiter context
-    const prompt = await generateDynamicPrompt(question, recruiterData);
+    const promptData = await generateDynamicPrompt(question, recruiterData);
     
     // Format the payload using the adapter, passing conversation history if available
-    const payload = adapter.formatPrompt(prompt, {
-      maxTokens: 300,
-      temperature: 0.3, // Lower temperature for more factual responses
-      topP: 0.9
+    const payload = adapter.formatPrompt(promptData, {
+      maxTokens: 150,
+      temperature: 0.3,
+      topP: 0.7
     }, recruiterData?.conversationHistory);
 
     const command = new InvokeModelCommand({
