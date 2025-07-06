@@ -7,10 +7,15 @@ import fs from 'fs/promises';
 // Load environment variables
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '../../..');
-dotenv.config({ path: path.join(projectRoot, '.env') });
 
 // Get environment from command line args
 const environment = process.argv[2] || 'dev';
+
+// Load environment-specific .env file first
+dotenv.config({ path: path.join(projectRoot, 'infrastructure', `.env.${environment}`) });
+
+// Load common variables from default .env file
+dotenv.config({ path: path.join(projectRoot, 'infrastructure', '.env') });
 
 if (environment !== 'dev' && environment !== 'prod') {
   console.error('Error: Environment must be either "dev" or "prod"');

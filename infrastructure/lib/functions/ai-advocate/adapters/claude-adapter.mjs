@@ -21,28 +21,32 @@ export class ClaudeAdapter extends ModelAdapter {
    */
   formatPrompt(promptData, options = {}, conversationHistory = null) {
     const { systemPrompt, userPrompt } = promptData;
-    
+
     // Build messages array from conversation history (or empty array)
     const messages = [];
-    if (conversationHistory && Array.isArray(conversationHistory) && conversationHistory.length > 0) {
-      conversationHistory.forEach(msg => {
+    if (
+      conversationHistory &&
+      Array.isArray(conversationHistory) &&
+      conversationHistory.length > 0
+    ) {
+      conversationHistory.forEach((msg) => {
         messages.push({
           role: msg.role === 'user' ? 'user' : 'assistant',
           content: msg.content
         });
       });
     }
-    
+
     // Add current user prompt
     messages.push({
-      role: "user",
+      role: 'user',
       content: userPrompt
     });
-    
+
     const modelConfig = { ...DEFAULT_OPTIONS, ...options };
-    
+
     return {
-      anthropic_version: "bedrock-2023-05-31",
+      anthropic_version: 'bedrock-2023-05-31',
       max_tokens: modelConfig.maxTokens,
       temperature: modelConfig.temperature,
       top_p: modelConfig.topP,
@@ -50,7 +54,6 @@ export class ClaudeAdapter extends ModelAdapter {
       messages: messages
     };
   }
-
 
   /**
    * Parse the response from Claude models
@@ -61,16 +64,16 @@ export class ClaudeAdapter extends ModelAdapter {
     if (response.content && Array.isArray(response.content) && response.content.length > 0) {
       return response.content[0].text || '';
     }
-    
+
     // Fallback for different response formats
     if (response.completion) {
       return response.completion;
     }
-    
+
     if (typeof response === 'string') {
       return response;
     }
-    
+
     throw new Error('Unable to parse Claude response: ' + JSON.stringify(response));
   }
 }
