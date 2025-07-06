@@ -9,7 +9,13 @@ import { SharedStack } from '../lib/stacks/shared-stack';
 import { JobMatchingStack } from '../lib/stacks/job-matching-stack';
 import { PipelineStack } from '../lib/stacks/pipeline-stack';
 
-// Load environment variables from .env file
+// Load environment variables from environment-specific .env file
+const environment = process.env.ENVIRONMENT || 'dev';
+dotenv.config({
+  path: path.join(__dirname, '..', `.env.${environment}`)
+});
+
+// Load common variables from default .env file
 dotenv.config({
   path: path.join(__dirname, '..', '.env')
 });
