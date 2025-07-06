@@ -15,9 +15,9 @@ import { addStackOutputs } from '../utils/stack-outputs';
 interface ApiStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
   stage: 'dev' | 'prod';
-  jobMatchingTable?: dynamodb.ITable;
-  recruiterProfilesTable?: dynamodb.ITable;
-  bedrockModelId?: string;
+  jobMatchingTable: dynamodb.ITable;
+  recruiterProfilesTable: dynamodb.ITable;
+  bedrockModelId: string;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -26,62 +26,92 @@ export class ApiStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
-    const { stage, userPool, jobMatchingTable, recruiterProfilesTable } = props;
+    const { stage, userPool, jobMatchingTable, recruiterProfilesTable, bedrockModelId } = props;
     this.stage = stage;
 
     if (!['dev', 'prod'].includes(this.stage)) {
       throw new Error('Stage must be either "dev" or "prod"');
     }
 
+    if (!userPool) {
+      throw new Error('userPool is required');
+    }
+
+    if (!jobMatchingTable) {
+      throw new Error('jobMatchingTable is required');
+    }
+
+    if (!recruiterProfilesTable) {
+      throw new Error('recruiterProfilesTable is required');
+    }
+
+    if (!bedrockModelId) {
+      throw new Error('bedrockModelId is required');
+    }
+
+    // Validate required environment variable for current stage
+    const bucketEnvVar = `${stage.toUpperCase()}_DATA_BUCKET_NAME`;
+    const dataBucketName = process.env[bucketEnvVar] as string | undefined;
+
+    if (!dataBucketName) {
+      throw new Error(`${bucketEnvVar} environment variable is required for ${stage} stage`);
+    }
+
     // Create AppSync API
-    this.api = this.createAppSyncApi(userPool, stage);
+    this.api = this.createAppSyncApi(userPool);
     const isProd = this.stage === 'prod';
 
     // Create DynamoDB tables
-    const { developerTable, projectTable } = this.createDynamoDBTables(stage, isProd);
+    const { developerTable, projectsTable } = this.createDynamoDBTables(isProd);
 
     // Create AppSync DataSources
-    const dataSources = this.createDataSources(this.api, developerTable, projectTable);
+    const dataSources = this.createDataSources(developerTable, projectsTable);
 
     // Add resolvers
     this.createResolvers(dataSources);
 
     // Create AI-powered resolvers (separate from basic CRUD operations)
-    this.createAIResolvers(jobMatchingTable, recruiterProfilesTable, props.bedrockModelId);
+    this.createAIResolvers(
+      jobMatchingTable,
+      recruiterProfilesTable,
+      bedrockModelId,
+      developerTable,
+      projectsTable
+    );
 
     // Create data loader to populate DynamoDB tables from S3
-    this.createDataLoader(stage, developerTable, projectTable);
+    this.createDataLoader(developerTable, projectsTable);
 
     // Add API outputs
-    addStackOutputs(this, stage, [
+    addStackOutputs(this, this.stage, [
       {
         id: 'AppSyncApiUrl',
         value: this.api.graphqlUrl,
         description: 'The URL of the GraphQL API',
-        exportName: `appsync-url-${stage}`,
+        exportName: `appsync-url-${this.stage}`,
         paramName: 'NEXT_PUBLIC_APPSYNC_URL'
       },
       {
         id: 'AppSyncApiKey',
         value: this.api.apiKey || '',
         description: 'API Key for development access',
-        exportName: `appsync-api-key-${stage}`,
+        exportName: `appsync-api-key-${this.stage}`,
         paramName: 'NEXT_PUBLIC_APPSYNC_API_KEY'
       },
       {
         id: 'AppSyncRegion',
         value: this.region,
         description: 'AWS Region for AppSync API',
-        exportName: `appsync-region-${stage}`,
+        exportName: `appsync-region-${this.stage}`,
         paramName: 'NEXT_PUBLIC_AWS_REGION'
       }
     ]);
   }
 
-  private createAppSyncApi(userPool: cognito.UserPool, stage: string): appsync.GraphqlApi {
+  private createAppSyncApi(userPool: cognito.UserPool): appsync.GraphqlApi {
     // Create the AppSync API using the L2 construct
     const api = new appsync.GraphqlApi(this, 'PortfolioApi', {
-      name: `portfolio-api-${stage}`,
+      name: `portfolio-api-${this.stage}`,
       definition: appsync.Definition.fromSchema(
         appsync.SchemaFile.fromAsset(path.join(__dirname, '../schema/schema.graphql'))
       ),
@@ -101,52 +131,47 @@ export class ApiStack extends cdk.Stack {
           }
         ]
       },
-      // Enable X-Ray for tracing
-      xrayEnabled: true
+      xrayEnabled: false
     });
 
     return api;
   }
 
-  private createDynamoDBTables(stage: string, isProd: boolean) {
+  private createDynamoDBTables(isProd: boolean) {
     const developerTable = new dynamodb.Table(this, 'DeveloperTable', {
-      tableName: `PortfolioDevelopers-${stage}`,
+      tableName: `PortfolioDevelopers-${this.stage}`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
       deletionProtection: isProd
     });
 
-    const projectTable = new dynamodb.Table(this, 'ProjectTable', {
-      tableName: `PortfolioProjects-${stage}`,
+    const projectsTable = new dynamodb.Table(this, 'ProjectsTable', {
+      tableName: `PortfolioProjects-${this.stage}`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
       deletionProtection: isProd
     });
 
-    projectTable.addGlobalSecondaryIndex({
+    projectsTable.addGlobalSecondaryIndex({
       indexName: 'byDeveloperId',
       partitionKey: { name: 'developerId', type: dynamodb.AttributeType.STRING }
     });
 
-    return { developerTable, projectTable };
+    return { developerTable, projectsTable };
   }
 
-  private createDataSources(
-    api: appsync.GraphqlApi,
-    developerTable: dynamodb.Table,
-    projectTable: dynamodb.Table
-  ) {
-    const developerDS = api.addDynamoDbDataSource('DeveloperDataSource', developerTable);
-    const projectDS = api.addDynamoDbDataSource('ProjectDataSource', projectTable);
+  private createDataSources(developerTable: dynamodb.Table, projectsTable: dynamodb.Table) {
+    const developerDS = this.api.addDynamoDbDataSource('DeveloperDataSource', developerTable);
+    const projectsDS = this.api.addDynamoDbDataSource('ProjectsDataSource', projectsTable);
 
-    return { developerDS, projectDS };
+    return { developerDS, projectsDS };
   }
 
   private createResolvers(dataSources: {
     developerDS: appsync.DynamoDbDataSource;
-    projectDS: appsync.DynamoDbDataSource;
+    projectsDS: appsync.DynamoDbDataSource;
   }) {
     // Custom resolver for getDeveloper with fixed key
     dataSources.developerDS.createResolver('GetDeveloperResolver', {
@@ -173,21 +198,21 @@ export class ApiStack extends cdk.Stack {
 
     // Project Resolvers (Public - API key)
     new DynamoDBResolverConstruct(this, 'GetProject', {
-      dataSource: dataSources.projectDS,
+      dataSource: dataSources.projectsDS,
       typeName: 'Query',
       fieldName: 'getProject',
       operation: 'get'
     });
 
     new DynamoDBResolverConstruct(this, 'ListProjects', {
-      dataSource: dataSources.projectDS,
+      dataSource: dataSources.projectsDS,
       typeName: 'Query',
       fieldName: 'listProjects',
       operation: 'list'
     });
 
     // For Developer.projects relationship (Public - no auth required)
-    dataSources.projectDS.createResolver('DeveloperProjectsResolver', {
+    dataSources.projectsDS.createResolver('DeveloperProjectsResolver', {
       typeName: 'Developer',
       fieldName: 'projects',
       requestMappingTemplate: appsync.MappingTemplate.fromString(`
@@ -220,46 +245,34 @@ export class ApiStack extends cdk.Stack {
    * These are separate from basic CRUD operations as they:
    * - Depend on external tables from other stacks
    * - Use Lambda data sources with complex logic (Bedrock AI)
-   * - Are conditionally created based on feature availability
    */
   private createAIResolvers(
-    jobMatchingTable?: dynamodb.ITable,
-    recruiterProfilesTable?: dynamodb.ITable,
-    bedrockModelId?: string
+    jobMatchingTable: dynamodb.ITable,
+    recruiterProfilesTable: dynamodb.ITable,
+    bedrockModelId: string,
+    developerTable: dynamodb.Table,
+    projectsTable: dynamodb.Table
   ) {
-    if (jobMatchingTable) {
-      // Find the developer table that was created in createDynamoDBTables
-      const developerTable = this.node.findChild('DeveloperTable') as dynamodb.Table;
-
-      if (!developerTable) {
-        throw new Error('Developer table not found. Make sure it is created before AI resolvers.');
-      }
-
-      new AIAdvocateResolverConstruct(this, 'AIAdvocateResolver', {
-        api: this.api,
-        jobMatchingTable,
-        recruiterProfilesTable,
-        developerTable,
-        stage: this.stage,
-        bedrockModelId
-      });
-    }
+    // Use the tables passed as parameters
+    new AIAdvocateResolverConstruct(this, 'AIAdvocateResolver', {
+      api: this.api,
+      jobMatchingTable,
+      recruiterProfilesTable,
+      developerTable,
+      projectsTable,
+      stage: this.stage,
+      bedrockModelId
+    });
   }
 
   /**
    * Creates a Lambda function that loads data from S3 to DynamoDB tables.
    * This is triggered during CloudFormation deployment via a custom resource.
    */
-  private createDataLoader(
-    stage: string,
-    developerTable: dynamodb.Table,
-    projectTable: dynamodb.Table
-  ) {
-    // Determine bucket name based on stage
-    const bucketName =
-      stage === 'prod'
-        ? process.env.PROD_DATA_BUCKET_NAME || 'portfolio-production-data'
-        : process.env.DEV_DATA_BUCKET_NAME || 'portfolio-development-data';
+  private createDataLoader(developerTable: dynamodb.Table, projectsTable: dynamodb.Table) {
+    // Get bucket name from environment variables
+    const bucketEnvVar = `${this.stage.toUpperCase()}_DATA_BUCKET_NAME`;
+    const bucketName = process.env[bucketEnvVar] as string;
 
     // Reference the existing S3 bucket
     const dataBucket = s3.Bucket.fromBucketName(this, 'DataBucket', bucketName);
@@ -271,16 +284,15 @@ export class ApiStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(__dirname, '../functions/data-loader')),
       timeout: cdk.Duration.minutes(5),
       environment: {
-        ENVIRONMENT: stage,
-        PROD_DATA_BUCKET_NAME: process.env.PROD_DATA_BUCKET_NAME || 'portfolio-production-data',
-        DEV_DATA_BUCKET_NAME: process.env.DEV_DATA_BUCKET_NAME || 'portfolio-development-data'
+        ENVIRONMENT: this.stage,
+        DATA_BUCKET_NAME: bucketName
       }
     });
 
     // Grant permissions to the Lambda
     dataBucket.grantRead(dataLoaderLambda);
     developerTable.grantWriteData(dataLoaderLambda);
-    projectTable.grantWriteData(dataLoaderLambda);
+    projectsTable.grantWriteData(dataLoaderLambda);
 
     // Create a custom resource to trigger the Lambda during deployment
     const dataLoaderProvider = new cr.Provider(this, 'DataLoaderProvider', {
@@ -292,7 +304,7 @@ export class ApiStack extends cdk.Stack {
     new cdk.CustomResource(this, 'DataLoaderResource', {
       serviceToken: dataLoaderProvider.serviceToken,
       properties: {
-        environment: stage,
+        environment: this.stage,
         // Add a timestamp to ensure the resource is updated on each deployment
         timestamp: new Date().toISOString()
       }
