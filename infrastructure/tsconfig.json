@@ -6,6 +6,7 @@
     "allowJs": true,
     "checkJs": false,
     "moduleResolution": "node",
+    "outDir": "./dist",
     "declaration": true,
     "strict": true,
     "noImplicitAny": true,
