@@ -54,7 +54,7 @@ jest.mock('@aws-sdk/lib-dynamodb', () => ({
 }));
 
 // Mock utils.mjs
-jest.mock('../lib/functions/ai-advocate/utils.mjs', () => ({
+jest.mock('../../lib/functions/ai-advocate/utils.mjs', () => ({
   findRelevantSkills: jest.fn().mockImplementation(() => ({
     matchingSkills: [{ skill: 'React' }, { skill: 'TypeScript' }],
     hasMatches: true
@@ -83,7 +83,7 @@ let promptGeneratorModule: any;
 describe('AI Advocate Prompt Generator', () => {
   beforeAll(async () => {
     // Dynamically import the module under test
-    promptGeneratorModule = await import('../lib/functions/ai-advocate/prompt-generator.mjs');
+    promptGeneratorModule = await import('../../lib/functions/ai-advocate/prompt-generator.mjs');
   });
 
   beforeEach(() => {
