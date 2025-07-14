@@ -5,7 +5,7 @@ jest.mock('@aws-sdk/client-ssm', () => ({
       Parameters: [
         { Name: '/portfolio/dev/NEXT_PUBLIC_COGNITO_CLIENT_ID', Value: 'test-client-id' },
         { Name: '/portfolio/dev/NEXT_PUBLIC_COGNITO_USER_POOL_ID', Value: 'test-user-pool-id' },
-        { Name: '/portfolio/dev/edge/visitor-table-name', Value: 'test-visitor-table' }
+        { Name: '/portfolio/dev/VISITOR_TABLE_NAME', Value: 'test-visitor-table' }
       ]
     })
   })),
@@ -50,7 +50,7 @@ let edgeFunction: any;
 describe('Lambda@Edge Function', () => {
   beforeAll(async () => {
     // Dynamically import the module under test
-    edgeFunction = await import('../lib/functions/visitor-context/dev/index.mjs');
+    edgeFunction = await import('../../lib/functions/visitor-context/dev/index.mjs');
   });
 
   // Helper function to create viewer-request event
