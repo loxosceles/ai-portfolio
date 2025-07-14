@@ -1,0 +1,65 @@
+[
+  {
+    "id": "proj-1",
+    "title": "AI-Powered Portfolio Platform",
+    "description": "A serverless portfolio application with AI-driven personalization, unique recruiter links, and customized prompts built on Next.js and AWS cloud services.",
+    "status": "Active",
+    "highlights": [
+      "Cost-optimized serverless architecture with S3 static deployment and pay-per-use AWS services",
+      "AI-powered personalization using Amazon Bedrock with unique recruiter-specific links",
+      "Working AI Q&A system using Amazon Bedrock with plans to enhance the knowledge base",
+      "Invisible authentication system using Cognito virtual users for secure personalized experiences",
+      "Infrastructure as Code with AWS CDK for automated, repeatable deployments"
+    ],
+    "tech": [
+      "Next.js",
+      "TypeScript",
+      "AWS AppSync",
+      "AWS CDK",
+      "DynamoDB",
+      "Amazon Bedrock",
+      "CloudFront",
+      "TailwindCSS"
+    ],
+    "imageUrl": "https://example.com/ai-portfolio-platform.jpg",
+    "developerId": "dev-1"
+  },
+  {
+    "id": "proj-2",
+    "title": "Web3 Snapshot Dashboard",
+    "description": "Real-time cryptocurrency market dashboard with live price tracking, tokenomics analysis, and responsive data visualization for top 100 cryptocurrencies.",
+    "status": "Completed",
+    "highlights": [
+      "Real-time data streaming with Server-Sent Events and Redis pub/sub for live market updates",
+      "Comprehensive tokenomics analysis including MC/FDV ratios and percentage change calculations",
+      "Full-stack containerized architecture with automated data fetching via cron jobs",
+      "Responsive React dashboard with interactive tables, modals, and iframe embedding support"
+    ],
+    "tech": ["React", "Flask", "Redis", "Docker", "Python", "SCSS", "SQLite", "Nginx"],
+    "imageUrl": "https://example.com/web3-dashboard.jpg",
+    "developerId": "dev-1"
+  },
+  {
+    "id": "proj-3",
+    "title": "Image Processor",
+    "description": "Concurrent batch image processing tool with Docker containerization and CLI interface.",
+    "status": "Completed",
+    "highlights": [
+      "Batch Processing: Process multiple images concurrently using ThreadPoolExecutor for optimal performance",
+      "Multiple Filters: Support for grayscale, blur, resize, and EXIF-based rotation operations",
+      "Containerized Deployment: Complete Docker setup with development environment and CI/CD pipeline"
+    ],
+    "tech": [
+      "Python",
+      "PIL/Pillow",
+      "Concurrent Processing",
+      "Docker",
+      "CLI",
+      "EXIF Handling",
+      "pytest",
+      "uv Package Manager"
+    ],
+    "imageUrl": "https://example.com/image-processor.jpg",
+    "developerId": "dev-1"
+  }
+]

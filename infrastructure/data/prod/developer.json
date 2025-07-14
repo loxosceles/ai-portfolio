@@ -1,0 +1,37 @@
+[
+  {
+    "id": "dev-1",
+    "name": "Magnus Henkel",
+    "title": "Senior Full Stack Developer",
+    "bio": "Experienced full stack developer with expertise in React, Typescript, Python, and AWS cloud services.",
+    "email": "dev@loxosceles.me",
+    "website": "https://dev.loxosceles.me",
+    "github": "loxosceles",
+    "linkedin": "magnus-henkel",
+    "location": "Lisbon, Portugal",
+    "yearsOfExperience": 6,
+    "isActive": true,
+    "skillSets": [
+      {
+        "id": "skill-1",
+        "name": "Web Development",
+        "skills": ["React", "Next.js", "TypeScript/JavaScript", "HTML5/CSS"]
+      },
+      {
+        "id": "skill-2",
+        "name": "Backend",
+        "skills": ["Node.js", "Express", "FastAPI", "Flask"]
+      },
+      {
+        "id": "skill-3",
+        "name": "Database",
+        "skills": ["PostgreSQL", "MongoDB", "DynamoDB", "Redis"]
+      },
+      {
+        "id": "skill-4",
+        "name": "DevOps",
+        "skills": ["Docker", "Kubernetes", "AWS", "CI/CD"]
+      }
+    ]
+  }
+]
