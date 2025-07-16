@@ -19,13 +19,25 @@ describe('CloudFront Invalidation Command Tests', () => {
     cloudFrontMock.on(CreateInvalidationCommand).resolves({
       Invalidation: {
         Id: 'test-invalidation-id',
-        Status: 'InProgress'
+        Status: 'InProgress',
+        CreateTime: new Date(),
+        InvalidationBatch: {
+          Paths: {
+            Quantity: 1,
+            Items: ['/*']
+          },
+          CallerReference: 'test-reference'
+        }
       }
     });
 
     cloudFormationMock.on(DescribeStacksCommand).resolves({
       Stacks: [
         {
+          StackName: 'test-stack',
+          StackId: 'test-stack-id',
+          CreationTime: new Date(),
+          StackStatus: 'CREATE_COMPLETE',
           Outputs: [{ OutputKey: 'CloudFrontDistributionId', OutputValue: 'test-distribution-id' }]
         }
       ]

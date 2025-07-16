@@ -36,6 +36,10 @@ describe('Web App Publish Command Tests', () => {
     cloudFormationMock.on(DescribeStacksCommand).resolves({
       Stacks: [
         {
+          StackName: 'test-stack',
+          StackId: 'test-stack-id',
+          CreationTime: new Date(),
+          StackStatus: 'CREATE_COMPLETE',
           Outputs: [{ OutputKey: 'WebBucketName', OutputValue: 'test-bucket' }]
         }
       ]
