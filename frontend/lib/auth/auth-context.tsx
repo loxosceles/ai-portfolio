@@ -7,25 +7,25 @@ import { getEnvironment } from './auth-utils';
 export type Environment = 'local' | 'dev' | 'prod';
 export type RouteType = 'public' | 'protected';
 
-interface AuthTokens {
+interface IAuthTokens {
   accessToken: string | null;
   idToken: string | null;
 }
 
-interface AuthContextValue {
+interface IAuthContextValue {
   isAuthenticated: boolean;
   environment: Environment;
-  tokens: AuthTokens;
+  tokens: IAuthTokens;
   visitorParam: string | null;
   getAuthHeaders: (routeType: RouteType) => Record<string, string>;
   getQueryContext: (routeType: RouteType) => { headers: Record<string, string> };
   refreshAuthState: () => void;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<IAuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [tokens, setTokens] = useState<AuthTokens>({ accessToken: null, idToken: null });
+  const [tokens, setTokens] = useState<IAuthTokens>({ accessToken: null, idToken: null });
   const [mounted, setMounted] = useState(false);
   const [visitorParam, setVisitorParam] = useState<string | null>(null);
 
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
-  const contextValue: AuthContextValue = {
+  const contextValue: IAuthContextValue = {
     isAuthenticated,
     environment,
     tokens,
@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth(): AuthContextValue {
+export function useAuth(): IAuthContextValue {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

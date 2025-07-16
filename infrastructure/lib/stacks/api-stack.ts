@@ -6,8 +6,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as logs from 'aws-cdk-lib/aws-logs';
-import { DynamoDBResolverConstruct } from '../resolvers/dynamodb-resolver-construct';
-import { AIAdvocateResolverConstruct } from '../resolvers/ai-advocate-resolver-construct';
+import { APIResolverConstruct } from '../resolvers/api-resolver-construct';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { addStackOutputs } from '../utils/stack-outputs';
@@ -24,7 +23,7 @@ export class ApiStack extends cdk.Stack {
   public readonly api: appsync.GraphqlApi;
   private readonly stage: string;
 
-  constructor(scope: Construct, id: string, props: ApiStackProps) {
+  constructor(scope: Construct, id: string, props: IApiStackProps) {
     super(scope, id, props);
     const { stage, userPool, jobMatchingTable, recruiterProfilesTable, bedrockModelId } = props;
     this.stage = stage;

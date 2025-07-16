@@ -3,8 +3,6 @@ version: 0.2
 env:
   variables:
     ENVIRONMENT: dev # Default, will be overridden by pipeline parameter
-    DEV_DATA_BUCKET_NAME: portfolio-development-data
-    PROD_DATA_BUCKET_NAME: portfolio-production-data
 
 phases:
   install:
@@ -15,61 +13,34 @@ phases:
       # Clean up any existing node_modules
       - rm -rf node_modules
       - find . -name "node_modules" -type f -delete
-      # Install pnpm
+      # Install pnpm and ts-node
       - npm install -g pnpm
+      - npm install -g ts-node
       # Install dependencies with modified flags
       - pnpm install --frozen-lockfile
 
   pre_build:
     commands:
       - echo "Deploying infrastructure for $ENVIRONMENT environment"
-      # Fetch parameters from SSM
-      - |
-        # Fetch Bedrock model ID from SSM in eu-central-1 region (required parameter)
-        echo "Fetching Bedrock model ID for $ENVIRONMENT environment from eu-central-1 region..."
-        BEDROCK_PARAM="/portfolio/${ENVIRONMENT}/BEDROCK_MODEL_ID"
-        BEDROCK_MODEL_ID=$(node infrastructure/lib/pipeline-helpers/fetch-parameter.mjs --name $BEDROCK_PARAM --region eu-central-1 --required)
-        export BEDROCK_MODEL_ID
-        echo "Bedrock model ID set to: $BEDROCK_MODEL_ID"
-
-        # For production, fetch additional parameters
-        if [ "$ENVIRONMENT" = "prod" ]; then
-          # Fetch domain name from us-east-1 region (optional parameter)
-          echo "Fetching domain name for production..."
-          PROD_DOMAIN_NAME=$(node infrastructure/lib/pipeline-helpers/fetch-parameter.mjs --name /portfolio/prod/PROD_DOMAIN_NAME --region us-east-1 --fallback "")
-          export PROD_DOMAIN_NAME
-          echo "Domain name set to: $PROD_DOMAIN_NAME"
-          
-          # Fetch certificate ARN from us-east-1 region (optional parameter)
-          echo "Fetching certificate ARN for production..."
-          PROD_CERTIFICATE_ARN=$(node infrastructure/lib/pipeline-helpers/fetch-parameter.mjs --name /portfolio/prod/PROD_CERTIFICATE_ARN --region us-east-1 --fallback "")
-          export PROD_CERTIFICATE_ARN
-          echo "Certificate ARN set to: $PROD_CERTIFICATE_ARN"
-        fi
-      # Pass the environment variables to the CDK command
-      - cd infrastructure && BEDROCK_MODEL_ID=$BEDROCK_MODEL_ID PROD_DOMAIN_NAME=$PROD_DOMAIN_NAME PROD_CERTIFICATE_ARN=$PROD_CERTIFICATE_ARN pnpm run deploy:$ENVIRONMENT && cd ..
+      - echo "Setting up infrastructure environment for $ENVIRONMENT environment"
+      - cd infrastructure && ts-node ./lib/cli/bin/ssm-params.ts export --target=infrastructure --output && cd ..
+      - cd infrastructure && pnpm run provision:$ENVIRONMENT && cd ..
 
   build:
     commands:
       - echo "Setting up data for $ENVIRONMENT environment"
-      - node infrastructure/lib/data-management/create-bucket.mjs $ENVIRONMENT
-      - node infrastructure/lib/data-management/download-static-data.mjs $ENVIRONMENT
-      - echo "Updating environment variables"
-      - ENVIRONMENT=$ENVIRONMENT node infrastructure/lib/data-management/update-env.mjs
-      - echo "Building and uploading frontend for $ENVIRONMENT environment"
-      - cd frontend && pnpm run deploy:$ENVIRONMENT && cd ..
-      - echo "Deploying frontend infrastructure for $ENVIRONMENT environment"
-      - cd infrastructure && pnpm run deploy:frontend:$ENVIRONMENT && cd ..
+      - cd infrastructure && pnpm run populate-static-data:$ENVIRONMENT && cd ..
+      - echo "Generating service environment files"
+      - cd infrastructure && ts-node ./lib/cli/bin/ssm-params.ts export --target=frontend --output && cd ..
+      - cd infrastructure && ts-node ./lib/cli/bin/ssm-params.ts export --target=link-generator --output && cd ..
+      - echo "Building and publishing frontend for $ENVIRONMENT environment"
+      - cd infrastructure && pnpm run publish:web-app && cd ..
 
   post_build:
     commands:
       - echo "Invalidating CloudFront cache"
-      # Get CloudFront distribution ID from SSM Parameter Store
-      - DISTRIBUTION_ID=$(aws ssm get-parameter --name "/portfolio/${ENVIRONMENT}/WEB_CLOUDFRONT_DISTRIBUTION_ID" --region us-east-1 --query 'Parameter.Value' --output text)
-      - aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*" --region us-east-1
-      # Get domain from SSM Parameter Store
-      - DOMAIN=$(aws ssm get-parameter --name "/portfolio/${ENVIRONMENT}/WEB_CLOUDFRONT_DOMAIN" --region us-east-1 --query 'Parameter.Value' --output text)
-      - echo "Deployment complete. Website available at https://$DOMAIN"
+      - cd infrastructure && pnpm run invalidate:cloudfront && cd ..
+      - echo "Deployment complete"
 
 cache:
   paths:
