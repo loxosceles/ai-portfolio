@@ -67,7 +67,7 @@ function validateDeveloper(developer: Partial<IDeveloper>): boolean {
  * @param project - Project to validate
  * @returns True if valid, throws an error if invalid
  */
-function validateProject(project: any): boolean {
+function validateProject(project: Partial<IProject>): boolean {
   if (!project.id) {
     throw new Error('Project ID is required');
   }
@@ -132,8 +132,8 @@ function validateStaticData(data: IDataCollection<IDataItem>): boolean {
  * Handle upload data command
  */
 export async function handleUploadData(
-  options: DataManagementOptions
-): Promise<DataManagementResult> {
+  options: IDataManagementOptions
+): Promise<IDataManagementResult> {
   const { verbose, region } = options;
   const stage = awsManager.getStage();
 
@@ -151,6 +151,7 @@ export async function handleUploadData(
     }
 
     if (verbose) {
+      // eslint-disable-next-line no-console
       console.log(`Loading local data for ${stage} stage...`);
     }
 
@@ -168,6 +169,7 @@ export async function handleUploadData(
     }
 
     if (verbose) {
+      // eslint-disable-next-line no-console
       console.log(`Uploading data to S3 bucket ${bucketName}...`);
     }
 
@@ -211,6 +213,7 @@ export async function handleDownloadData(
     }
 
     if (verbose) {
+      // eslint-disable-next-line no-console
       console.log(`Downloading data from S3 bucket ${bucketName}...`);
     }
 
@@ -252,8 +255,8 @@ export async function handleDownloadData(
  * Handle populate DynamoDB command
  */
 export async function handlePopulateDynamoDB(
-  options: DataManagementOptions
-): Promise<DataManagementResult> {
+  options: IDataManagementOptions
+): Promise<IDataManagementResult> {
   const { verbose, region } = options;
   const stage = awsManager.getStage();
 
@@ -271,6 +274,7 @@ export async function handlePopulateDynamoDB(
     }
 
     if (verbose) {
+      // eslint-disable-next-line no-console
       console.log(`Downloading data from S3 bucket ${bucketName}...`);
     }
 
@@ -292,6 +296,7 @@ export async function handlePopulateDynamoDB(
     }
 
     if (verbose) {
+      // eslint-disable-next-line no-console
       console.log(`Populating DynamoDB tables for ${stage} stage...`);
     }
 

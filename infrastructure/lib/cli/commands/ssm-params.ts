@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { ExportOptions, ExportResult } from '../../../types/cli/ssm-params';
+import { IExportOptions, IExportResult } from '../../../types/cli/ssm-params';
 import { AWSManager } from '../../core/aws-manager';
 import { EnvironmentManager } from '../../core/env-manager';
 import { awsManagerConfig } from '../../../configs/aws-config';
@@ -92,6 +92,7 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
             const paramName = param.Name.split('/').pop() as string;
             allParams[paramName] = param.Value;
             if (verbose) {
+              // eslint-disable-next-line no-console
               console.log(`Downloaded: ${paramName} = ${param.Value}`);
             }
           }
@@ -225,6 +226,7 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
       // CI environments can overwrite any file without restrictions
 
       await envManager.writeEnvFile(finalOutputPath, content);
+      // eslint-disable-next-line no-console
       console.log(`✅ Parameters written to ${finalOutputPath}`);
     }
 

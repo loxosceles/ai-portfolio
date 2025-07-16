@@ -108,6 +108,7 @@ export class AWSManager extends BaseManager {
           }
         })
       );
+      // eslint-disable-next-line no-console
       console.log(`✅ Populated PortfolioDevelopers-${stage} with ${data.developers.length} items`);
     }
 
@@ -121,6 +122,7 @@ export class AWSManager extends BaseManager {
           }
         })
       );
+      // eslint-disable-next-line no-console
       console.log(`✅ Populated PortfolioProjects-${stage} with ${data.projects.length} items`);
     }
   }
@@ -138,6 +140,7 @@ export class AWSManager extends BaseManager {
       return 0;
     }
 
+    // eslint-disable-next-line no-console
     console.log(`Uploading stack parameters for ${stage} stage to ${region}...`);
     let uploadCount = 0;
     let errorCount = 0;
@@ -154,6 +157,7 @@ export class AWSManager extends BaseManager {
       const paramValue = params[paramName];
 
       try {
+        // eslint-disable-next-line no-console
         console.log(`Uploading: ${paramPath} = ${paramValue} (to ${region})`);
         await this.putParameter(paramPath, paramValue, region);
         uploadCount++;
@@ -164,9 +168,10 @@ export class AWSManager extends BaseManager {
     }
 
     if (errorCount === 0) {
+      // eslint-disable-next-line no-console
       console.log(`✅ Successfully uploaded ${uploadCount} parameters to ${region}`);
     } else {
-      console.log(`⚠️ Uploaded ${uploadCount} parameters to ${region} with ${errorCount} errors`);
+      console.error(`⚠️ Uploaded ${uploadCount} parameters to ${region} with ${errorCount} errors`);
     }
     return errorCount;
   }
@@ -183,6 +188,7 @@ export class AWSManager extends BaseManager {
       return 0;
     }
 
+    // eslint-disable-next-line no-console
     console.log(`[DRY-RUN] Would upload stack parameters for ${stage} stage to ${region}...`);
     let errorCount = 0;
 
@@ -196,6 +202,7 @@ export class AWSManager extends BaseManager {
 
       const paramPath = `/portfolio/${stage}/stack/${paramName}`;
       const paramValue = params[paramName];
+      // eslint-disable-next-line no-console
       console.log(`[DRY-RUN] Would upload: ${paramPath} = ${paramValue} (to ${region})`);
     }
     return errorCount;
@@ -226,16 +233,16 @@ export class AWSManager extends BaseManager {
   }
 
   // Data Management Operations
-  async loadLocalData(stage: string): Promise<DataCollection<DataItem>> {
+  async loadLocalData(stage: string): Promise<IDataCollection<IDataItem>> {
     const localPath = DATA_CONFIG.localPathTemplate.replace('{stage}', stage);
     const dataDir = path.resolve(this.config.projectRoot, localPath);
-    const collections: DataCollection<DataItem> = {};
+    const collections: IDataCollection<IDataItem> = {};
 
     try {
       for (const [key, fileName] of Object.entries(DATA_CONFIG.dataFiles)) {
         const filePath = path.join(dataDir, fileName);
         const content = await fs.readFile(filePath, 'utf-8');
-        collections[key] = JSON.parse(content) as DataItem[];
+        collections[key] = JSON.parse(content) as IDataItem[];
       }
       return collections;
     } catch (error) {
@@ -248,7 +255,7 @@ export class AWSManager extends BaseManager {
   async uploadDataToS3(
     stage: string,
     bucketName: string,
-    data: DataCollection<DataItem>,
+    data: IDataCollection<IDataItem>,
     region: string
   ): Promise<void> {
     for (const [key, items] of Object.entries(data)) {
@@ -261,6 +268,7 @@ export class AWSManager extends BaseManager {
         .replace('{fileName}', fileName);
       await this.uploadJsonToS3(bucketName, s3Key, items, region);
     }
+    // eslint-disable-next-line no-console
     console.log(`✅ Uploaded data to s3://${bucketName}/${stage}/`);
   }
 
@@ -274,7 +282,7 @@ export class AWSManager extends BaseManager {
       const s3Key = DATA_CONFIG.s3PathTemplate
         .replace('{stage}', stage)
         .replace('{fileName}', fileName);
-      collections[key] = await this.downloadJsonFromS3<DataItem[]>(bucketName, s3Key, region);
+      collections[key] = await this.downloadJsonFromS3<IDataItem[]>(bucketName, s3Key, region);
     }
     return collections;
   }
@@ -288,6 +296,7 @@ export class AWSManager extends BaseManager {
       }
       await fs.writeFile(path.join(outputDir, fileName), JSON.stringify(items, null, 2));
     }
+    // eslint-disable-next-line no-console
     console.log(`✅ Data saved to ${outputDir}`);
   }
 
@@ -333,6 +342,7 @@ export class AWSManager extends BaseManager {
 
     try {
       await client.send(command);
+      // eslint-disable-next-line no-console
       console.log(`✅ CloudFront invalidation created for distribution ${distributionId}`);
     } catch (error) {
       throw new Error(`Failed to invalidate distribution: ${error}`);
@@ -385,6 +395,7 @@ export class AWSManager extends BaseManager {
       }
     }
 
+    // eslint-disable-next-line no-console
     console.log(`✅ Synced ${files.length} files to s3://${bucketName}/`);
   }
 

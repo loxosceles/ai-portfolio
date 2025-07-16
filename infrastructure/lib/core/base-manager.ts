@@ -3,7 +3,7 @@
  *
  * Provides common functionality for all manager classes
  */
-import { BaseManagerConfig } from '../../types/config';
+import { IBaseManagerConfig } from '../../types/config';
 import { Stage } from '../../types/common';
 import {
   VALID_REGIONS,
@@ -100,6 +100,7 @@ export abstract class BaseManager {
    */
   public logVerbose(verbose: boolean, message: string): void {
     if (verbose) {
+      // eslint-disable-next-line no-console
       console.log(`[VERBOSE] ${message}`);
     }
   }

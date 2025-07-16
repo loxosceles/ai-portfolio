@@ -25,6 +25,7 @@ export async function invalidateCloudFrontDistribution(verbose: boolean = false)
     awsManager.logVerbose(verbose, `Invalidating CloudFront distribution ${distributionId}...`);
     await awsManager.invalidateDistribution(distributionId, region);
 
+    // eslint-disable-next-line no-console
     console.log('✅ CloudFront invalidation completed');
   } catch (error) {
     console.error(`❌ Failed to invalidate CloudFront distribution: ${error}`);
