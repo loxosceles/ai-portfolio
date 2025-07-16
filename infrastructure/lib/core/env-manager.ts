@@ -36,9 +36,10 @@ export class EnvironmentManager extends BaseManager {
       try {
         const stageEnvContent = fsSync.readFileSync(stageEnvPath, 'utf-8');
         stageEnv = dotenv.parse(stageEnvContent);
-      } catch (error) {
+      } catch (err) {
         // Stage-specific env file might not exist, which is fine
-        console.log(`Note: No stage-specific env file found at ${stageEnvPath}`);
+        console.warn(`Note: No stage-specific env file found at ${stageEnvPath}`);
+        console.warn(err);
       }
     }
 

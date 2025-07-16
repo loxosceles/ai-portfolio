@@ -47,6 +47,7 @@ program
         process.exit(1);
       }
 
+      // eslint-disable-next-line no-console
       console.log(result.message);
     } catch (error) {
       console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
@@ -60,7 +61,7 @@ program
   .option('-o, --output <directory>', 'Output directory for downloaded data')
   .option('-v, --verbose', 'Enable verbose logging')
   .option('-r, --region <region>', 'AWS region to use')
-  .action(async (options: DataManagementCommandOptions) => {
+  .action(async (options: IDownloadDataCommandOptions) => {
     try {
       const result = await handleDownloadData({
         verbose: options.verbose,
@@ -75,10 +76,13 @@ program
 
       // Display data if no output directory was specified
       if (!options.output && result.data) {
+        // eslint-disable-next-line no-console
         console.log('Developers:', JSON.stringify(result.data.developers, null, 2));
+        // eslint-disable-next-line no-console
         console.log('Projects:', JSON.stringify(result.data.projects, null, 2));
       }
 
+      // eslint-disable-next-line no-console
       console.log(result.message);
     } catch (error) {
       console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
@@ -91,7 +95,7 @@ program
   .description('Download static data from S3 and populate DynamoDB tables')
   .option('-v, --verbose', 'Enable verbose logging')
   .option('-r, --region <region>', 'AWS region to use')
-  .action(async (options: DataManagementCommandOptions) => {
+  .action(async (options: IPopulateDynamoDBWithStaticDataCommandOptions) => {
     try {
       const result = await handlePopulateDynamoDB({
         verbose: options.verbose,
@@ -103,6 +107,7 @@ program
         process.exit(1);
       }
 
+      // eslint-disable-next-line no-console
       console.log(result.message);
     } catch (error) {
       console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);

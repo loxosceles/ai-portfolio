@@ -24,5 +24,6 @@ export async function publishWebApp(verbose: boolean = false): Promise<void> {
   const frontendOutDir = path.join(awsManager.config.projectRoot, '../frontend/out');
   await awsManager.syncDirectoryToS3(frontendOutDir, bucketName, region);
 
+  // eslint-disable-next-line no-console
   console.log('✅ Web app publishing completed');
 }
