@@ -7,7 +7,7 @@ import { awsManagerConfig } from '../../../configs/aws-config';
  *
  * AWS operations only - Next.js build handled by shell script
  */
-export async function publishWebApp(verbose: boolean = false): Promise<void> {
+export async function handlePublishWepApp(verbose: boolean = false): Promise<void> {
   const awsManager = new AWSManager(awsManagerConfig);
   const stage = awsManager.getStage();
   const region = awsManager.getRegionForService('web');

@@ -8,7 +8,9 @@ import { awsManagerConfig } from '../../../configs/aws-config';
  * 1. Get current distribution ID from stack output
  * 2. Invalidate the distribution
  */
-export async function invalidateCloudFrontDistribution(verbose: boolean = false): Promise<void> {
+export async function handleInvalidateCloudFrontDistribution(
+  verbose: boolean = false
+): Promise<void> {
   const awsManager = new AWSManager(awsManagerConfig);
 
   try {
