@@ -1,12 +1,7 @@
 /**
- * SSM Parameter CLI types
- */
-import { Stage } from '../common';
-
-/**
  * Options for SSM parameter export operations
  */
-export interface ExportOptions {
+export interface IExportOptions {
   regions?: string[];
   format?: 'env' | 'json';
   scope?: string;
@@ -19,7 +14,7 @@ export interface ExportOptions {
 /**
  * Result of SSM parameter export operations
  */
-export interface ExportResult {
+export interface IExportResult {
   success: boolean;
   message: string;
   errorCount: number;

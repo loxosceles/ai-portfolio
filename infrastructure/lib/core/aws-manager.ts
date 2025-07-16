@@ -11,8 +11,8 @@ import { DynamoDBDocumentClient, BatchWriteCommand } from '@aws-sdk/lib-dynamodb
 import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
 import { CloudFrontClient, CreateInvalidationCommand } from '@aws-sdk/client-cloudfront';
 import { BaseManager } from './base-manager';
-import { BaseManagerConfig } from '../../types/config';
-import { DataItem, DataCollection } from '../../types/data';
+import { IBaseManagerConfig } from '../../types/config';
+import { IDataItem, IDataCollection } from '../../types/data';
 import { Stage } from '../../types/common';
 import { PARAMETER_SCHEMA, DATA_CONFIG } from '../../configs/aws-config';
 import * as fs from 'fs/promises';
@@ -24,7 +24,7 @@ import * as path from 'path';
  * Unified manager for all AWS service operations
  */
 export class AWSManager extends BaseManager {
-  constructor(config: BaseManagerConfig) {
+  constructor(config: IBaseManagerConfig) {
     super(config);
   }
 
@@ -92,7 +92,7 @@ export class AWSManager extends BaseManager {
   // DynamoDB Operations
   async populateDynamoDB(
     stage: Stage,
-    data: DataCollection<DataItem>,
+    data: IDataCollection<IDataItem>,
     region: string
   ): Promise<void> {
     const client = new DynamoDBClient({ region });
@@ -268,8 +268,8 @@ export class AWSManager extends BaseManager {
     stage: string,
     bucketName: string,
     region: string
-  ): Promise<DataCollection<DataItem>> {
-    const collections: DataCollection<DataItem> = {};
+  ): Promise<IDataCollection<IDataItem>> {
+    const collections: IDataCollection<IDataItem> = {};
     for (const [key, fileName] of Object.entries(DATA_CONFIG.dataFiles)) {
       const s3Key = DATA_CONFIG.s3PathTemplate
         .replace('{stage}', stage)
@@ -279,7 +279,7 @@ export class AWSManager extends BaseManager {
     return collections;
   }
 
-  async saveLocalData(data: DataCollection<DataItem>, outputDir: string): Promise<void> {
+  async saveLocalData(data: IDataCollection<IDataItem>, outputDir: string): Promise<void> {
     await fs.mkdir(outputDir, { recursive: true });
     for (const [key, items] of Object.entries(data)) {
       const fileName = DATA_CONFIG.dataFiles[key as keyof typeof DATA_CONFIG.dataFiles];

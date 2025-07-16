@@ -1,28 +1,28 @@
 /**
  * Data collection types
  */
-import { Developer } from './developer';
-import { Project } from './project';
+import { IDeveloper } from './developer';
+import { IProject } from './project';
 
 /**
  * Base data item
  */
-export interface DataItem {
+export interface IDataItem {
   id: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
  * Collection of data items
  */
-export interface DataCollection<T extends DataItem = DataItem> {
+export interface IDataCollection<T extends IDataItem = IDataItem> {
   [key: string]: T[];
 }
 
 /**
  * Static data
  */
-export interface StaticData {
-  developers: Developer[];
-  projects: Project[];
+export interface IStaticData {
+  developers: IDeveloper[];
+  projects: IProject[];
 }

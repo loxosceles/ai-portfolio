@@ -5,13 +5,13 @@
  */
 import * as path from 'path';
 import { Stage } from '../types/common';
-import { RegionConfig } from '../types/common/region';
+import { IRegionConfig } from '../types/common/region';
 
 // Define supported stages here in the config
 export const SUPPORTED_STAGES: Stage[] = ['dev', 'prod', 'test'];
 
 // Define region configuration
-export const REGIONS: Record<Stage, RegionConfig> = {
+export const REGIONS: Record<Stage, IRegionConfig> = {
   dev: {
     primary: 'eu-central-1',
     distribution: 'us-east-1'

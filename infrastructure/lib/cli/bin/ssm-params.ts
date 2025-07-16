@@ -1,6 +1,21 @@
-#!/usr/bin/env ts-node
 import { Command } from 'commander';
 import { handleUploadParameters, handleExportParameters } from '../commands/ssm-params';
+
+interface IUploadCommandOptions {
+  region?: string;
+  dryRun?: boolean;
+  verbose?: boolean;
+}
+
+interface IExportCommandOptions {
+  regions?: string;
+  scope?: string;
+  format?: 'env' | 'json';
+  target?: string;
+  output?: boolean;
+  outputPath?: string;
+  verbose?: boolean;
+}
 
 const program = new Command();
 
@@ -15,7 +30,7 @@ program
   .option('-r, --region <region>', 'Upload to specific region only (eu-central-1|us-east-1)')
   .option('-d, --dry-run', 'Show what would be uploaded without actually uploading')
   .option('-v, --verbose', 'Enable verbose logging')
-  .action(async (options: any) => {
+  .action(async (options: IUploadCommandOptions) => {
     try {
       const result = await handleUploadParameters({
         region: options.region,
@@ -23,15 +38,20 @@ program
         verbose: options.verbose
       });
 
+      // eslint-disable-next-line no-console
       console.log('\n=== Upload Summary ===');
+      // eslint-disable-next-line no-console
       console.log(`Stage: ${process.env.ENVIRONMENT}`);
 
       if (options.dryRun) {
+        // eslint-disable-next-line no-console
         console.log('Mode: DRY RUN (no actual uploads performed)');
       } else {
+        // eslint-disable-next-line no-console
         console.log(`Status: ${result.message}`);
       }
 
+      // eslint-disable-next-line no-console
       console.log(`Parameters available at: /portfolio/${process.env.ENVIRONMENT}/stack/`);
 
       process.exit(result.errorCount > 0 ? 1 : 0);
@@ -51,7 +71,7 @@ program
   .option('-o, --output', 'Write to file instead of console output')
   .option('--output-path <path>', 'Custom output file path')
   .option('-v, --verbose', 'Enable verbose logging')
-  .action(async (options: any) => {
+  .action(async (options: IExportCommandOptions) => {
     try {
       const result = await handleExportParameters({
         regions: options.regions ? options.regions.split(',') : undefined,

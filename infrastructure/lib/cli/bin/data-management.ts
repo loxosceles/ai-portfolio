@@ -5,7 +5,22 @@ import {
   handleDownloadData,
   handlePopulateDynamoDB
 } from '../commands/data-management';
-import { DataManagementCommandOptions } from '../../../types/cli/data-management';
+interface IUploadDataCommandOptions {
+  verbose?: boolean;
+  output?: string;
+  region?: string;
+}
+
+interface IDownloadDataCommandOptions {
+  verbose?: boolean;
+  output?: string;
+  region?: string;
+}
+
+interface IPopulateDynamoDBWithStaticDataCommandOptions {
+  verbose?: boolean;
+  region?: string;
+}
 
 // Create a new command instance
 const program = new Command();
@@ -20,7 +35,7 @@ program
   .description('Upload static data to S3')
   .option('-v, --verbose', 'Enable verbose logging')
   .option('-r, --region <region>', 'AWS region to use')
-  .action(async (options: DataManagementCommandOptions) => {
+  .action(async (options: IUploadDataCommandOptions) => {
     try {
       const result = await handleUploadData({
         verbose: options.verbose,

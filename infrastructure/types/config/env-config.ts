@@ -1,20 +1,12 @@
 /**
  * Environment manager configuration
  */
-import { BaseManagerConfig } from './base-config';
-
-/**
- * Environment paths configuration
- */
-export interface EnvPaths {
-  base: string;
-  stage: (stage: string) => string;
-}
+import { IBaseManagerConfig } from './base-config';
 
 /**
  * Service configuration
  */
-export interface ServiceConfig {
+export interface IServiceConfig {
   envPath: string;
   requiredParams: string[];
   prefix: string;
@@ -24,7 +16,7 @@ export interface ServiceConfig {
 /**
  * Infrastructure environment paths configuration
  */
-export interface InfrastructureEnvPaths {
+export interface IInfrastructureEnvPaths {
   base: string;
   stage: (stage: string) => string;
   runtime: string;
@@ -33,7 +25,7 @@ export interface InfrastructureEnvPaths {
 /**
  * Environment manager configuration
  */
-export interface EnvironmentManagerConfig extends BaseManagerConfig {
-  infrastructureEnvPaths: InfrastructureEnvPaths;
-  serviceConfigs: Record<string, ServiceConfig>;
+export interface IEnvironmentManagerConfig extends IBaseManagerConfig {
+  infrastructureEnvPaths: IInfrastructureEnvPaths;
+  serviceConfigs: Record<string, IServiceConfig>;
 }

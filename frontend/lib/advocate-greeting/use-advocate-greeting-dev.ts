@@ -3,7 +3,7 @@
 import { useQuery, gql } from '@apollo/client';
 import { useSearchParams } from 'next/navigation';
 import { GET_ADVOCATE_GREETING } from '@/queries/advocate-greeting';
-import { AdvocateGreetingData } from './advocate-greeting-service';
+import { IAdvocateGreetingData } from './advocate-greeting-service';
 import { useAuth } from '@/lib/auth/auth-context';
 
 // Mock data removed - now handled by local interceptor
@@ -63,7 +63,7 @@ export function useAdvocateGreetingDev() {
   }
 
   return {
-    greetingData: greetingData as AdvocateGreetingData | null,
+    greetingData: greetingData as IAdvocateGreetingData | null,
     isLoading,
     error: errorMessage,
     isAuthenticated // Only real token-based authentication

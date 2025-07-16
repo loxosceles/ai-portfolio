@@ -1,9 +1,11 @@
-import { DataManagementOptions, DataManagementResult } from '../../../types/cli/data-management';
+import { IDataManagementOptions, IDataManagementResult } from '../../../types/cli/data-management';
 import { EnvironmentManager } from '../../core/env-manager';
 import { AWSManager } from '../../core/aws-manager';
 import { awsManagerConfig } from '../../../configs/aws-config';
 import { envManagerConfig } from '../../../configs/env-config';
-import { DataItem, DataCollection } from '../../../types/data';
+import { IDataItem, IDataCollection } from '../../../types/data';
+import { IProject } from '../../../types/data/project';
+import { IDeveloper } from '../../../types/data';
 
 // Create manager instances
 const envManager = new EnvironmentManager(envManagerConfig);
@@ -18,7 +20,7 @@ const awsManager = new AWSManager(awsManagerConfig);
  * @param developer - Developer profile to validate
  * @returns True if valid, throws an error if invalid
  */
-function validateDeveloper(developer: any): boolean {
+function validateDeveloper(developer: Partial<IDeveloper>): boolean {
   if (!developer.id) {
     throw new Error('Developer ID is required');
   }
@@ -106,7 +108,7 @@ function validateProject(project: any): boolean {
  * @param data - Static data to validate
  * @returns True if valid, throws an error if invalid
  */
-function validateStaticData(data: DataCollection<DataItem>): boolean {
+function validateStaticData(data: IDataCollection<IDataItem>): boolean {
   if (!data.developers || !Array.isArray(data.developers)) {
     throw new Error('Developers must be an array');
   }
@@ -190,8 +192,8 @@ export async function handleUploadData(
  * Handle download data command
  */
 export async function handleDownloadData(
-  options: DataManagementOptions
-): Promise<DataManagementResult> {
+  options: IDataManagementOptions
+): Promise<IDataManagementResult> {
   const { verbose, output, region } = options;
   const stage = awsManager.getStage();
 

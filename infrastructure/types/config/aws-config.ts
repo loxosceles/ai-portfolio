@@ -1,13 +1,13 @@
 /**
  * SSM Parameter Manager Configuration
  */
-import { BaseManagerConfig } from './base-config';
+import { IBaseManagerConfig } from './base-config';
 import { Stage } from '../common';
 
 /**
  * SSM Parameter Manager Configuration
  */
-export interface AwsManagerConfig extends BaseManagerConfig {
+export interface IAwsManagerConfig extends IBaseManagerConfig {
   ssmBasePath: string;
   validRegions: string[];
   paramConfig: Record<Stage, Record<string, string[]>>;

@@ -1,9 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { Construct } from 'constructs';
-import { addStackOutputs } from '../utils/stack-outputs';
+import { addStackOutputs } from './stack-helpers';
 
-interface SharedStackProps extends cdk.StackProps {
+interface ISharedStackProps extends cdk.StackProps {
   stage: 'dev' | 'prod';
 }
 
@@ -13,7 +13,7 @@ export class SharedStack extends cdk.Stack {
   private readonly userPoolDomain: cognito.UserPoolDomain;
   private readonly stage: string;
 
-  constructor(scope: Construct, id: string, props: SharedStackProps) {
+  constructor(scope: Construct, id: string, props: ISharedStackProps) {
     super(scope, id, props);
     this.stage = props.stage;
 
