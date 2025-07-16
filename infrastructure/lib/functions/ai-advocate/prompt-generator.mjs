@@ -10,12 +10,12 @@
 
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { 
-  findRelevantSkills, 
-  formatSkillsSection, 
-  formatProjectsSection, 
-  formatExperienceSection, 
-  buildRulesSection 
+import {
+  findRelevantSkills,
+  formatSkillsSection,
+  formatProjectsSection,
+  formatExperienceSection,
+  buildRulesSection
 } from './utils.mjs';
 
 // Initialize DynamoDB client
@@ -34,7 +34,7 @@ export async function generateDynamicPrompt(question, recruiterData) {
     const developerData = await getDeveloperData();
     if (!developerData) {
       const tableName = process.env.DEVELOPER_TABLE_NAME;
-      throw new Error(`No developer profile found in table: ${tableName || 'undefined'}. Please check that DEVELOPER_TABLE_NAME is set and the table contains data.`);
+      throw new Error(`No developer profile found in table: ${tableName || 'undefined'}.`);
     }
 
     // For debugging - log the developer data structure
@@ -48,9 +48,10 @@ export async function generateDynamicPrompt(question, recruiterData) {
     const relevantSkills = findRelevantSkills(recruiterData, developerData);
 
     // Simple conversation context
-    const conversationContext = recruiterData?.conversationHistory?.length > 0 
-      ? `Context: Previous conversation with ${recruiterData.conversationHistory.length} messages.`
-      : 'Context: First interaction with this recruiter.';
+    const conversationContext =
+      recruiterData?.conversationHistory?.length > 0
+        ? `Context: Previous conversation with ${recruiterData.conversationHistory.length} messages.`
+        : 'Context: First interaction with this recruiter.';
 
     // Create recruiter context section
     let recruiterContext = '';
@@ -203,15 +204,15 @@ async function getDeveloperData() {
 async function getDeveloperProjects(docClient, developerId) {
   try {
     const tableName = process.env.PROJECTS_TABLE_NAME;
-    
+
     if (!tableName) {
       throw new Error('PROJECTS_TABLE_NAME environment variable is not set');
     }
-    
+
     if (!developerId) {
       throw new Error('Developer ID is required to fetch projects');
     }
-    
+
     // Query the table for projects with this developerId
     const command = new ScanCommand({
       TableName: tableName,
@@ -220,13 +221,13 @@ async function getDeveloperProjects(docClient, developerId) {
         ':devId': developerId
       }
     });
-    
+
     const response = await docClient.send(command);
-    
+
     if (!response.Items) {
       throw new Error(`Failed to retrieve projects for developer: ${developerId}`);
     }
-    
+
     return response.Items;
   } catch (error) {
     console.error('Error fetching developer projects:', error);
