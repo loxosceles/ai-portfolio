@@ -14,10 +14,10 @@ import {
 import { SERVICE_CONFIGS } from '../../configs/env-config';
 
 export abstract class BaseManager {
-  public config: BaseManagerConfig;
+  public config: IBaseManagerConfig;
   private stage: Stage;
 
-  constructor(config: BaseManagerConfig) {
+  constructor(config: IBaseManagerConfig) {
     this.config = config;
 
     // Validate environment at construction time

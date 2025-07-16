@@ -6,9 +6,8 @@ import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as path from 'path';
 import { Construct } from 'constructs';
-import { addStackOutputs } from '../utils/stack-outputs';
 
-interface JobMatchingStackProps extends cdk.StackProps {
+interface IJobMatchingStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
   stage: 'dev' | 'prod';
   cloudfrontDomain: string;
@@ -20,7 +19,7 @@ export class JobMatchingStack extends cdk.Stack {
   public readonly api: apigateway.RestApi;
   private readonly stage: string;
 
-  constructor(scope: Construct, id: string, props: JobMatchingStackProps) {
+  constructor(scope: Construct, id: string, props: IJobMatchingStackProps) {
     super(scope, id, props);
     const { stage, userPool, cloudfrontDomain } = props;
     this.stage = stage;

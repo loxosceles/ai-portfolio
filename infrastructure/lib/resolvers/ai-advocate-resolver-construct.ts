@@ -2,12 +2,8 @@ import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
 import * as appsync from 'aws-cdk-lib/aws-appsync';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import * as path from 'path';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import { getSupportedModels } from './supported-models';
 
-export interface AIAdvocateResolverProps {
+export interface IAIAdvocateResolverProps {
   api: appsync.GraphqlApi;
   jobMatchingTable: dynamodb.ITable;
   recruiterProfilesTable: dynamodb.ITable;
@@ -19,9 +15,8 @@ export interface AIAdvocateResolverProps {
 
 export class AIAdvocateResolverConstruct extends Construct {
   public readonly dataSource: appsync.LambdaDataSource;
-  public readonly aiAdvocateLambdaFunction: lambda.Function;
 
-  constructor(scope: Construct, id: string, props: AIAdvocateResolverProps) {
+  constructor(scope: Construct, id: string, props: IAIAdvocateResolverProps) {
     super(scope, id);
 
     // Destructure all props first

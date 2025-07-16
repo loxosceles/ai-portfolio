@@ -2,7 +2,7 @@
  * Environment Manager Configuration
  */
 import { projectRoot, SUPPORTED_STAGES } from './base';
-import { EnvironmentManagerConfig } from '../types/config';
+import { IEnvironmentManagerConfig } from '../types/config';
 
 // Infrastructure environment file paths
 export const INFRASTRUCTURE_ENV_PATHS = {
@@ -46,7 +46,7 @@ export const SERVICE_CONFIGS = {
 };
 
 // Configuration object for EnvironmentManager
-export const envManagerConfig: EnvironmentManagerConfig = {
+export const envManagerConfig: IEnvironmentManagerConfig = {
   projectRoot,
   supportedStages: [...SUPPORTED_STAGES],
   infrastructureEnvPaths: INFRASTRUCTURE_ENV_PATHS,

@@ -2,11 +2,11 @@ import * as ssmCommands from '../../lib/cli/commands/ssm-params';
 import * as dataCommands from '../../lib/cli/commands/data-management';
 import * as invalidateCommands from '../../lib/cli/commands/invalidate-cloudfront-distribution';
 import * as publishCommands from '../../lib/cli/commands/web-app-publish';
-import { ExportOptions, ExportResult } from '../../types/cli/ssm-params';
-import { DataManagementOptions, DataManagementResult } from '../../types/cli/data-management';
+import { IExportOptions, IExportResult } from '../../types/cli/ssm-params';
+import { IDataManagementOptions, IDataManagementResult } from '../../types/cli/data-management';
 
 // Define upload result type to match the function return
-interface UploadResult {
+interface IUploadResult {
   success: boolean;
   message: string;
   errorCount: number;
@@ -38,11 +38,11 @@ export const publishCommandHandlers = {
 export async function simulateSSMCLI(
   command: string,
   options: Record<string, any> = {}
-): Promise<UploadResult | ExportResult> {
+): Promise<IUploadResult | IExportResult> {
   if (command === 'upload') {
     return await ssmCommandHandlers.upload(options);
   } else if (command === 'export') {
-    return await ssmCommandHandlers.export(options as ExportOptions);
+    return await ssmCommandHandlers.export(options as IExportOptions);
   }
   throw new Error(`Unknown command: ${command}`);
 }
@@ -50,8 +50,8 @@ export async function simulateSSMCLI(
 // Function to simulate Data Management CLI execution without spawning a process
 export async function simulateDataCLI(
   command: string,
-  options: DataManagementOptions = {}
-): Promise<DataManagementResult> {
+  options: IDataManagementOptions = {}
+): Promise<IDataManagementResult> {
   if (command === 'upload') {
     return await dataCommandHandlers.upload(options);
   } else if (command === 'download') {

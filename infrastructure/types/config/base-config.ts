@@ -5,7 +5,7 @@
 /**
  * Base configuration for all managers
  */
-export interface BaseManagerConfig {
+export interface IBaseManagerConfig {
   projectRoot: string;
   supportedStages: string[];
 }

@@ -11,10 +11,8 @@ import { Construct } from 'constructs';
 import { addStackOutputs } from '../utils/stack-outputs';
 import * as path from 'path';
 
-interface WebStackProps extends cdk.StackProps {
+interface IWebStackProps extends cdk.StackProps {
   stage: 'dev' | 'prod';
-  userPool: cognito.UserPool;
-  userPoolClient: cognito.UserPoolClient;
   domainName?: string;
 }
 
@@ -29,7 +27,7 @@ export class WebStack extends cdk.Stack {
   public readonly userPoolClient: cognito.UserPoolClient;
   private readonly stage: string;
 
-  constructor(scope: Construct, id: string, props: WebStackProps) {
+  constructor(scope: Construct, id: string, props: IWebStackProps) {
     super(scope, id, {
       ...props,
       env: {

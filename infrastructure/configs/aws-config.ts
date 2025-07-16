@@ -1,6 +1,6 @@
 import { Stage } from '../types/common';
 import { projectRoot, SUPPORTED_STAGES } from './base';
-import { BaseManagerConfig } from '../types/config';
+import { IBaseManagerConfig } from '../types/config';
 
 // Valid regions for AWS operations
 export const VALID_REGIONS = ['eu-central-1', 'us-east-1'];
@@ -65,7 +65,7 @@ export const STACK_NAME_PATTERNS = {
 } as const;
 
 // AWS Manager Configuration
-export const awsManagerConfig: BaseManagerConfig = {
+export const awsManagerConfig: IBaseManagerConfig = {
   projectRoot,
   supportedStages: [...SUPPORTED_STAGES]
 };

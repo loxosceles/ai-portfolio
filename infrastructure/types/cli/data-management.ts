@@ -1,12 +1,12 @@
 /**
  * Data Management CLI types
  */
-import { DataCollection, DataItem } from '../data';
+import { IDataCollection, IDataItem } from '../data';
 
 /**
  * Options for data management operations
  */
-export interface DataManagementOptions {
+export interface IDataManagementOptions {
   verbose?: boolean;
   output?: string;
   region?: string;
@@ -15,7 +15,7 @@ export interface DataManagementOptions {
 /**
  * Command options for data management CLI
  */
-export interface DataManagementCommandOptions {
+export interface IDataManagementCommandOptions {
   verbose?: boolean;
   output?: string;
   region?: string;
@@ -24,9 +24,9 @@ export interface DataManagementCommandOptions {
 /**
  * Result of data management operations
  */
-export interface DataManagementResult {
+export interface IDataManagementResult {
   success: boolean;
   message: string;
-  data?: DataCollection<DataItem>;
+  data?: IDataCollection<IDataItem>;
   error?: Error;
 }

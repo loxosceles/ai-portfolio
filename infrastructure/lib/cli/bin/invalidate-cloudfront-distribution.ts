@@ -5,10 +5,14 @@ import { invalidateCloudFrontDistribution } from '../commands/invalidate-cloudfr
 
 const program = new Command();
 
+interface IInvalidateCloudFrontDistributionCommandOptions {
+  verbose?: boolean;
+}
+
 program
   .description('Invalidate CloudFront distribution cache')
   .option('-v, --verbose', 'Enable verbose logging')
-  .action(async (options: any) => {
+  .action(async (options: IInvalidateCloudFrontDistributionCommandOptions) => {
     try {
       await invalidateCloudFrontDistribution(options.verbose);
     } catch (error) {

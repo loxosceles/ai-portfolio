@@ -5,7 +5,7 @@
 /**
  * Skill
  */
-export interface Skill {
+export interface ISkill {
   name: string;
   level?: number;
 }
@@ -13,7 +13,7 @@ export interface Skill {
 /**
  * Skill set
  */
-export interface SkillSet {
+export interface ISkillSet {
   id: string;
   name: string;
   skills: string[];
@@ -22,7 +22,7 @@ export interface SkillSet {
 /**
  * Developer profile
  */
-export interface Developer {
+export interface IDeveloper {
   id: string;
   name: string;
   title: string;
@@ -34,5 +34,5 @@ export interface Developer {
   location?: string;
   yearsOfExperience: number;
   isActive: boolean;
-  skillSets: SkillSet[];
+  skillSets: ISkillSet[];
 }

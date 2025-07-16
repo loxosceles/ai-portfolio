@@ -1,19 +1,19 @@
 import { BaseManager } from '../../lib/core/base-manager';
-import { BaseManagerConfig } from '../../types/config';
+import { IBaseManagerConfig } from '../../types/config';
 
 // Mock environment
 process.env.ENVIRONMENT = 'dev';
 
 // Create a concrete implementation of BaseManager for testing
 class TestManager extends BaseManager {
-  constructor(config: BaseManagerConfig) {
+  constructor(config: IBaseManagerConfig) {
     super(config);
   }
 }
 
 describe('BaseManager', () => {
   // Test configuration
-  const testConfig: BaseManagerConfig = {
+  const testConfig: IBaseManagerConfig = {
     projectRoot: '/test/project/root',
     supportedStages: ['dev', 'prod']
   };

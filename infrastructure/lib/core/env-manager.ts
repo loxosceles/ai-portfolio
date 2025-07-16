@@ -3,12 +3,12 @@ import * as fsSync from 'fs';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { BaseManager } from './base-manager';
-import { EnvironmentManagerConfig } from '../../types/config';
+import { IEnvironmentManagerConfig } from '../../types/config';
 
 export class EnvironmentManager extends BaseManager {
-  private envConfig: EnvironmentManagerConfig;
+  private envConfig: IEnvironmentManagerConfig;
 
-  constructor(config: EnvironmentManagerConfig) {
+  constructor(config: IEnvironmentManagerConfig) {
     super(config);
     this.envConfig = config;
   }

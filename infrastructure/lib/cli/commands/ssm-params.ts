@@ -57,7 +57,7 @@ export async function handleUploadParameters(options: {
 /**
  * Handle export parameters command
  */
-export async function handleExportParameters(options: ExportOptions): Promise<ExportResult> {
+export async function handleExportParameters(options: IExportOptions): Promise<IExportResult> {
   try {
     const { regions, scope, format = 'env', target, output, outputPath, verbose = false } = options;
     const stage = awsManager.getStage();

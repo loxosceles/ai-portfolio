@@ -1,5 +1,5 @@
 import { EnvironmentManager } from '../../lib/core/env-manager';
-import { EnvironmentManagerConfig } from '../../types/config';
+import { IEnvironmentManagerConfig } from '../../types/config';
 import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
 import * as path from 'path';
@@ -15,7 +15,7 @@ process.env.ENVIRONMENT = 'dev';
 
 describe('EnvironmentManager', () => {
   // Test configuration
-  const testConfig: EnvironmentManagerConfig = {
+  const testConfig: IEnvironmentManagerConfig = {
     projectRoot: '/test/project/root',
     supportedStages: ['dev', 'prod'],
     infrastructureEnvPaths: {
