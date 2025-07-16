@@ -1,7 +1,6 @@
 /**
  * Data Management CLI types
  */
-import { Stage } from '../common';
 import { DataCollection, DataItem } from '../data';
 
 /**

@@ -1,5 +1,6 @@
 /**
- * Stage type and related constants
+ * Stage type
  */
-export const SUPPORTED_STAGES = ['dev', 'prod'] as const;
-export type Stage = (typeof SUPPORTED_STAGES)[number];
+
+// Define the type directly here
+export type Stage = 'dev' | 'prod' | 'test';
