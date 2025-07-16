@@ -37,35 +37,35 @@ export class SharedStack extends cdk.Stack {
         value: this.userPool.userPoolId,
         description: 'Cognito User Pool ID',
         exportName: 'cognito-user-pool-id',
-        paramName: 'NEXT_PUBLIC_COGNITO_USER_POOL_ID'
+        paramName: 'COGNITO_USER_POOL_ID'
       },
       {
         id: 'CognitoClientId',
         value: this.userPoolClient.userPoolClientId,
         description: 'Cognito User Pool Client ID',
         exportName: 'cognito-client-id',
-        paramName: 'NEXT_PUBLIC_COGNITO_CLIENT_ID'
+        paramName: 'COGNITO_CLIENT_ID'
       },
       {
         id: 'CognitoDomainName',
         value: this.userPoolDomain.domainName,
         description: 'Cognito Domain Name',
         exportName: 'cognito-domain-name',
-        paramName: 'NEXT_PUBLIC_COGNITO_DOMAIN_NAME'
+        paramName: 'COGNITO_DOMAIN_NAME'
       },
       {
         id: 'CognitoAuthority',
         value: cognitoAuthority,
         description: 'Cognito Authority URL',
         exportName: 'cognito-authority',
-        paramName: 'NEXT_PUBLIC_COGNITO_AUTHORITY'
+        paramName: 'COGNITO_AUTHORITY'
       },
       {
         id: 'RedirectUri',
         value: redirectUri,
         description: 'OAuth Redirect URI',
         exportName: 'redirect-uri',
-        paramName: 'NEXT_PUBLIC_REDIRECT_URI'
+        paramName: 'REDIRECT_URI'
       },
       {
         id: 'AWSAccountId',
