@@ -36,6 +36,21 @@ export const PARAMETER_SCHEMA: Record<Stage, Record<string, string[]>> = {
       'RECRUITER_PROFILES_TABLE_NAME'
     ],
     'us-east-1': ['CERTIFICATE_ARN', 'PROD_DOMAIN_NAME', 'VISITOR_TABLE_NAME']
+  },
+  test: {
+    'eu-central-1': [
+      'BEDROCK_MODEL_ID',
+      'CDK_DEFAULT_ACCOUNT',
+      'CDK_DEFAULT_REGION',
+      'GITHUB_OWNER',
+      'GITHUB_REPO',
+      'DATA_BUCKET_NAME',
+      'DEVELOPER_TABLE_NAME',
+      'PROJECTS_TABLE_NAME',
+      'MATCHING_TABLE_NAME',
+      'RECRUITER_PROFILES_TABLE_NAME'
+    ],
+    'us-east-1': ['VISITOR_TABLE_NAME']
   }
 };
 

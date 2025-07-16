@@ -5,10 +5,9 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
-import { addStackOutputs } from '../utils/stack-outputs';
+import { addStackOutputs, getRequiredEnvVars } from './stack-helpers';
 import * as path from 'path';
 
 interface IWebStackProps extends cdk.StackProps {
@@ -23,8 +22,6 @@ interface IWebStackProps extends cdk.StackProps {
 export class WebStack extends cdk.Stack {
   public readonly websiteBucket: s3.Bucket;
   public readonly distribution: cloudfront.Distribution;
-  public readonly userPool: cognito.UserPool;
-  public readonly userPoolClient: cognito.UserPoolClient;
   private readonly stage: string;
 
   constructor(scope: Construct, id: string, props: IWebStackProps) {
@@ -36,18 +33,27 @@ export class WebStack extends cdk.Stack {
       }
     });
     this.stage = props.stage;
-    this.userPool = props.userPool;
-    this.userPoolClient = props.userPoolClient;
 
     if (!['dev', 'prod'].includes(this.stage)) {
       throw new Error('Stage must be either "dev" or "prod"');
     }
 
+    // Get required environment variables
+    const envVars =
+      this.stage === 'prod'
+        ? getRequiredEnvVars(
+            ['VISITOR_TABLE_NAME', 'PROD_DOMAIN_NAME', 'PROD_CERTIFICATE_ARN'],
+            this.stage
+          )
+        : getRequiredEnvVars(['VISITOR_TABLE_NAME'], this.stage);
+
+    const { visitorTableName, prodDomainName, prodCertificateArn } = envVars;
+
     const isProd = this.stage === 'prod';
 
     // Create DynamoDB table for visitor context
     const visitorTable = new dynamodb.Table(this, 'VisitorLinkTable', {
-      tableName: `portfolio-visitor-links-${this.stage}`,
+      tableName: `${visitorTableName}-${this.stage}`,
       partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
       timeToLiveAttribute: 'ttl', // Add TTL for link expiration
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -106,12 +112,12 @@ export class WebStack extends cdk.Stack {
       })
     );
 
-    // Add permissions for Cognito
+    // Add permissions for Cognito (using parameter from SSM)
     edgeFunctionRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['cognito-idp:AdminInitiateAuth', 'cognito-idp:AdminGetUser'],
-        resources: [props.userPool.userPoolArn]
+        resources: [`arn:aws:cognito-idp:*:${this.account}:userpool/*`]
       })
     );
 
@@ -138,6 +144,7 @@ export class WebStack extends cdk.Stack {
       this,
       'VisitorContextFunction',
       {
+        functionName: `visitor-context-${this.stage}`,
         runtime: lambda.Runtime.NODEJS_20_X,
         handler: 'index.handler',
         code: lambda.Code.fromAsset(
@@ -145,7 +152,6 @@ export class WebStack extends cdk.Stack {
         ),
         role: edgeFunctionRole,
         stackId: `${this.stackName}-visitor-context-${this.stage}-edge`,
-        functionName: `visitor-context-${this.stage}`,
         timeout: cdk.Duration.seconds(5),
         memorySize: 128,
         description: `Adds visitor context headers for ${this.stage} environment`,
@@ -181,10 +187,9 @@ export class WebStack extends cdk.Stack {
     });
 
     // Get domain name for production from environment variable
-    // This is set by the pipeline-helpers/fetch-domain.mjs script
     let domainName: string | undefined;
     if (isProd) {
-      domainName = process.env.PROD_DOMAIN_NAME;
+      domainName = prodDomainName;
 
       if (domainName) {
         // eslint-disable-next-line no-console
@@ -201,7 +206,7 @@ export class WebStack extends cdk.Stack {
 
     if (isProd && domainName) {
       // Get certificate ARN from environment variable
-      const certificateArn = process.env.PROD_CERTIFICATE_ARN;
+      const certificateArn = prodCertificateArn;
 
       if (certificateArn) {
         // Use the existing certificate that has been manually validated
@@ -275,46 +280,32 @@ export class WebStack extends cdk.Stack {
     // Add stack outputs with unique export names
     addStackOutputs(this, this.stage, [
       {
-        id: 'WebBucketName',
-        value: this.websiteBucket.bucketName,
-        description: 'Name of the website bucket',
-        exportName: 'web-bucket',
-        paramName: 'WEB_BUCKET_NAME'
-      },
-      {
-        id: 'WebDistributionDomainName',
+        id: 'CloudFrontDomain',
         value: this.distribution.distributionDomainName,
-        description: 'CloudFront Distribution Domain Name for web stack',
-        exportName: 'web-cloudfront-domain',
-        paramName: 'WEB_CLOUDFRONT_DOMAIN'
+        description: 'CloudFront Distribution Domain Name',
+        exportName: 'cloudfront-domain',
+        paramName: 'CLOUDFRONT_DOMAIN'
       },
       {
-        id: 'WebDistributionId',
+        id: 'CloudFrontDistributionId',
         value: this.distribution.distributionId,
         description: 'CloudFront Distribution ID for web stack',
         exportName: 'web-cloudfront-distribution-id',
-        paramName: 'WEB_CLOUDFRONT_DISTRIBUTION_ID'
+        paramName: 'CLOUDFRONT_DISTRIBUTION_ID'
       },
       {
-        id: 'EdgeFunctionRegion',
-        value: 'eu-central-1',
-        description: 'Region for Edge Function to access Cognito',
-        exportName: 'edge-function-region',
-        paramName: 'edge/function-region'
-      },
-      {
-        id: 'EdgeVisitorTableName',
-        value: visitorTable.tableName,
-        description: 'DynamoDB table for visitor links',
-        exportName: 'edge-visitor-table',
-        paramName: 'edge/visitor-table-name'
-      },
-      {
-        id: 'EdgeVisitorTableRegion',
+        id: 'AwsRegionDistrib',
         value: 'us-east-1',
-        description: 'Region for visitor table',
-        exportName: 'edge-visitor-table-region',
-        paramName: 'edge/visitor-table-region'
+        description: 'AWS region for distribution services',
+        exportName: 'aws-region-distrib',
+        paramName: 'AWS_REGION_DISTRIB'
+      },
+      {
+        id: 'WebBucketName',
+        value: this.websiteBucket.bucketName,
+        description: 'S3 bucket name for website hosting',
+        exportName: 'web-bucket-name',
+        paramName: 'WEB_BUCKET_NAME'
       }
     ]);
   }
