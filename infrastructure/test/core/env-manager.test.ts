@@ -18,9 +18,10 @@ describe('EnvironmentManager', () => {
   const testConfig: EnvironmentManagerConfig = {
     projectRoot: '/test/project/root',
     supportedStages: ['dev', 'prod'],
-    envPaths: {
+    infrastructureEnvPaths: {
       base: 'infrastructure/.env',
-      stage: (stage: string) => `infrastructure/.env.${stage}`
+      stage: (stage: string) => `infrastructure/.env.${stage}`,
+      runtime: 'infrastructure/.env.runtime'
     },
     serviceConfigs: {
       frontend: {
@@ -92,7 +93,7 @@ describe('EnvironmentManager', () => {
       const env = envManager.loadEnv();
 
       expect(dotenv.config).toHaveBeenCalledWith({
-        path: path.join(testConfig.projectRoot, testConfig.envPaths.base)
+        path: path.join(testConfig.projectRoot, testConfig.infrastructureEnvPaths.base)
       });
 
       expect(env).toEqual({
@@ -104,11 +105,11 @@ describe('EnvironmentManager', () => {
       const env = envManager.loadEnv('dev');
 
       expect(dotenv.config).toHaveBeenCalledWith({
-        path: path.join(testConfig.projectRoot, testConfig.envPaths.base)
+        path: path.join(testConfig.projectRoot, testConfig.infrastructureEnvPaths.base)
       });
 
       expect(fsSync.readFileSync).toHaveBeenCalledWith(
-        path.join(testConfig.projectRoot, testConfig.envPaths.stage('dev')),
+        path.join(testConfig.projectRoot, testConfig.infrastructureEnvPaths.stage('dev')),
         'utf-8'
       );
 
