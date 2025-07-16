@@ -25,11 +25,11 @@ export const dataCommandHandlers = {
 };
 
 export const invalidateCommandHandlers = {
-  invalidate: invalidateCommands.invalidateCloudFrontDistribution
+  invalidate: invalidateCommands.handleInvalidateCloudFrontDistribution
 };
 
 export const publishCommandHandlers = {
-  publish: publishCommands.publishWebApp
+  publish: publishCommands.handlePublishWepApp
 };
 
 // Environment is set in test/setup/environment.js

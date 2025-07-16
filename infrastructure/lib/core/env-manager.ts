@@ -39,7 +39,7 @@ export class EnvironmentManager extends BaseManager {
       } catch (err) {
         // Stage-specific env file might not exist, which is fine
         console.warn(`Note: No stage-specific env file found at ${stageEnvPath}`);
-        console.warn(err);
+        console.warn(`Warning: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 
