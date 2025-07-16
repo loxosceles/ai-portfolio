@@ -224,8 +224,7 @@ async function createJobMatchingData(linkId) {
       recruiterName: 'New Recruiter',
       context: 'Software Engineering',
       greeting: `Welcome! Thanks for checking out my portfolio.`,
-      message:
-        'I appreciate your interest in my work. My experience with cloud architecture and full-stack development could be a great match for your needs.',
+      message: 'I appreciate your interest in my work. My experience with cloud architecture and full-stack development could be a great match for your needs.',
       skills: ['AWS', 'React', 'Node.js', 'TypeScript', 'Serverless']
     };
 
