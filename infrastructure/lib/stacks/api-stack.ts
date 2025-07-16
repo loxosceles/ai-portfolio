@@ -23,7 +23,7 @@ export class ApiStack extends cdk.Stack {
   public readonly api: appsync.GraphqlApi;
   private readonly stage: string;
 
-  constructor(scope: Construct, id: string, props: ApiStackProps) {
+  constructor(scope: Construct, id: string, props: IApiStackProps) {
     super(scope, id, props);
     const { stage, userPool, jobMatchingTable, recruiterProfilesTable, bedrockModelId } = props;
     this.stage = stage;
