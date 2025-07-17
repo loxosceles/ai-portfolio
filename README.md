@@ -131,6 +131,9 @@ graph TB
 - [AI Advocate Implementation Plan](docs/ai-advocate-implementation-plan.md)
 - [Authentication Flow](docs/auth-flow.md)
 - [Model Adapters for AI Advocate](docs/model-adapters.md)
+- [Development Guide](docs/development.md)
+- [Environment Variable Strategy](docs/environment-variable-strategy.md)
+- [CLI Architecture](docs/cli-architecture.md)
 
 ### Features
 
@@ -142,8 +145,6 @@ graph TB
 ### Deployment & Operations
 
 - [Deployment Guide](docs/deployment.md)
-- [Deployment Pipeline](docs/deployment-pipeline.md)
-- [CodePipeline Deployment](docs/codepipeline-deployment.md)
 - [S3 Bucket Regions](docs/s3-bucket-regions.md)
 - [Security Policy](docs/security-policy.md)
 

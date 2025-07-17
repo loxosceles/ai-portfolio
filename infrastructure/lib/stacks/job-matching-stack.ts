@@ -6,9 +6,8 @@ import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as path from 'path';
 import { Construct } from 'constructs';
-import { addStackOutputs } from '../utils/stack-outputs';
 
-interface JobMatchingStackProps extends cdk.StackProps {
+interface IJobMatchingStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
   stage: 'dev' | 'prod';
   cloudfrontDomain: string;
@@ -16,11 +15,13 @@ interface JobMatchingStackProps extends cdk.StackProps {
 
 export class JobMatchingStack extends cdk.Stack {
   public readonly matchingTable: dynamodb.Table;
-  public readonly recruiterProfilesTable: dynamodb.Table; // New table for recruiter profiles
+  public readonly recruiterProfilesTable: dynamodb.Table;
   public readonly api: apigateway.RestApi;
   private readonly stage: string;
+  private matchingTableName: string;
+  private recruiterProfilesTableName: string;
 
-  constructor(scope: Construct, id: string, props: JobMatchingStackProps) {
+  constructor(scope: Construct, id: string, props: IJobMatchingStackProps) {
     super(scope, id, props);
     const { stage, userPool, cloudfrontDomain } = props;
     this.stage = stage;
@@ -28,6 +29,17 @@ export class JobMatchingStack extends cdk.Stack {
     if (!['dev', 'prod'].includes(this.stage)) {
       throw new Error('Stage must be either "dev" or "prod"');
     }
+
+    // Get required environment variables
+    const { getRequiredEnvVars } = require('./stack-helpers');
+    const { matchingTableName, recruiterProfilesTableName } = getRequiredEnvVars(
+      ['MATCHING_TABLE_NAME', 'RECRUITER_PROFILES_TABLE_NAME'],
+      this.stage
+    );
+
+    // Store for use in private methods
+    this.matchingTableName = matchingTableName;
+    this.recruiterProfilesTableName = recruiterProfilesTableName;
 
     // Create DynamoDB tables for job matching data
     this.matchingTable = this.createMatchingTable(stage === 'prod');
@@ -50,14 +62,11 @@ export class JobMatchingStack extends cdk.Stack {
       apiGatewayLoggingRole,
       cloudfrontDomain
     );
-
-    // Add stack outputs
-    this.addOutputs(stage);
   }
 
   private createMatchingTable(isProd: boolean): dynamodb.Table {
     return new dynamodb.Table(this, 'JobMatchingTable', {
-      tableName: `JobMatching-${this.stage}`,
+      tableName: `${this.matchingTableName}-${this.stage}`,
       partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
@@ -73,7 +82,7 @@ export class JobMatchingStack extends cdk.Stack {
    */
   private createRecruiterProfilesTable(isProd: boolean): dynamodb.Table {
     return new dynamodb.Table(this, 'RecruiterProfilesTable', {
-      tableName: `RecruiterProfiles-${this.stage}`,
+      tableName: `${this.recruiterProfilesTableName}-${this.stage}`,
       partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
@@ -89,7 +98,7 @@ export class JobMatchingStack extends cdk.Stack {
   ): lambda.Function {
     const fn = new lambda.Function(this, 'JobMatchingFunction', {
       functionName: `job-matching-${this.stage}`,
-      runtime: lambda.Runtime.NODEJS_22_X, // Updated to Node.js 22
+      runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../functions/job-matching')),
       environment: {
@@ -164,17 +173,5 @@ export class JobMatchingStack extends cdk.Stack {
     });
 
     return api;
-  }
-
-  private addOutputs(stage: string): void {
-    addStackOutputs(this, stage, [
-      {
-        id: 'JobMatchingApiUrl',
-        value: this.api.url,
-        description: 'URL of the Job Matching API',
-        exportName: `job-matching-api-url-${stage}`,
-        paramName: 'NEXT_PUBLIC_JOB_MATCHING_API_URL'
-      }
-    ]);
   }
 }

@@ -1,295 +1,373 @@
-# Dynamic Prompt Generation System
+# Conversation-Aware AI Advocate System
 
-This document outlines the plan for implementing a dynamic prompt generation system for the AI advocate feature.
+This document outlines the plan for implementing a conversation-aware AI advocate system that eliminates repetitive responses and creates natural, contextual conversations with recruiters.
 
-## Current State
+## Problem Statement
 
-Currently, the AI advocate feature uses a hardcoded prompt in the `generateAIResponse` function in `index.mjs`:
+The current AI advocate system has several critical issues:
 
-```javascript
-const prompt = `
-  ${context}
-  
-  You are an AI Advocate representing a developer in a conversation with a recruiter.
-  Answer the following question about the developer's skills, experience, or background:
-  
-  Question: "${question}"
-  
-  Use the following information about the developer to provide an accurate, helpful response:
-  - Full-stack developer with experience in React, Node.js, and AWS
-  - 5+ years of experience building web applications
-  - Experience with cloud architecture, particularly with AWS services
-  - Strong background in serverless architectures and microservices
-  - Passionate about clean code, performance optimization, and user experience
-  
-  Keep your response professional, concise (around 150 words), and focused on the question asked.
-`;
-```
+1. **Repetitive responses**: The AI falls back to the same base information regardless of question context
+2. **Robotic conversations**: Lacks conversational memory and context awareness
+3. **Poor user experience**: Recruiters receive identical information repeatedly
+4. **No conversation continuity**: Each question is treated in isolation
 
-This approach has several limitations:
+## Solution Overview
 
-- Developer information is hardcoded and cannot be updated without code changes
-- No way to tailor responses based on specific skills or experiences
-- No integration with the existing developer profile data
+We'll implement a conversation-aware system that:
 
-## Proposed Solution
+1. **Stores conversation history** in the RecruiterProfile table
+2. **Prevents repetitive responses** through dynamic prompt generation
+3. **Maintains conversation context** across sessions
+4. **Provides natural conversation flow** with memory of previous interactions
+5. **Enables analytics** on recruiter interests and conversation patterns
 
-We'll implement a dynamic prompt generation system that:
+## Architecture Decision: Backend-Only State Management
 
-1. Uses the existing developer profile data from the developer table
-2. Integrates with the job matching table for recruiter context
-3. Dynamically generates prompts based on the latest developer information
-4. Optimizes for performance by minimizing latency
+**Key Principle**: The frontend remains stateless. All conversation state is managed by the Lambda function.
 
-## Implementation Plan
+**Flow**:
 
-### Step 1: Update AI Advocate Resolver to Access Developer Data
+1. Frontend sends question via GraphQL
+2. Lambda loads conversation history from RecruiterProfile
+3. Lambda generates contextual response with anti-repetition rules
+4. Lambda saves updated conversation history
+5. Frontend receives response (no state management required)
 
-Modify the `AIAdvocateResolverConstruct` to grant access to the developer table:
+**Benefits**:
+
+- Simplified frontend architecture
+- Automatic persistence across sessions
+- Atomic operations per request
+- Natural integration with existing auth flow
+
+## Database Design: Extended RecruiterProfile
+
+**Decision**: Extend the existing RecruiterProfile table rather than creating a separate ConversationHistory table.
+
+**Rationale**:
+
+- Conversation history is inherently tied to a specific recruiter session
+- Simpler data model with fewer joins
+- Easier analytics and conversation reset per recruiter
+- Natural fit with existing linkId-based architecture
+
+**Extended Schema**:
 
 ```typescript
-// In ai-advocate-resolver-construct.ts
-export interface AIAdvocateResolverProps {
-  api: appsync.GraphqlApi;
-  jobMatchingTable: dynamodb.ITable;
-  developerTable: dynamodb.ITable; // Add this
-  stage: string;
-  bedrockModelId?: string;
+interface RecruiterProfile {
+  // ... existing fields
+  conversationHistory?: ConversationMessage[];
+  lastInteractionAt?: number;
+  conversationStartedAt?: number;
+  topicsCovered?: string[];
 }
 
-// In the constructor
-this.function = new lambda.Function(this, 'AIAdvocateFunction', {
-  // ...existing config
-  environment: {
-    MATCHING_TABLE_NAME: props.jobMatchingTable.tableName,
-    DEVELOPER_TABLE_NAME: props.developerTable.tableName, // Add this
-    BEDROCK_MODEL_ID: props.bedrockModelId
-  }
-  // ...
-});
-
-// Grant read access to developer table
-props.developerTable.grantReadData(this.function);
+interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+  topicsCovered?: string[];
+}
 ```
 
-### Step 2: Create Prompt Generation Module
+## Implementation Stages
 
-Create a new module for prompt generation in the AI advocate function:
+### Stage 1: Conversation Persistence + Anti-Repetition (Combined)
+
+**Goal**: Eliminate robotic responses through conversation awareness
+
+**Why Combined**: These features are tightly coupled - storing history without using it provides no immediate value.
+
+**Implementation**:
+
+1. Extend RecruiterProfile table schema
+2. Modify AI advocate Lambda to load/save conversation history
+3. Integrate conversation context into prompt generation
+4. Implement anti-repetition rules in prompt
+5. Add conversation reset endpoint
+
+**Key Features**:
+
+- Persistent conversation across sessions
+- Dynamic prompt includes conversation context
+- Rule: "Never repeat information already discussed unless specifically requested"
+- Topic tracking prevents redundant information sharing
+- Backend-only state management
+
+**Technical Details**:
 
 ```javascript
-// In /infrastructure/lib/functions/ai-advocate/prompt-generator.mjs
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+// Lambda function flow
+async function handleAIQuestion(event) {
+  const { question, linkId } = event.arguments;
 
-// Initialize DynamoDB client
-const dynamodb = new DynamoDBClient({ region: 'eu-central-1' });
-const docClient = DynamoDBDocumentClient.from(dynamodb);
+  // Load recruiter profile (includes conversation history)
+  const recruiterProfile = await getRecruiterProfile(linkId);
 
-/**
- * Generates a dynamic prompt based on developer profile and recruiter context
- * @param {string} question - The question asked by the recruiter
- * @param {object} recruiterData - Data about the recruiter from the job matching table
- * @returns {string} - The generated prompt
- */
-export async function generateDynamicPrompt(question, recruiterData) {
-  // Get developer profile data
-  const developerData = await getDeveloperData();
+  // Generate response with full context
+  const response = await generateContextualResponse(question, recruiterProfile);
 
-  // Create recruiter context section
-  let recruiterContext = '';
-  if (recruiterData) {
-    recruiterContext = `
-      You are responding to ${recruiterData.recruiterName} from ${recruiterData.companyName}.
-      Their context is: ${recruiterData.context || 'Not specified'}
-      Skills they might be interested in: ${recruiterData.skills?.join(', ') || 'Not specified'}
-    `;
-  }
+  // Update conversation history
+  const updatedHistory = [
+    ...(recruiterProfile.conversationHistory || []),
+    { role: 'user', content: question, timestamp: Date.now() },
+    { role: 'assistant', content: response, timestamp: Date.now() }
+  ];
 
-  // Format skills section
-  const skillsSection = formatSkillsSection(developerData);
+  // Save updated profile
+  await updateRecruiterProfile(linkId, {
+    conversationHistory: updatedHistory,
+    lastInteractionAt: Date.now(),
+    conversationStartedAt: recruiterProfile.conversationStartedAt || Date.now()
+  });
 
-  // Format experience section
-  const experienceSection = formatExperienceSection(developerData);
+  return { response };
+}
+```
 
-  // Combine everything into a prompt
+**Prompt Composition Strategy**:
+
+```javascript
+function buildContextualPrompt(question, recruiterProfile, developerData) {
+  const history = recruiterProfile.conversationHistory || [];
+  const conversationContext = buildConversationContext(history);
+
   return `
-    ${recruiterContext}
+    ${buildRecruiterContext(recruiterProfile)}
+    ${conversationContext}
     
-    You are an AI Advocate representing a developer in a conversation with a recruiter.
-    Answer the following question about the developer's skills, experience, or background:
+    CONVERSATION RULES:
+    - Never repeat information already shared unless specifically requested
+    - Build upon previous context naturally
+    - If returning after a break (>1 hour), acknowledge the gap warmly
     
     Question: "${question}"
     
-    Use the following information about the developer to provide an accurate, helpful response:
-    ${skillsSection}
-    ${experienceSection}
+    ${buildDeveloperContext(developerData)}
     
-    Keep your response professional, concise (around 150 words), and focused on the question asked.
+    Keep responses professional, concise (around 150 words), and conversational.
   `;
 }
-
-/**
- * Gets developer data from the DynamoDB table
- * @returns {object} - Developer profile data
- */
-async function getDeveloperData() {
-  try {
-    const tableName = process.env.DEVELOPER_TABLE_NAME;
-
-    // For now, we'll scan the table to get all developer data
-    // In a future iteration, we could use a specific ID or filter
-    const command = new ScanCommand({
-      TableName: tableName,
-      Limit: 10 // Assuming we have a small number of developer profiles
-    });
-
-    const response = await docClient.send(command);
-
-    // Return the first active developer profile or the first profile if none are marked active
-    const activeProfile = response.Items?.find((item) => item.isActive === true);
-    return activeProfile || response.Items?.[0] || null;
-  } catch (error) {
-    console.error('Error fetching developer data:', error);
-    return null;
-  }
-}
-
-/**
- * Formats the skills section of the prompt
- * @param {object} developerData - Developer profile data
- * @returns {string} - Formatted skills section
- */
-function formatSkillsSection(developerData) {
-  if (!developerData || !developerData.skillSets) {
-    return '- Full-stack developer with experience in web development';
-  }
-
-  return developerData.skillSets
-    .map((skillSet) => {
-      return `- ${skillSet.name}: ${skillSet.skills.join(', ')}`;
-    })
-    .join('\n');
-}
-
-/**
- * Formats the experience section of the prompt
- * @param {object} developerData - Developer profile data
- * @returns {string} - Formatted experience section
- */
-function formatExperienceSection(developerData) {
-  if (!developerData) {
-    return '- Several years of experience in software development';
-  }
-
-  return `- ${developerData.yearsOfExperience}+ years of experience as a ${developerData.title}
-- ${developerData.bio || 'Experienced developer with a passion for quality code'}`;
-}
 ```
 
-### Step 3: Update the AI Advocate Function
+### Stage 2: Smart Session Management
 
-Modify the AI advocate function to use the dynamic prompt generator:
+**Goal**: Natural conversation flow across sessions
+
+**Implementation**:
+
+1. Conversation resumption with context summary
+2. Intelligent session gap handling (>1 hour)
+3. Enhanced "welcome back" messages
+4. Conversation reset functionality
+
+**Key Features**:
+
+- "Welcome back" messages: "Nice to see you again. I remember we were talking about [topic] last time. What's on your mind today?"
+- Automatic context refresh for long gaps
+- Manual conversation reset option
+- Session continuity indicators
+
+**Technical Details**:
 
 ```javascript
-// In index.mjs
-import { generateDynamicPrompt } from './prompt-generator.mjs';
-
-// Update the generateAIResponse function
-async function generateAIResponse(question, recruiterData) {
-  try {
-    // Get model ID from environment variables
-    const modelId = process.env.BEDROCK_MODEL_ID;
-    if (!modelId) {
-      throw new Error('BEDROCK_MODEL_ID environment variable is not set');
-    }
-
-    // Get the appropriate adapter for this model
-    const adapter = ModelRegistry.getAdapter(modelId);
-
-    // Generate dynamic prompt based on developer profile and recruiter context
-    const prompt = await generateDynamicPrompt(question, recruiterData);
-
-    // Format the payload using the adapter
-    const payload = adapter.formatPrompt(prompt, {
-      maxTokens: 300,
-      temperature: 0.7,
-      topP: 0.9
-    });
-
-    // Rest of the function remains the same
-    // ...
-  } catch (error) {
-    // Error handling
-    // ...
+function buildConversationContext(history) {
+  if (!history || history.length === 0) {
+    return 'This is the start of our conversation.';
   }
+
+  const recentTopics = extractRecentTopics(history);
+  const lastInteraction = history[history.length - 1];
+  const timeSinceLastMessage = Date.now() - lastInteraction.timestamp;
+
+  if (timeSinceLastMessage > 3600000) {
+    // 1 hour
+    return `
+      CONVERSATION CONTEXT: We previously discussed: ${recentTopics.join(', ')}.
+      It's been a while since our last conversation - greet them warmly and reference our previous discussion.
+    `;
+  }
+
+  return `
+    CONVERSATION CONTEXT: In this conversation we have already covered: ${recentTopics.join(', ')}.
+    Build upon this context naturally without repeating the same information.
+  `;
 }
 ```
 
-### Step 4: Update Stack to Pass Developer Table
+### Stage 3: Analytics & Optimization
 
-Update the API stack to pass the developer table to the AI advocate resolver:
+**Goal**: Business intelligence and conversation optimization
 
-```typescript
-// In api-stack.ts or wherever the AI advocate resolver is created
-const developerTable = this.getOrCreateDeveloperTable();
+**Implementation**:
 
-const aiAdvocateResolver = new AIAdvocateResolverConstruct(this, 'AIAdvocateResolver', {
-  api,
-  jobMatchingTable: this.jobMatchingTable,
-  developerTable, // Add this
-  stage,
-  bedrockModelId: props.bedrockModelId
-});
+1. Conversation analytics dashboard
+2. Topic popularity tracking
+3. Response effectiveness metrics
+4. Recruiter interest patterns
 
-// Helper method to get or create the developer table
-private getOrCreateDeveloperTable(): dynamodb.Table {
-  // Check if the table already exists as a construct in this stack
-  const existingTable = this.node.tryFindChild('DeveloperTable') as dynamodb.Table;
-  if (existingTable) {
-    return existingTable;
-  }
+**Key Features**:
 
-  // If not, create it
-  return new dynamodb.Table(this, 'DeveloperTable', {
-    tableName: `Developer-${this.stage}`,
-    partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-    billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-    removalPolicy: this.stage === 'prod' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
-    deletionProtection: this.stage === 'prod'
+- Most discussed topics across all conversations
+- Average conversation length and engagement
+- Popular question patterns
+- Recruiter interest heatmaps
+- Conversation quality metrics
+
+**Analytics Queries**:
+
+- What topics do recruiters ask about most?
+- How long do conversations typically last?
+- Which responses lead to follow-up questions?
+- What skills generate the most interest?
+
+## Performance Considerations
+
+### Conversation History Growth Management
+
+- **History Trimming**: Keep last 20 exchanges per conversation
+- **Compression**: Summarize older messages to preserve context
+- **DynamoDB Limits**: Monitor item size (400KB limit)
+- **Pagination**: Implement if history becomes very large
+
+### Caching Strategy
+
+- **Static Data**: Cache developer profile and recruiter context in Lambda memory
+- **Dynamic Data**: Always load fresh conversation history
+- **Hybrid Approach**: Cached base prompt + dynamic conversation context
+
+### Prompt Composition Optimization
+
+```javascript
+// Efficient prompt composition
+async function generateContextualPrompt(question, linkId) {
+  // STATIC (cache-friendly): Load once per conversation
+  const [developerData, recruiterProfile] = await Promise.all([
+    getDeveloperData(), // Can be cached
+    getRecruiterProfile(linkId) // Base profile can be cached
+  ]);
+
+  // DYNAMIC (per message): Extract conversation history
+  const conversationHistory = recruiterProfile.conversationHistory || [];
+
+  // Compose prompt with conversation context
+  return buildPrompt({
+    static: { developerData, recruiterProfile },
+    dynamic: { question, conversationHistory }
   });
 }
 ```
 
+## Integration with Existing Systems
+
+### Prompt Caching Compatibility
+
+The conversation system works alongside existing prompt caching:
+
+- **Base prompt components** (developer data, recruiter context) remain cached
+- **Conversation context** is dynamically added per request
+- **No conflicts** with existing caching mechanisms
+
+### Authentication Flow
+
+- Uses existing JWT-based authentication
+- Leverages linkId for recruiter identification
+- No changes required to auth flow
+
+### Frontend Integration
+
+- **Minimal changes**: Frontend continues to send questions and receive responses
+- **No state management**: All conversation state handled by backend
+- **Existing UI**: Works with current chat interface
+
+## Migration Strategy
+
+### Phase 1: Schema Extension
+
+1. Add new fields to RecruiterProfile table
+2. Deploy infrastructure changes
+3. Ensure backward compatibility
+
+### Phase 2: Lambda Updates
+
+1. Update AI advocate function with conversation logic
+2. Deploy with feature flag for gradual rollout
+3. Monitor performance and accuracy
+
+### Phase 3: Full Activation
+
+1. Enable conversation features for all users
+2. Monitor conversation quality
+3. Gather feedback and iterate
+
+## Testing Strategy
+
+### Unit Tests
+
+- Conversation history management
+- Prompt generation with context
+- Anti-repetition logic
+- Session gap detection
+
+### Integration Tests
+
+- End-to-end conversation flow
+- Cross-session continuity
+- Performance under load
+- DynamoDB operations
+
+### User Acceptance Testing
+
+- Conversation quality assessment
+- Repetition detection
+- Natural flow evaluation
+- Recruiter feedback collection
+
+## Success Metrics
+
+### Primary Metrics
+
+- **Repetition Reduction**: Measure decrease in repeated information
+- **Conversation Length**: Track engagement through longer conversations
+- **User Satisfaction**: Recruiter feedback on conversation quality
+
+### Secondary Metrics
+
+- **Response Time**: Maintain sub-2-second response times
+- **Conversation Completion**: Track full conversation cycles
+- **Topic Coverage**: Measure breadth of topics discussed
+
 ## Future Enhancements
 
-### Phase 2: Recruiter Context Integration
+### Advanced Features (Post-Stage 3)
 
-In the second phase, we'll enhance the prompt generation to better utilize recruiter context:
+- **Conversation Summarization**: AI-generated conversation summaries
+- **Proactive Suggestions**: AI suggests relevant topics based on recruiter profile
+- **Multi-Modal Responses**: Include relevant portfolio links or examples
+- **Conversation Templates**: Pre-built conversation flows for common scenarios
 
-1. Analyze the recruiter's company and skills of interest
-2. Tailor the prompt to emphasize relevant developer skills
-3. Include specific examples of projects or experiences that match the recruiter's interests
+### Analytics Evolution
 
-### Phase 3: Prompt Caching
-
-To further optimize performance:
-
-1. Implement a caching mechanism for frequently used prompt components
-2. Pre-compute base prompts during deployment or on developer profile updates
-3. Add versioning to prompts to track changes over time
-
-## Benefits
-
-- **Dynamic Content**: Developer information can be updated without code changes
-- **Personalized Responses**: Responses tailored to both the developer profile and recruiter context
-- **Improved Accuracy**: More comprehensive developer information leads to better AI responses
-- **Maintainability**: Separation of prompt generation logic from the main function
-- **Performance**: Optimized for low latency through efficient data access
+- **Predictive Analytics**: Predict recruiter interests based on conversation patterns
+- **A/B Testing**: Test different conversation strategies
+- **Personalization**: Adapt conversation style to recruiter preferences
 
 ## Cost Analysis
 
-This implementation has minimal cost impact:
+### Additional Costs
 
-- Additional DynamoDB read operations: ~$0.25 per million reads
-- No additional infrastructure required
-- Negligible increase in Lambda execution time
+- **DynamoDB**: Minimal increase for conversation history storage (~$0.25 per million reads)
+- **Lambda**: Slight increase in execution time for history processing
+- **No new infrastructure**: Uses existing services
+
+### Cost Optimization
+
+- **History Trimming**: Prevents unbounded storage growth
+- **Efficient Queries**: Minimize DynamoDB operations
+- **Caching**: Reduce redundant data fetching
+
+## Conclusion
+
+This conversation-aware AI advocate system addresses the core problem of repetitive, robotic responses while maintaining the simplicity and performance of the existing architecture. The incremental implementation approach allows for controlled rollout and continuous improvement based on real-world usage patterns.
+
+The backend-only state management approach ensures frontend simplicity while providing powerful conversation capabilities that will significantly improve the recruiter experience and provide valuable business intelligence.
