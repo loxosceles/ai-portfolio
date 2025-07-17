@@ -36,7 +36,9 @@ phases:
       - echo "Generating service environment files"
       - cd infrastructure && ts-node ./lib/cli/bin/ssm-params.ts export --target=frontend --output && cd ..
       - cd infrastructure && ts-node ./lib/cli/bin/ssm-params.ts export --target=link-generator --output && cd ..
-      - echo "Building and publishing frontend for $ENVIRONMENT environment"
+      - echo "Building frontend for $ENVIRONMENT environment"
+      - cd frontend && NEXT_PUBLIC_ENVIRONMENT=$ENVIRONMENT pnpm build && cd ..
+      - echo "Publishing frontend for $ENVIRONMENT environment"
       - cd infrastructure && pnpm run publish:web-app && cd ..
 
   post_build:
