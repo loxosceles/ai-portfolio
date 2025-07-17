@@ -24,6 +24,9 @@ phases:
       - echo "Deploying infrastructure for $ENVIRONMENT environment"
       - echo "Setting up infrastructure environment for $ENVIRONMENT environment"
       - cd infrastructure && ts-node ./lib/cli/bin/ssm-params.ts export --target=infrastructure --output && cd ..
+      - echo "Loading environment variables"
+      - cat infrastructure/.env
+      - echo 'Provisioning infrastructure for $ENVIRONMENT environment'
       - cd infrastructure && pnpm run provision:$ENVIRONMENT && cd ..
 
   build:
