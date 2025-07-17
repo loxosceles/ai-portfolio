@@ -52,9 +52,9 @@ describe('Web App Publish Command Tests', () => {
     s3Mock.on(PutObjectCommand).resolves({});
 
     // Import the function after mocking
-    const { publishWebApp } = require('../../lib/cli/commands/web-app-publish');
+    const { handlePublishWepApp } = require('../../lib/cli/commands/web-app-publish');
 
     // Test the function
-    await expect(publishWebApp(false)).resolves.not.toThrow();
+    await expect(handlePublishWepApp(false)).resolves.not.toThrow();
   });
 });

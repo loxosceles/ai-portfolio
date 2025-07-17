@@ -5,7 +5,7 @@ import { simulateInvalidateCLI, invalidateCommandHandlers } from '../helpers/cli
 
 // Mock CloudFront Invalidation command handlers
 jest.mock('../../lib/cli/commands/invalidate-cloudfront-distribution', () => ({
-  invalidateCloudFrontDistribution: jest.fn().mockResolvedValue(undefined)
+  handleInvalidateCloudFrontDistribution: jest.fn().mockResolvedValue(undefined)
 }));
 
 describe('CloudFront Invalidation CLI Tests', () => {

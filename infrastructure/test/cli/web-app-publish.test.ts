@@ -5,7 +5,7 @@ import { simulatePublishCLI, publishCommandHandlers } from '../helpers/cli-comma
 
 // Mock Web App Publish command handlers
 jest.mock('../../lib/cli/commands/web-app-publish', () => ({
-  publishWebApp: jest.fn().mockResolvedValue(undefined)
+  handlePublishWepApp: jest.fn().mockResolvedValue(undefined)
 }));
 
 describe('Web App Publish CLI Tests', () => {
