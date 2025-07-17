@@ -21,7 +21,7 @@ export async function handlePublishWepApp(verbose: boolean = false): Promise<voi
 
   // 2. Sync to S3 (AWSManager - AWS operation)
   awsManager.logVerbose(verbose, `Syncing to S3 bucket ${bucketName}...`);
-  const frontendOutDir = path.join(awsManager.config.projectRoot, '../frontend/out');
+  const frontendOutDir = path.join(awsManager.config.projectRoot, 'frontend/out');
   await awsManager.syncDirectoryToS3(frontendOutDir, bucketName, region);
 
   // eslint-disable-next-line no-console

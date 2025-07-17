@@ -3,6 +3,7 @@ import { awsManagerConfig } from '../../configs/aws-config';
 import { mockClient } from 'aws-sdk-client-mock';
 import { SSMClient, GetParametersByPathCommand, PutParameterCommand } from '@aws-sdk/client-ssm';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import * as fs from 'fs/promises';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
@@ -20,7 +21,22 @@ const cloudFrontMock = mockClient(CloudFrontClient);
 jest.mock('fs/promises', () => ({
   readFile: jest.fn().mockResolvedValue(JSON.stringify([{ id: 'test', name: 'Test' }])),
   mkdir: jest.fn().mockResolvedValue(undefined),
-  writeFile: jest.fn().mockResolvedValue(undefined)
+  writeFile: jest.fn().mockResolvedValue(undefined),
+  access: jest.fn().mockResolvedValue(undefined),
+  readdir: jest.fn().mockImplementation((path, options) => {
+    if (options && options.withFileTypes) {
+      return Promise.resolve([
+        { name: 'index.html', isDirectory: () => false },
+        { name: 'styles.css', isDirectory: () => false }
+      ]);
+    }
+    return Promise.resolve(['index.html', 'styles.css']);
+  }),
+  stat: jest.fn().mockImplementation(() =>
+    Promise.resolve({
+      isDirectory: () => false
+    })
+  )
 }));
 
 // Mock glob
@@ -37,9 +53,18 @@ describe('AWSManager', () => {
   // Spy on console.error to suppress output during tests
   let consoleErrorSpy: jest.SpyInstance;
 
+  // Spy on console logs
+  let consoleLogSpy: jest.SpyInstance;
+  let consoleWarnSpy: jest.SpyInstance;
+
   beforeEach(() => {
-    // Suppress console.error output during tests
+    // Suppress console output during tests
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // Reset all mocks
+    jest.clearAllMocks();
 
     ssmMock.reset();
     s3Mock.reset();
@@ -51,6 +76,8 @@ describe('AWSManager', () => {
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
+    consoleLogSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   afterAll(() => {
@@ -109,15 +136,85 @@ describe('AWSManager', () => {
     });
 
     test('should download JSON from S3', async () => {
+      // Mock S3 GetObjectCommand response with any to avoid TypeScript errors
       s3Mock.on(GetObjectCommand).resolves({
         Body: {
           transformToString: () => Promise.resolve(JSON.stringify({ test: 'data' }))
         }
-      });
+      } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
       const result = await awsManager.downloadJsonFromS3('test-bucket', 'test.json', 'us-east-1');
 
       expect(result).toEqual({ test: 'data' });
+      expect(s3Mock.calls()).toHaveLength(1);
+      expect(s3Mock.call(0).args[0].input).toEqual({
+        Bucket: 'test-bucket',
+        Key: 'test.json'
+      });
+    });
+
+    test('should successfully sync directory to S3', async () => {
+      // Mock fs.readdir to return files (directory has files)
+      jest.spyOn(fs, 'readdir').mockImplementation((path, options) => {
+        if (options && options.withFileTypes) {
+          return Promise.resolve([
+            { name: 'index.html', isDirectory: () => false },
+            { name: 'styles.css', isDirectory: () => false }
+          ]);
+        }
+        return Promise.resolve(['index.html', 'styles.css']);
+      });
+
+      // Mock S3 PutObjectCommand
+      s3Mock.on(PutObjectCommand).resolves({});
+
+      // Run the function
+      await awsManager.syncDirectoryToS3('/test-dir', 'test-bucket', 'us-east-1');
+
+      // Verify PutObjectCommand was called for each file
+      expect(s3Mock.calls().length).toBeGreaterThanOrEqual(2); // At least 2 files
+    });
+
+    test('should handle non-existent directory during sync', async () => {
+      // Mock fs.access to throw an error (directory doesn't exist)
+      const accessError = new Error('Directory not found');
+      jest.spyOn(fs, 'access').mockRejectedValue(accessError);
+
+      // Run the function and expect it to throw
+      await expect(
+        awsManager.syncDirectoryToS3('/non-existent-dir', 'test-bucket', 'us-east-1')
+      ).rejects.toThrow('Local directory does not exist');
+    });
+
+    test('should handle empty directory during sync', async () => {
+      // Mock fs.readdir to return empty array (empty directory)
+      jest.spyOn(fs, 'access').mockResolvedValue(undefined);
+      jest.spyOn(fs, 'readdir').mockResolvedValue([]);
+
+      // Run the function
+      await awsManager.syncDirectoryToS3('/empty-dir', 'test-bucket', 'us-east-1');
+
+      // Verify warning was logged
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('empty'));
+    });
+
+    test('should handle S3 upload errors', async () => {
+      // Mock fs.readdir to return files
+      jest.spyOn(fs, 'access').mockResolvedValue(undefined);
+      jest.spyOn(fs, 'readdir').mockImplementation((path, options) => {
+        if (options && options.withFileTypes) {
+          return Promise.resolve([{ name: 'index.html', isDirectory: () => false }]);
+        }
+        return Promise.resolve(['index.html']);
+      });
+
+      // Mock S3 PutObjectCommand to throw an error
+      s3Mock.on(PutObjectCommand).rejects(new Error('S3 upload failed'));
+
+      // Run the function and expect it to throw
+      await expect(
+        awsManager.syncDirectoryToS3('/test-dir', 'test-bucket', 'us-east-1')
+      ).rejects.toThrow('Failed to sync directory to S3');
     });
   });
 
@@ -141,6 +238,9 @@ describe('AWSManager', () => {
       cloudFormationMock.on(DescribeStacksCommand).resolves({
         Stacks: [
           {
+            StackName: 'test-stack',
+            CreationTime: new Date(),
+            StackStatus: 'CREATE_COMPLETE',
             Outputs: [{ OutputKey: 'TestOutput', OutputValue: 'test-value' }]
           }
         ]
