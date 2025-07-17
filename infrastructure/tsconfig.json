@@ -22,7 +22,7 @@
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "isolatedModules": true,
-    "typeRoots": ["./node_modules/@types"]
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
   "exclude": ["node_modules", "cdk.out"]
 }
