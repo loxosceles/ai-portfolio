@@ -39,15 +39,27 @@ export class AWSManager extends BaseManager {
     region: string
   ): Promise<Array<{ Name?: string; Value?: string }>> {
     const client = new SSMClient({ region });
-    const command = new GetParametersByPathCommand({
-      Path: path,
-      Recursive: true,
-      WithDecryption: true
-    });
+    let nextToken: string | undefined;
+    let allParameters: Array<{ Name?: string; Value?: string }> = [];
 
     try {
-      const response = await client.send(command);
-      return response.Parameters || [];
+      do {
+        const command = new GetParametersByPathCommand({
+          Path: path,
+          Recursive: true,
+          WithDecryption: true,
+          NextToken: nextToken
+        });
+
+        const response = await client.send(command);
+        if (response.Parameters) {
+          allParameters = [...allParameters, ...response.Parameters];
+        }
+        // Type assertion for NextToken since TypeScript doesn't recognize it on all response types
+        nextToken = (response as any).NextToken;
+      } while (nextToken);
+
+      return allParameters;
     } catch (error) {
       console.error(`Error getting parameters by path ${path}: ${error}`);
       return [];
