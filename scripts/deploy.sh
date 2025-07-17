@@ -28,15 +28,15 @@ cd frontend && NEXT_PUBLIC_ENVIRONMENT=$ENVIRONMENT pnpm build && cd ..
 
 # Step 3: Publish web app
 echo "🌐 Publishing web application..."
-cd infrastructure && pnpm run publish:web-app && cd ..
+cd "$PROJECT_ROOT/infrastructure" && pnpm run publish:web-app
 
 # Step 4: Invalidate CloudFront
 echo "🔄 Invalidating CloudFront cache..."
-cd infrastructure && pnpm run invalidate:cloudfront && cd ..
+cd "$PROJECT_ROOT/infrastructure" && pnpm run invalidate:cloudfront
 
 # Get CloudFront domain from stack outputs
 echo "📡 Retrieving deployment URL..."
-CLOUDFRONT_DOMAIN=$(cd infrastructure && pnpm run --silent stack-outputs:web CloudFrontDomain)
+CLOUDFRONT_DOMAIN=$(cd "$PROJECT_ROOT/infrastructure" && pnpm run --silent stack-outputs:web CloudFrontDomain)
 
 echo "✅ Deployment completed successfully!"
 echo "Website is now live at: https://${CLOUDFRONT_DOMAIN}"
