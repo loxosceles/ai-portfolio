@@ -1,11 +1,5 @@
 import { SSMClient, PutParameterCommand, GetParametersByPathCommand } from '@aws-sdk/client-ssm';
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-  ListObjectsV2Command,
-  DeleteObjectCommand
-} from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
@@ -351,65 +345,92 @@ export class AWSManager extends BaseManager {
 
   // S3 Directory Sync Operations
   async syncDirectoryToS3(localDir: string, bucketName: string, region: string): Promise<void> {
-    const s3Client = new S3Client({ region });
-    const glob = require('glob');
-
-    // Get existing objects in bucket
-    const existingObjects = await s3Client.send(
-      new ListObjectsV2Command({
-        Bucket: bucketName
-      })
-    );
-
-    // Upload local files
-    const files = glob.sync('**/*', { cwd: localDir, nodir: true });
-    const uploadedKeys = new Set<string>();
-
-    for (const file of files) {
-      const filePath = path.join(localDir, file);
-      const content = await fs.readFile(filePath);
-
-      await s3Client.send(
-        new PutObjectCommand({
-          Bucket: bucketName,
-          Key: file,
-          Body: content,
-          ContentType: this.getContentType(file)
-        })
-      );
-
-      uploadedKeys.add(file);
-    }
-
-    // Delete removed files (--delete flag)
-    if (existingObjects.Contents) {
-      for (const obj of existingObjects.Contents) {
-        if (obj.Key && !uploadedKeys.has(obj.Key)) {
-          await s3Client.send(
-            new DeleteObjectCommand({
-              Bucket: bucketName,
-              Key: obj.Key
-            })
-          );
-        }
-      }
-    }
-
     // eslint-disable-next-line no-console
-    console.log(`✅ Synced ${files.length} files to s3://${bucketName}/`);
-  }
+    console.log(`Syncing directory ${localDir} to s3://${bucketName}/`);
 
-  private getContentType(filename: string): string {
-    const ext = path.extname(filename).toLowerCase();
-    const types: Record<string, string> = {
-      '.html': 'text/html',
-      '.css': 'text/css',
-      '.js': 'application/javascript',
-      '.json': 'application/json',
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.svg': 'image/svg+xml'
-    };
-    return types[ext] || 'application/octet-stream';
+    // Check if directory exists
+    try {
+      await fs.access(localDir);
+    } catch (err) {
+      console.error('Error: Local directory does not exist', err);
+      throw new Error(`Local directory does not exist: ${localDir}`);
+    }
+
+    // Check if directory has files
+    const dirContents = await fs.readdir(localDir);
+    if (dirContents.length === 0) {
+      console.warn(`Warning: Directory ${localDir} is empty, nothing to sync`);
+      return;
+    }
+
+    try {
+      // Content type resolver function to set proper MIME types based on file extensions
+      const contentTypeResolver = (filePath: string): string | undefined => {
+        const ext = path.extname(filePath).toLowerCase();
+        const contentTypes: Record<string, string> = {
+          '.html': 'text/html',
+          '.css': 'text/css',
+          '.js': 'application/javascript',
+          '.json': 'application/json',
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.gif': 'image/gif',
+          '.svg': 'image/svg+xml',
+          '.ico': 'image/x-icon',
+          '.txt': 'text/plain',
+          '.ttf': 'font/ttf',
+          '.otf': 'font/otf',
+          '.woff': 'font/woff',
+          '.woff2': 'font/woff2',
+          '.xml': 'application/xml',
+          '.pdf': 'application/pdf',
+          '.webp': 'image/webp'
+        };
+        return contentTypes[ext];
+      };
+
+      // Upload files manually with correct content types
+      const uploadFiles = async (dir: string, baseDir: string): Promise<void> => {
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+
+        for (const entry of entries) {
+          const fullPath = path.join(dir, entry.name);
+
+          if (entry.isDirectory()) {
+            await uploadFiles(fullPath, baseDir);
+          } else {
+            const relativePath = path.relative(baseDir, fullPath);
+            const s3Key = relativePath.replace(/\\/g, '/'); // Convert Windows paths to S3 paths
+            const contentType = contentTypeResolver(fullPath);
+
+            const fileContent = await fs.readFile(fullPath);
+
+            await new S3Client({ region }).send(
+              new PutObjectCommand({
+                Bucket: bucketName,
+                Key: s3Key,
+                Body: fileContent,
+                ContentType: contentType || 'application/octet-stream'
+              })
+            );
+
+            // eslint-disable-next-line no-console
+            console.log(
+              `Uploaded ${s3Key} with content type ${contentType || 'application/octet-stream'}`
+            );
+          }
+        }
+      };
+
+      await uploadFiles(localDir, localDir);
+
+      // eslint-disable-next-line no-console
+      console.log(`✅ Synced files to s3://${bucketName}/`);
+    } catch (error) {
+      throw new Error(
+        `Failed to sync directory to S3: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
 }
