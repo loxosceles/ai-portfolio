@@ -48,7 +48,7 @@ phases:
       - echo "Retrieving deployment URL..."
       - CLOUDFRONT_DOMAIN=$(cd infrastructure && pnpm run --silent stack-outputs:web CloudFrontDomain)
       - echo "Deployment complete"
-      - echo "Website is now live at: https://${CLOUDFRONT_DOMAIN}"
+      - echo "Website is now live at https://${CLOUDFRONT_DOMAIN}"
 
 cache:
   paths:
