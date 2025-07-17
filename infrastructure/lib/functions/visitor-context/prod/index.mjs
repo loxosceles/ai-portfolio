@@ -30,7 +30,7 @@ async function getConfig(request) {
 
   // Fetch edge-specific config from us-east-1
   const edgeConfigCommand = new GetParametersCommand({
-    Names: ['/portfolio/prod/edge/visitor-table-name'],
+    Names: ['/portfolio/prod/VISITOR_TABLE_NAME'],
     WithDecryption: true
   });
 
@@ -45,7 +45,7 @@ async function getConfig(request) {
     clientId: allParameters.find((p) => p.Name.endsWith('NEXT_PUBLIC_COGNITO_CLIENT_ID')).Value,
     userPoolId: allParameters.find((p) => p.Name.endsWith('NEXT_PUBLIC_COGNITO_USER_POOL_ID'))
       .Value,
-    tableName: allParameters.find((p) => p.Name.endsWith('visitor-table-name')).Value
+    tableName: allParameters.find((p) => p.Name.endsWith('VISITOR_TABLE_NAME')).Value
   };
 
   return config;

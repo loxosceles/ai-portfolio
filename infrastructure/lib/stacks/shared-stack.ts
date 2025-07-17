@@ -1,10 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
-import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
-import { addStackOutputs } from '../utils/stack-outputs';
+import { addStackOutputs } from './stack-helpers';
 
-interface SharedStackProps extends cdk.StackProps {
+interface ISharedStackProps extends cdk.StackProps {
   stage: 'dev' | 'prod';
 }
 
@@ -14,7 +13,7 @@ export class SharedStack extends cdk.Stack {
   private readonly userPoolDomain: cognito.UserPoolDomain;
   private readonly stage: string;
 
-  constructor(scope: Construct, id: string, props: SharedStackProps) {
+  constructor(scope: Construct, id: string, props: ISharedStackProps) {
     super(scope, id, props);
     this.stage = props.stage;
 
@@ -38,35 +37,35 @@ export class SharedStack extends cdk.Stack {
         value: this.userPool.userPoolId,
         description: 'Cognito User Pool ID',
         exportName: 'cognito-user-pool-id',
-        paramName: 'NEXT_PUBLIC_COGNITO_USER_POOL_ID'
+        paramName: 'COGNITO_USER_POOL_ID'
       },
       {
         id: 'CognitoClientId',
         value: this.userPoolClient.userPoolClientId,
         description: 'Cognito User Pool Client ID',
         exportName: 'cognito-client-id',
-        paramName: 'NEXT_PUBLIC_COGNITO_CLIENT_ID'
+        paramName: 'COGNITO_CLIENT_ID'
       },
       {
         id: 'CognitoDomainName',
         value: this.userPoolDomain.domainName,
         description: 'Cognito Domain Name',
         exportName: 'cognito-domain-name',
-        paramName: 'NEXT_PUBLIC_COGNITO_DOMAIN_NAME'
+        paramName: 'COGNITO_DOMAIN_NAME'
       },
       {
         id: 'CognitoAuthority',
         value: cognitoAuthority,
         description: 'Cognito Authority URL',
         exportName: 'cognito-authority',
-        paramName: 'NEXT_PUBLIC_COGNITO_AUTHORITY'
+        paramName: 'COGNITO_AUTHORITY'
       },
       {
         id: 'RedirectUri',
         value: redirectUri,
         description: 'OAuth Redirect URI',
         exportName: 'redirect-uri',
-        paramName: 'NEXT_PUBLIC_REDIRECT_URI'
+        paramName: 'REDIRECT_URI'
       },
       {
         id: 'AWSAccountId',

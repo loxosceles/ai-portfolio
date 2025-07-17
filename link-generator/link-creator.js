@@ -14,13 +14,13 @@ const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
 // Validation function
 function validateEnvironment() {
   const requiredEnvVars = [
-    'DYNAMODB_TABLE_NAME',
+    'VISITOR_TABLE_NAME',
     'COGNITO_USER_POOL_ID',
     'COGNITO_CLIENT_ID',
-    'AWS_REGION_DYNAMODB',
-    'AWS_REGION_COGNITO',
+    'AWS_REGION_DISTRIB',
+    'AWS_REGION_DEFAULT',
     'OUTPUT_FILE_PATH',
-    'DOMAIN_URL'
+    'CLOUDFRONT_DOMAIN'
   ];
 
   const missingVars = [];
@@ -41,13 +41,13 @@ function validateEnvironment() {
 
   console.log('Configuration:', config);
   return {
-    dynamoDbTableName: config.dynamodb_table_name,
+    visitorTableName: config.visitor_table_name,
     cognitoUserPoolId: config.cognito_user_pool_id,
     cognitoClientId: config.cognito_client_id,
-    dynamoDbRegion: config.aws_region_dynamodb,
-    cognitoRegion: config.aws_region_cognito,
+    dynamoDbRegion: config.aws_region_distrib,
+    cognitoRegion: config.aws_region_default,
     outputFilePath: config.output_file_path,
-    domainUrl: config.domain_url
+    domainUrl: config.cloudfront_domain
   };
 }
 
@@ -168,7 +168,7 @@ async function createLink() {
     );
 
     await createDynamoDBEntry(
-      config.dynamoDbTableName,
+      config.visitorTableName,
       linkId,
       credentials.password,
       config.dynamoDbRegion
@@ -202,12 +202,12 @@ async function createJobMatchingData(linkId) {
     // Check if job matching environment variables are set
     const jobMatchingTable = process.env.JOB_MATCHING_TABLE_NAME;
     const jobMatchingRegion = process.env.AWS_REGION_JOB_MATCHING || 'eu-central-1';
-    
+
     if (!jobMatchingTable) {
       console.log('\nSkipping job matching data creation (JOB_MATCHING_TABLE_NAME not set)');
       return false;
     }
-    
+
     // Check if we're in production
     const environment = process.env.ENVIRONMENT || 'dev';
     if (environment === 'prod') {
@@ -216,7 +216,7 @@ async function createJobMatchingData(linkId) {
     }
 
     console.log('\nCreating job matching data...');
-    
+
     // Sample job matching data
     const jobMatchingData = {
       linkId,
@@ -259,7 +259,7 @@ async function main() {
       console.log('Username:', result.username);
       console.log('Temporary Password:', result.password);
       console.log('Tokens:', JSON.stringify(result.tokens, null, 2));
-      
+
       // Create job matching data if requested
       const createJobMatching = process.argv.includes('--create-job-matching');
       if (createJobMatching) {
@@ -267,14 +267,14 @@ async function main() {
       } else {
         console.log('\nTo create job matching data, run with --create-job-matching flag');
       }
-      
+
       console.log('\nTest with:');
       console.log(`aws cognito-idp admin-initiate-auth \\
 --user-pool-id ${process.env.COGNITO_USER_POOL_ID} \\
 --client-id ${process.env.COGNITO_CLIENT_ID} \\
 --auth-flow ADMIN_USER_PASSWORD_AUTH \\
 --auth-parameters USERNAME="${result.username}",PASSWORD="${result.password}" \\
---region ${process.env.AWS_REGION_COGNITO}`);
+--region ${process.env.AWS_REGION_DEFAULT}`);
     } else {
       console.error('Failed to create link:', result.error);
       process.exit(1);

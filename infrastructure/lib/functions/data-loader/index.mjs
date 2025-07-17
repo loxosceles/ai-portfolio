@@ -3,8 +3,13 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
 
 // Initialize clients
-const s3Client = new S3Client({ region: process.env.AWS_REGION || 'eu-central-1' });
-const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'eu-central-1' });
+// Require explicit AWS_REGION_DEFAULT environment variable (set by stack)
+if (!process.env.AWS_REGION_DEFAULT) {
+  throw new Error('AWS_REGION_DEFAULT environment variable is required');
+}
+
+const s3Client = new S3Client({ region: process.env.AWS_REGION_DEFAULT });
+const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION_DEFAULT });
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
 export const handler = async (event) => {
@@ -15,14 +20,23 @@ export const handler = async (event) => {
     const environment = event.ResourceProperties?.environment || process.env.ENVIRONMENT || 'dev';
     console.log(`Loading data for environment: ${environment}`);
     
-    // Determine bucket name based on environment
-    const bucketName = environment === 'prod' 
-      ? process.env.PROD_DATA_BUCKET_NAME 
-      : process.env.DEV_DATA_BUCKET_NAME;
-    
-    if (!bucketName) {
-      throw new Error(`Data bucket name not defined for ${environment} environment`);
+    // Validate environment
+    if (environment !== 'dev' && environment !== 'prod') {
+      throw new Error('Environment must be either "dev" or "prod"');
     }
+    
+    // Validate required environment variables
+    if (!process.env.DATA_BUCKET_NAME) {
+      throw new Error('DATA_BUCKET_NAME environment variable is required');
+    }
+    if (!process.env.DEVELOPER_TABLE_NAME) {
+      throw new Error('DEVELOPER_TABLE_NAME environment variable is required');
+    }
+    if (!process.env.PROJECTS_TABLE_NAME) {
+      throw new Error('PROJECTS_TABLE_NAME environment variable is required');
+    }
+    
+    const bucketName = process.env.DATA_BUCKET_NAME;
     
     // Load developers data
     console.log(`Loading developers from s3://${bucketName}/${environment}/developer.json`);
@@ -134,7 +148,7 @@ async function writeToDynamoDB(developers, projects, environment) {
     await docClient.send(
       new BatchWriteCommand({
         RequestItems: {
-          [`PortfolioDevelopers-${environment}`]: developers.map((dev) => ({
+          [process.env.DEVELOPER_TABLE_NAME]: developers.map((dev) => ({
             PutRequest: {
               Item: dev
             }
@@ -150,7 +164,7 @@ async function writeToDynamoDB(developers, projects, environment) {
     await docClient.send(
       new BatchWriteCommand({
         RequestItems: {
-          [`PortfolioProjects-${environment}`]: projects.map((proj) => ({
+          [process.env.PROJECTS_TABLE_NAME]: projects.map((proj) => ({
             PutRequest: {
               Item: proj
             }

@@ -4,7 +4,7 @@ import { ModelAdapter } from './model-adapter.mjs';
  * Adapter for Ollama models
  */
 export class OllamaAdapter extends ModelAdapter {
-  formatPrompt(prompt, config) {
+  formatPrompt(prompt, config, conversationHistory = null) {
     return {
       prompt: prompt,
       model: config.model || 'llama2',
