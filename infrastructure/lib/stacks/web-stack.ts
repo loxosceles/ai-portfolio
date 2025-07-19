@@ -126,7 +126,9 @@ export class WebStack extends cdk.Stack {
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['dynamodb:GetItem'],
-        resources: [visitorTable.tableArn]
+        resources: [
+          `arn:aws:dynamodb:${this.region}:${this.account}:table/${visitorTableName}-${this.stage}`
+        ]
       })
     );
 
