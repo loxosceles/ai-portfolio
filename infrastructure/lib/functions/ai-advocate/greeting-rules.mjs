@@ -17,3 +17,5 @@ const GREETING_RULES = [
     rule: "Avoid technical jargon unless it directly relates to the recruiter's interests."
   }
 ];
+
+export default GREETING_RULES;
