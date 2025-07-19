@@ -45,9 +45,6 @@ export const handler = async (event) => {
       case 'getAdvocateGreeting':
         return await handleGetAdvocateGreeting(event);
 
-      case 'getAdvocateGreetingByLinkId':
-        return await handleGetAdvocateGreetingByLinkId(event);
-
       case 'askAIQuestion':
         return await handleAskAIQuestion(event);
 
@@ -209,21 +206,7 @@ async function handleAskAIQuestion(event) {
   }
 }
 
-// Get matching data from DynamoDB
-async function getMatchingData(tableName, linkId) {
-  try {
-    const command = new GetCommand({
-      TableName: tableName,
-      Key: { linkId }
-    });
-
-    const response = await docClient.send(command);
-    return response.Item;
-  } catch (error) {
-    console.error('DynamoDB error:', error);
-    return null;
-  }
-}
+// getMatchingData function removed as it's no longer needed
 
 // Get recruiter profile data from DynamoDB
 async function getRecruiterProfile(linkId) {
