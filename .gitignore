@@ -41,7 +41,7 @@ apollo.config.js
 # Vscode
 .vscode/ 
 !.vscode/launch.json
-ai-portfolio-frontend.code-workspace
+ai-portfolio.code-workspace
 
 # Amazon Q rules
 /.amazonq/
