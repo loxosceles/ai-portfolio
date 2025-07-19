@@ -22,6 +22,10 @@ echo "🚀 Starting full deployment for $ENVIRONMENT environment..."
 echo "📦 Provisioning infrastructure..."
 cd infrastructure && pnpm run provision:"$ENVIRONMENT" && cd ..
 
+# Step 1.5: Generate frontend environment variables
+echo "🔄 Generating frontend environment variables..."
+cd infrastructure && ts-node ./lib/cli/bin/ssm-params.ts export --target=frontend --output && cd ..
+
 # Step 2: Build Next.js app
 echo "🏗️ Building Next.js application..."
 cd frontend && NEXT_PUBLIC_ENVIRONMENT=$ENVIRONMENT pnpm build && cd ..

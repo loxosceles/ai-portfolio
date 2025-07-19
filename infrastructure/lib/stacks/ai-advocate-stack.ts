@@ -10,11 +10,8 @@ import { getSupportedModels } from '../resolvers/supported-models';
 import { AIAdvocateResolverConstruct } from '../resolvers/ai-advocate-resolver-construct';
 
 interface IAIAdvocateStackProps extends cdk.StackProps {
-  api: appsync.GraphqlApi;
   developerTable: dynamodb.ITable;
   projectsTable: dynamodb.ITable;
-  jobMatchingTable: dynamodb.ITable;
-  recruiterProfilesTable: dynamodb.ITable;
   stage: 'dev' | 'prod';
 }
 
@@ -22,10 +19,19 @@ export class AIAdvocateStack extends cdk.Stack {
   public readonly aiAdvocateLambda: lambda.Function;
   private readonly stage: string;
 
+  public readonly recruiterProfilesTable: dynamodb.Table;
+  private recruiterProfilesTableName: string;
+
   constructor(scope: Construct, id: string, props: IAIAdvocateStackProps) {
     super(scope, id, props);
-    const { api, developerTable, projectsTable, jobMatchingTable, recruiterProfilesTable, stage } =
-      props;
+    const { developerTable, projectsTable, stage } = props;
+
+    // Import the GraphQL API using CloudFormation exports
+    const apiId = cdk.Fn.importValue(`GraphQLApiId-${stage}`);
+    const api = appsync.GraphqlApi.fromGraphqlApiAttributes(this, 'ImportedApi', {
+      graphqlApiId: apiId,
+      graphqlApiArn: `arn:aws:appsync:${this.region}:${this.account}:apis/${apiId}`
+    });
     this.stage = stage;
 
     if (!['dev', 'prod'].includes(this.stage)) {
@@ -42,18 +48,25 @@ export class AIAdvocateStack extends cdk.Stack {
     if (!projectsTable) {
       throw new Error('projectsTable is required');
     }
-    if (!jobMatchingTable) {
-      throw new Error('jobMatchingTable is required');
-    }
-    if (!recruiterProfilesTable) {
-      throw new Error('recruiterProfilesTable is required');
-    }
-
     // Get required environment variables
-    const { developerTableName, projectsTableName, bedrockModelId } = getRequiredEnvVars(
-      ['DEVELOPER_TABLE_NAME', 'PROJECTS_TABLE_NAME', 'BEDROCK_MODEL_ID'],
-      this.stage
-    );
+    const { developerTableName, projectsTableName, bedrockModelId, recruiterProfilesTableName } =
+      getRequiredEnvVars(
+        [
+          'DEVELOPER_TABLE_NAME',
+          'PROJECTS_TABLE_NAME',
+          'BEDROCK_MODEL_ID',
+          'RECRUITER_PROFILES_TABLE_NAME'
+        ],
+        this.stage
+      );
+
+    this.recruiterProfilesTableName = recruiterProfilesTableName;
+
+    // Create RecruiterProfiles table
+    const isProd = stage === 'prod';
+    this.recruiterProfilesTable = this.createRecruiterProfilesTable(isProd);
+
+    // Environment variables already retrieved above
 
     // Validate the model ID
     const supportedModels = getSupportedModels();
@@ -67,21 +80,16 @@ export class AIAdvocateStack extends cdk.Stack {
     this.aiAdvocateLambda = this.createAIAdvocateLambda(
       developerTableName,
       projectsTableName,
-      bedrockModelId,
-      jobMatchingTable,
-      recruiterProfilesTable
+      bedrockModelId
     );
 
     // Grant DynamoDB permissions
-    this.grantDynamoDBPermissions(
-      developerTable,
-      projectsTable,
-      jobMatchingTable,
-      recruiterProfilesTable
-    );
+    this.grantDynamoDBPermissions(developerTable, projectsTable);
 
     // Grant Bedrock permissions
     this.grantBedrockPermissions(bedrockModelId);
+
+    // The schema is already defined in the API, we just need to add resolvers for AI operations
 
     // Create AppSync resolvers using the construct
     new AIAdvocateResolverConstruct(this, 'AIAdvocateResolver', {
@@ -93,9 +101,7 @@ export class AIAdvocateStack extends cdk.Stack {
   private createAIAdvocateLambda(
     developerTableName: string,
     projectsTableName: string,
-    bedrockModelId: string,
-    jobMatchingTable: dynamodb.ITable,
-    recruiterProfilesTable: dynamodb.ITable
+    bedrockModelId: string
   ): lambda.Function {
     return new lambda.Function(this, 'AIAdvocateFunction', {
       functionName: `ai-advocate-${this.stage}`,
@@ -105,8 +111,7 @@ export class AIAdvocateStack extends cdk.Stack {
       environment: {
         DEVELOPER_TABLE_NAME: `${developerTableName}-${this.stage}`,
         PROJECTS_TABLE_NAME: `${projectsTableName}-${this.stage}`,
-        MATCHING_TABLE_NAME: jobMatchingTable.tableName,
-        RECRUITER_PROFILES_TABLE_NAME: recruiterProfilesTable.tableName,
+        RECRUITER_PROFILES_TABLE_NAME: this.recruiterProfilesTable.tableName,
         BEDROCK_MODEL_ID: bedrockModelId
       },
       timeout: cdk.Duration.seconds(30),
@@ -116,17 +121,14 @@ export class AIAdvocateStack extends cdk.Stack {
 
   private grantDynamoDBPermissions(
     developerTable: dynamodb.ITable,
-    projectsTable: dynamodb.ITable,
-    jobMatchingTable: dynamodb.ITable,
-    recruiterProfilesTable: dynamodb.ITable
+    projectsTable: dynamodb.ITable
   ): void {
     // Grant read access to data tables
     developerTable.grantReadData(this.aiAdvocateLambda);
     projectsTable.grantReadData(this.aiAdvocateLambda);
-    jobMatchingTable.grantReadData(this.aiAdvocateLambda);
 
     // Grant read/write access to recruiter profiles table for conversation history
-    recruiterProfilesTable.grantReadWriteData(this.aiAdvocateLambda);
+    this.recruiterProfilesTable.grantReadWriteData(this.aiAdvocateLambda);
   }
 
   private grantBedrockPermissions(bedrockModelId: string): void {
@@ -136,5 +138,21 @@ export class AIAdvocateStack extends cdk.Stack {
         resources: [`arn:aws:bedrock:eu-central-1::foundation-model/${bedrockModelId}`]
       })
     );
+  }
+
+  /**
+   * Creates the RecruiterProfiles table with enhanced schema
+   * @param isProd Whether this is a production deployment
+   * @returns The created DynamoDB table
+   */
+  private createRecruiterProfilesTable(isProd: boolean): dynamodb.Table {
+    return new dynamodb.Table(this, 'RecruiterProfilesTable', {
+      tableName: `${this.recruiterProfilesTableName}-${this.stage}`,
+      partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+      deletionProtection: isProd,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: isProd }
+    });
   }
 }

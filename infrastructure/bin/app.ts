@@ -3,10 +3,11 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { WebStack } from '../lib/stacks/web-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { SharedStack } from '../lib/stacks/shared-stack';
-import { JobMatchingStack } from '../lib/stacks/job-matching-stack';
+import { AIAdvocateStack } from '../lib/stacks/ai-advocate-stack';
 import { PipelineStack } from '../lib/stacks/pipeline-stack';
 
 const environment = process.env.ENVIRONMENT;
@@ -54,23 +55,22 @@ const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
   }
 });
 
-// Create Job Matching stack with CloudFront domain
-const jobMatchingStack = new JobMatchingStack(app, `JobMatchingStack-${stage}`, {
-  stage,
-  env,
-  userPool: sharedStack.userPool,
-  cloudfrontDomain: `https://${webStack.distribution.distributionDomainName}`,
-  crossRegionReferences: true
-});
-
-// Create API stack with job matching table and recruiter profiles table
+// Create API stack
 const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
   stage,
   env,
-  userPool: sharedStack.userPool,
-  jobMatchingTable: jobMatchingStack.matchingTable,
-  recruiterProfilesTable: jobMatchingStack.recruiterProfilesTable
+  userPool: sharedStack.userPool
 });
+
+// Create AI Advocate stack
+const aiAdvocateStack = new AIAdvocateStack(app, `AIAdvocateStack-${stage}`, {
+  stage,
+  env,
+  developerTable: apiStack.developerTable,
+  projectsTable: apiStack.projectsTable
+});
+
+// Dependencies have been set up above
 
 // Create pipeline stacks (separate from application deployment)
 const skipPipeline = process.env.CODEBUILD_BUILD_ID || process.env.SKIP_PIPELINE;
@@ -102,9 +102,6 @@ if (!skipPipeline) {
 }
 
 // Add dependencies
-jobMatchingStack.addDependency(sharedStack);
-jobMatchingStack.addDependency(webStack); // Job matching depends on web stack for CloudFront domain
 apiStack.addDependency(sharedStack);
-apiStack.addDependency(jobMatchingStack);
 
 app.synth();
