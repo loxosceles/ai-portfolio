@@ -5,7 +5,6 @@
 Before deploying, ensure that:
 
 1. **Environment Files**: Set up the required environment files:
-
    - `infrastructure/.env`: Base environment variables
    - `infrastructure/.env.dev`: Development stage-specific variables
    - `infrastructure/.env.prod`: Production stage-specific variables
@@ -115,7 +114,7 @@ aws secretsmanager create-secret \
 
 # Add to infrastructure/.env
 GITHUB_OWNER=your-github-username
-GITHUB_REPO=ai-portfolio-frontend
+GITHUB_REPO=ai-portfolio
 ```
 
 **Deploy Pipeline:**
