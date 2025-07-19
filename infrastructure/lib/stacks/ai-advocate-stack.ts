@@ -66,8 +66,6 @@ export class AIAdvocateStack extends cdk.Stack {
     const isProd = stage === 'prod';
     this.recruiterProfilesTable = this.createRecruiterProfilesTable(isProd);
 
-    // Environment variables already retrieved above
-
     // Validate the model ID
     const supportedModels = getSupportedModels();
     if (!supportedModels.includes(bedrockModelId)) {
