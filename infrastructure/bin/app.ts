@@ -3,7 +3,6 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { WebStack } from '../lib/stacks/web-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { SharedStack } from '../lib/stacks/shared-stack';
@@ -47,7 +46,7 @@ const sharedStack = new SharedStack(app, `PortfolioSharedStack-${stage}`, {
 });
 
 // Create combined website stack in us-east-1 first to get the CloudFront domain
-const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
+new WebStack(app, `PortfolioWebStack-${stage}`, {
   stage,
   env: {
     account: env.account,
@@ -63,14 +62,12 @@ const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
 });
 
 // Create AI Advocate stack
-const aiAdvocateStack = new AIAdvocateStack(app, `AIAdvocateStack-${stage}`, {
+new AIAdvocateStack(app, `AIAdvocateStack-${stage}`, {
   stage,
   env,
   developerTable: apiStack.developerTable,
   projectsTable: apiStack.projectsTable
 });
-
-// Dependencies have been set up above
 
 // Create pipeline stacks (separate from application deployment)
 const skipPipeline = process.env.CODEBUILD_BUILD_ID || process.env.SKIP_PIPELINE;
