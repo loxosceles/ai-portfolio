@@ -61,5 +61,7 @@ export interface IAppSyncEvent {
   identity?: {
     claims: Record<string, string>;
   };
-  arguments?: Record<string, any>;
+  arguments?: {
+    question?: string;
+  };
 }

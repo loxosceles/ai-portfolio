@@ -96,7 +96,7 @@ describe('Lambda@Edge Function', () => {
           },
           request: {
             uri: '/test-page',
-            querystring: '',
+            querystring,
             headers: requestHeaders
           },
           response: {
