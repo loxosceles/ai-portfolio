@@ -108,7 +108,7 @@ async function createCognitoUser(userPoolId, clientId, linkId, region) {
       uppercase: true,
       lowercase: true,
       strict: true,
-      exclude: '"`\\\\\'\\${}[]()!?><|&;*' // Exclude characters that might break the shell command
+      exclude: '"`\'\\${}[]()!?><|&;*' // Exclude characters that might break the shell command
     });
 
     // Create the user
@@ -189,7 +189,7 @@ async function createLink() {
     );
 
     const cleanDomainUrl = config.domainUrl.replace(/\/+$/, '');
-    const linkUrl = cleanDomainUrl.startsWith('http') 
+    const linkUrl = cleanDomainUrl.startsWith('http')
       ? `${cleanDomainUrl}/?visitor=${linkId}`
       : `https://${cleanDomainUrl}/?visitor=${linkId}`;
 
@@ -217,12 +217,12 @@ async function createRecruiterProfileData(linkId) {
   try {
     // Check if recruiter profiles environment variables are set
     const recruiterProfilesTable = process.env.RECRUITER_PROFILES_TABLE_NAME;
-    
+
     if (!recruiterProfilesTable) {
       console.log('\nSkipping recruiter profile creation (RECRUITER_PROFILES_TABLE_NAME not set)');
       return false;
     }
-    
+
     // Get region from environment variable
     const recruiterProfilesRegion = process.env.AWS_REGION_DEFAULT;
     if (!recruiterProfilesRegion) {
@@ -258,7 +258,7 @@ async function createRecruiterProfileData(linkId) {
     // Add to recruiter profiles table
     const tableName = `${recruiterProfilesTable}-${environment}`;
     console.log(`Using recruiter profiles table: ${tableName}`);
-    
+
     const command = new PutCommand({
       TableName: tableName,
       Item: recruiterProfileData
