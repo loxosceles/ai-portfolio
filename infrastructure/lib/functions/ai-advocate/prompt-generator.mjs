@@ -6,6 +6,8 @@
  * into a structured prompt for the AI model.
  *
  * The prompt uses a prioritized rules system to guide the AI's responses.
+ * 
+ * It also provides specialized prompts for different use cases like greetings and Q&A.
  */
 
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -15,7 +17,8 @@ import {
   formatSkillsSection,
   formatProjectsSection,
   formatExperienceSection,
-  buildRulesSection
+  buildRulesSection,
+  buildGreetingRulesSection
 } from './utils.mjs';
 
 // Initialize DynamoDB client
@@ -192,6 +195,117 @@ async function getDeveloperData() {
   } catch (error) {
     console.error('Error fetching developer data:', error);
     return null;
+  }
+}
+
+/**
+ * Generates a greeting-specific prompt based on developer profile and recruiter context
+ * @param {object} recruiterData - Data about the recruiter from the recruiter profile table
+ * @returns {object} - Object with systemPrompt and userPrompt
+ */
+export async function generateGreetingPrompt(recruiterData) {
+  try {
+    // Get developer profile data
+    const developerData = await getDeveloperData();
+    if (!developerData) {
+      const tableName = process.env.DEVELOPER_TABLE_NAME;
+      throw new Error(`No developer profile found in table: ${tableName || 'undefined'}.`);
+    }
+
+    // Get developer projects
+    const developerProjects = await getDeveloperProjects(docClient, developerData.id);
+    
+    // Find relevant skills based on recruiter data
+    const relevantSkills = findRelevantSkills(recruiterData, developerData);
+
+    // Create recruiter context section
+    let recruiterContext = '';
+    if (recruiterData) {
+      // Extract skills from requiredSkills or preferredSkills
+      const recruiterSkills = recruiterData.requiredSkills || recruiterData.preferredSkills || [];
+
+      // Build job context if available
+      let jobContext = '';
+      if (recruiterData.jobTitle || recruiterData.jobDescription) {
+        jobContext = `\nThey are recruiting for: ${recruiterData.jobTitle || 'a position'}`;
+        if (recruiterData.jobDescription) {
+          jobContext += `\nJob description: ${recruiterData.jobDescription}`;
+        }
+      }
+
+      // Build company context if available
+      let companyContext = '';
+      if (recruiterData.companyIndustry || recruiterData.companySize) {
+        companyContext = '\nCompany details:';
+        if (recruiterData.companyIndustry) {
+          companyContext += `\n- Industry: ${recruiterData.companyIndustry}`;
+        }
+        if (recruiterData.companySize) {
+          companyContext += `\n- Size: ${recruiterData.companySize}`;
+        }
+      }
+
+      // Build the full recruiter context
+      recruiterContext = `
+You are creating a greeting for ${recruiterData.recruiterName} from ${recruiterData.companyName}.${jobContext}${companyContext}
+Their context is: ${recruiterData.context || 'Not specified'}
+Skills they might be interested in: ${recruiterSkills.join(', ') || 'Not specified'}
+`;
+    }
+
+    // Format skills section with relevant skills highlighted
+    const skillsSection = formatSkillsSection(developerData, relevantSkills);
+
+    // Format projects section (simplified for greeting)
+    const projectsSection = formatProjectsSection(developerProjects.slice(0, 3)); // Limit to top 3 projects
+
+    // Format experience section
+    const experienceSection = formatExperienceSection(developerData);
+
+    // Get developer's name for personalized responses
+    const developerName = developerData?.name?.split(' ')[0] || 'the developer';
+    const developerFullName = developerData?.name || 'the developer';
+
+    // Build system prompt (identity + rules)
+    const systemPrompt = `You are an AI Advocate named Alex representing ${developerFullName} in creating a personalized greeting for a recruiter.
+
+${buildGreetingRulesSection(developerName)}`;
+
+    // Build user prompt (greeting context)
+    const userPrompt = `${recruiterContext}
+
+Task: Create a personalized greeting message for this recruiter visiting ${developerFullName}'s portfolio website.
+
+Here is the developer information for reference (only use what's relevant):
+
+===DEVELOPER_SKILLS===
+${skillsSection}
+===END_DEVELOPER_SKILLS===
+
+===DEVELOPER_PROJECTS===
+${projectsSection}
+===END_DEVELOPER_PROJECTS===
+
+===DEVELOPER_EXPERIENCE===
+${experienceSection}
+===END_DEVELOPER_EXPERIENCE===
+
+${
+  recruiterData && recruiterData.requiredSkills
+    ? `===RECRUITER_INTERESTS===
+Job Title: ${recruiterData.jobTitle || 'Not specified'}
+Job Description: ${recruiterData.jobDescription || 'Not specified'}
+Required Skills: ${(recruiterData.requiredSkills || []).join(', ')}
+Preferred Skills: ${(recruiterData.preferredSkills || []).join(', ')}
+===END_RECRUITER_INTERESTS===
+`
+    : ''
+}`;
+
+    return { systemPrompt, userPrompt };
+  } catch (error) {
+    console.error('Error generating greeting prompt:', error);
+    throw error;
   }
 }
 
