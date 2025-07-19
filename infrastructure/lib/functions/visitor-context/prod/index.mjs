@@ -21,16 +21,13 @@ async function getConfig(request) {
 
   // Fetch main app config from eu-central-1
   const mainConfigCommand = new GetParametersCommand({
-    Names: [
-      '/portfolio/prod/NEXT_PUBLIC_COGNITO_CLIENT_ID',
-      '/portfolio/prod/NEXT_PUBLIC_COGNITO_USER_POOL_ID'
-    ],
+    Names: ['/portfolio/prod/COGNITO_CLIENT_ID', '/portfolio/prod/COGNITO_USER_POOL_ID'],
     WithDecryption: true
   });
 
   // Fetch edge-specific config from us-east-1
   const edgeConfigCommand = new GetParametersCommand({
-    Names: ['/portfolio/prod/VISITOR_TABLE_NAME'],
+    Names: ['/portfolio/prod/stack/VISITOR_TABLE_NAME'],
     WithDecryption: true
   });
 
@@ -42,9 +39,8 @@ async function getConfig(request) {
   const allParameters = [...mainParameters.Parameters, ...edgeParameters.Parameters];
 
   config = {
-    clientId: allParameters.find((p) => p.Name.endsWith('NEXT_PUBLIC_COGNITO_CLIENT_ID')).Value,
-    userPoolId: allParameters.find((p) => p.Name.endsWith('NEXT_PUBLIC_COGNITO_USER_POOL_ID'))
-      .Value,
+    clientId: allParameters.find((p) => p.Name.endsWith('COGNITO_CLIENT_ID')).Value,
+    userPoolId: allParameters.find((p) => p.Name.endsWith('COGNITO_USER_POOL_ID')).Value,
     tableName: allParameters.find((p) => p.Name.endsWith('VISITOR_TABLE_NAME')).Value
   };
 
