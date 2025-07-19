@@ -3,7 +3,7 @@ import * as appsync from 'aws-cdk-lib/aws-appsync';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 export interface IAIAdvocateResolverProps {
-  api: appsync.GraphqlApi;
+  api: appsync.IGraphqlApi;
   aiAdvocateLambda: lambda.Function;
 }
 
@@ -20,11 +20,6 @@ export class AIAdvocateResolverConstruct extends Construct {
     this.dataSource.createResolver('GetAdvocateGreetingResolver', {
       typeName: 'Query',
       fieldName: 'getAdvocateGreeting'
-    });
-
-    this.dataSource.createResolver('GetAdvocateGreetingByLinkIdResolver', {
-      typeName: 'Query',
-      fieldName: 'getAdvocateGreetingByLinkId'
     });
 
     this.dataSource.createResolver('AskAIQuestionResolver', {
