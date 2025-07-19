@@ -1,15 +1,25 @@
-require('dotenv').config();
-const { v4: uuidv4 } = require('uuid');
-const fs = require('fs').promises;
-const generator = require('generate-password');
-const {
+// Load base .env file first
+import dotenv from 'dotenv';
+import { v4 as uuidv4 } from 'uuid';
+import { promises as fs } from 'fs';
+import generator from 'generate-password';
+import {
   CognitoIdentityProviderClient,
   AdminCreateUserCommand,
   AdminSetUserPasswordCommand,
   AdminInitiateAuthCommand
-} = require('@aws-sdk/client-cognito-identity-provider');
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
+} from '@aws-sdk/client-cognito-identity-provider';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
+
+// Load base .env file first
+dotenv.config();
+
+// Then load environment-specific .env file to override any duplicate variables
+const environment = process.env.ENVIRONMENT;
+if (environment) {
+  dotenv.config({ path: `.env.${environment}` });
+}
 
 // Validation function
 function validateEnvironment() {
@@ -20,7 +30,9 @@ function validateEnvironment() {
     'AWS_REGION_DISTRIB',
     'AWS_REGION_DEFAULT',
     'OUTPUT_FILE_PATH',
-    'CLOUDFRONT_DOMAIN'
+    'CLOUDFRONT_DOMAIN',
+    'RECRUITER_PROFILES_TABLE_NAME',
+    'ENVIRONMENT'
   ];
 
   const missingVars = [];
@@ -47,11 +59,12 @@ function validateEnvironment() {
     dynamoDbRegion: config.aws_region_distrib,
     cognitoRegion: config.aws_region_default,
     outputFilePath: config.output_file_path,
-    domainUrl: config.cloudfront_domain
+    domainUrl: config.cloudfront_domain,
+    stage: config.environment
   };
 }
 
-async function createDynamoDBEntry(tableName, linkId, password, region) {
+async function createDynamoDBEntry(tableName, linkId, password, region, stage) {
   try {
     // Create DynamoDB client
     const client = new DynamoDBClient({ region });
@@ -63,7 +76,7 @@ async function createDynamoDBEntry(tableName, linkId, password, region) {
 
     // Create the item
     const command = new PutCommand({
-      TableName: tableName,
+      TableName: `${tableName}-${stage}`,
       Item: {
         linkId,
         password,
@@ -95,7 +108,7 @@ async function createCognitoUser(userPoolId, clientId, linkId, region) {
       uppercase: true,
       lowercase: true,
       strict: true,
-      exclude: '"`\'\\${}[]()!?><|&;*' // Exclude characters that might break the shell command
+      exclude: '"`\\\\\'\\${}[]()!?><|&;*' // Exclude characters that might break the shell command
     });
 
     // Create the user
@@ -171,11 +184,14 @@ async function createLink() {
       config.visitorTableName,
       linkId,
       credentials.password,
-      config.dynamoDbRegion
+      config.dynamoDbRegion,
+      config.stage
     );
 
     const cleanDomainUrl = config.domainUrl.replace(/\/+$/, '');
-    const linkUrl = `${cleanDomainUrl}/?visitor=${linkId}`;
+    const linkUrl = cleanDomainUrl.startsWith('http') 
+      ? `${cleanDomainUrl}/?visitor=${linkId}`
+      : `https://${cleanDomainUrl}/?visitor=${linkId}`;
 
     await fs.writeFile(config.outputFilePath, `${linkUrl}\n`, 'utf8');
 
@@ -196,53 +212,63 @@ async function createLink() {
   }
 }
 
-// Create job matching data for a new link
-async function createJobMatchingData(linkId) {
+// Create recruiter profile data for a new link
+async function createRecruiterProfileData(linkId) {
   try {
-    // Check if job matching environment variables are set
-    const jobMatchingTable = process.env.JOB_MATCHING_TABLE_NAME;
-    const jobMatchingRegion = process.env.AWS_REGION_JOB_MATCHING || 'eu-central-1';
-
-    if (!jobMatchingTable) {
-      console.log('\nSkipping job matching data creation (JOB_MATCHING_TABLE_NAME not set)');
+    // Check if recruiter profiles environment variables are set
+    const recruiterProfilesTable = process.env.RECRUITER_PROFILES_TABLE_NAME;
+    
+    if (!recruiterProfilesTable) {
+      console.log('\nSkipping recruiter profile creation (RECRUITER_PROFILES_TABLE_NAME not set)');
+      return false;
+    }
+    
+    // Get region from environment variable
+    const recruiterProfilesRegion = process.env.AWS_REGION_DEFAULT;
+    if (!recruiterProfilesRegion) {
+      console.log('\nSkipping recruiter profile creation (AWS_REGION_DEFAULT not set)');
       return false;
     }
 
     // Check if we're in production
-    const environment = process.env.ENVIRONMENT || 'dev';
+    const environment = process.env.ENVIRONMENT;
     if (environment === 'prod') {
-      console.error('\nCreating job matching data not allowed in production');
+      console.log('\nSkipping recruiter profile creation in production environment');
       return false;
     }
 
-    console.log('\nCreating job matching data...');
+    console.log('\nCreating recruiter profile data...');
 
-    // Sample job matching data
-    const jobMatchingData = {
+    // Sample recruiter profile data
+    const recruiterProfileData = {
       linkId,
       companyName: 'New Company',
       recruiterName: 'New Recruiter',
       context: 'Software Engineering',
       greeting: `Welcome! Thanks for checking out my portfolio.`,
-      message: 'I appreciate your interest in my work. My experience with cloud architecture and full-stack development could be a great match for your needs.',
+      message:
+        'I appreciate your interest in my work. My experience with cloud architecture and full-stack development could be a great match for your needs.',
       skills: ['AWS', 'React', 'Node.js', 'TypeScript', 'Serverless']
     };
 
-    // Create DynamoDB client for job matching table (eu-central-1)
-    const client = new DynamoDBClient({ region: jobMatchingRegion });
+    // Create DynamoDB client for recruiter profiles table
+    const client = new DynamoDBClient({ region: recruiterProfilesRegion });
     const docClient = DynamoDBDocumentClient.from(client);
 
-    // Add to job matching table
+    // Add to recruiter profiles table
+    const tableName = `${recruiterProfilesTable}-${environment}`;
+    console.log(`Using recruiter profiles table: ${tableName}`);
+    
     const command = new PutCommand({
-      TableName: jobMatchingTable,
-      Item: jobMatchingData
+      TableName: tableName,
+      Item: recruiterProfileData
     });
 
     await docClient.send(command);
-    console.log('Job matching data created successfully!');
+    console.log('Recruiter profile data created successfully!');
     return true;
   } catch (error) {
-    console.error('Error creating job matching data:', error);
+    console.error('Error creating recruiter profile data:', error);
     return false;
   }
 }
@@ -260,12 +286,12 @@ async function main() {
       console.log('Temporary Password:', result.password);
       console.log('Tokens:', JSON.stringify(result.tokens, null, 2));
 
-      // Create job matching data if requested
+      // Create recruiter profile data if requested
       const createJobMatching = process.argv.includes('--create-job-matching');
       if (createJobMatching) {
-        await createJobMatchingData(result.linkId);
+        await createRecruiterProfileData(result.linkId);
       } else {
-        console.log('\nTo create job matching data, run with --create-job-matching flag');
+        console.log('\nTo create recruiter profile data, run with --create-job-matching flag');
       }
 
       console.log('\nTest with:');
@@ -273,7 +299,7 @@ async function main() {
 --user-pool-id ${process.env.COGNITO_USER_POOL_ID} \\
 --client-id ${process.env.COGNITO_CLIENT_ID} \\
 --auth-flow ADMIN_USER_PASSWORD_AUTH \\
---auth-parameters USERNAME="${result.username}",PASSWORD="${result.password}" \\
+--auth-parameters USERNAME="${result.username}",PASSWORD='${result.password}' \\
 --region ${process.env.AWS_REGION_DEFAULT}`);
     } else {
       console.error('Failed to create link:', result.error);
@@ -286,12 +312,9 @@ async function main() {
 }
 
 // Execute main if this is the main module
-if (require.main === module) {
+if (process.argv[1] === new URL(import.meta.url).pathname) {
   main();
 }
 
 // Export for testing or importing
-module.exports = {
-  createLink,
-  main
-};
+export { createLink, main };
