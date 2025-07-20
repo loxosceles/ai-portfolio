@@ -136,7 +136,7 @@ describe('Lambda@Edge Function', () => {
   describe('Event Type Handling', () => {
     test('should handle viewer-request events with visitor parameter', async () => {
       const event = createViewerRequestEvent('visitor=test-link-id');
-      const result = (await edgeFunction.handler(event)) as any;
+      const result = (await edgeFunction.handler(event)) as CloudFrontRequest;
 
       // Should add auth tokens to headers
       expect(result.headers['x-auth-tokens']).toBeDefined();
@@ -145,7 +145,7 @@ describe('Lambda@Edge Function', () => {
 
     test('should handle viewer-request events without visitor parameter', async () => {
       const event = createViewerRequestEvent();
-      const result = (await edgeFunction.handler(event)) as any;
+      const result = (await edgeFunction.handler(event)) as CloudFrontRequest;
 
       // Should not add auth tokens to headers
       expect(result.headers?.['x-auth-tokens']).toBeUndefined();
@@ -168,7 +168,7 @@ describe('Lambda@Edge Function', () => {
         },
         {}
       );
-      const result = (await edgeFunction.handler(event)) as any;
+      const result = (await edgeFunction.handler(event)) as CloudFrontResponse;
 
       // Should add cookies to response
       expect(result.headers['set-cookie']).toBeDefined();
@@ -177,7 +177,7 @@ describe('Lambda@Edge Function', () => {
 
     test('should handle viewer-response events without auth tokens', async () => {
       const event = createViewerResponseEvent({}, {});
-      const result = (await edgeFunction.handler(event)) as any;
+      const result = (await edgeFunction.handler(event)) as CloudFrontResponse;
 
       // Should not modify the response
       expect(result.headers['set-cookie']).toBeUndefined();

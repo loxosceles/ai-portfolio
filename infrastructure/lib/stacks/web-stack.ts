@@ -52,7 +52,7 @@ export class WebStack extends cdk.Stack {
     const isProd = this.stage === 'prod';
 
     // Create DynamoDB table for visitor context
-    const visitorTable = new dynamodb.Table(this, 'VisitorLinkTable', {
+    new dynamodb.Table(this, 'VisitorLinkTable', {
       tableName: `${visitorTableName}-${this.stage}`,
       partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
       timeToLiveAttribute: 'ttl', // Add TTL for link expiration
