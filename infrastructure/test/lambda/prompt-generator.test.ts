@@ -1,3 +1,5 @@
+import { PromptGeneratorModule, RecruiterData, DeveloperData, ProjectData } from '../types';
+
 // Mock AWS SDK modules
 jest.mock('@aws-sdk/client-dynamodb', () => ({
   DynamoDBClient: jest.fn().mockImplementation(() => ({}))
@@ -26,7 +28,7 @@ jest.mock('@aws-sdk/lib-dynamodb', () => ({
                   skills: ['Node.js', 'Express', 'AWS Lambda']
                 }
               ]
-            }
+            } as DeveloperData
           });
         }
         return Promise.resolve({
@@ -37,7 +39,7 @@ jest.mock('@aws-sdk/lib-dynamodb', () => ({
               description: 'A serverless portfolio with AI features',
               tech: ['React', 'AWS', 'GraphQL'],
               highlights: ['Implemented RAG for personalized content']
-            }
+            } as ProjectData
           ]
         });
       })
@@ -62,7 +64,7 @@ jest.mock('../../lib/functions/ai-advocate/utils.mjs', () => ({
   formatSkillsSection: jest
     .fn()
     .mockReturnValue(
-      '- Frontend: React, TypeScript, Next.js\n- Backend: Node.js, Express, AWS Lambda'
+      '- Frontend: React, TypeScript, Next.js\\n- Backend: Node.js, Express, AWS Lambda'
     ),
   formatProjectsSection: jest
     .fn()
@@ -70,20 +72,22 @@ jest.mock('../../lib/functions/ai-advocate/utils.mjs', () => ({
   formatExperienceSection: jest
     .fn()
     .mockReturnValue(
-      '- 8+ years of experience as a Full Stack Developer\n- Passionate about building scalable web applications\n- Based in Berlin, Germany'
+      '- 8+ years of experience as a Full Stack Developer\\n- Passionate about building scalable web applications\\n- Based in Berlin, Germany'
     ),
   buildRulesSection: jest
     .fn()
-    .mockReturnValue('Response Guidelines:\nHigh Priority:\n- Rule 1\n- Rule 2')
+    .mockReturnValue('Response Guidelines:\\nHigh Priority:\\n- Rule 1\\n- Rule 2')
 }));
 
 // Use dynamic import for ES modules
-let promptGeneratorModule: any;
+let promptGeneratorModule: PromptGeneratorModule;
 
 describe('AI Advocate Prompt Generator', () => {
   beforeAll(async () => {
     // Dynamically import the module under test
-    promptGeneratorModule = await import('../../lib/functions/ai-advocate/prompt-generator.mjs');
+    promptGeneratorModule = (await import(
+      '../../lib/functions/ai-advocate/prompt-generator.mjs'
+    )) as PromptGeneratorModule;
   });
 
   beforeEach(() => {
@@ -97,7 +101,8 @@ describe('AI Advocate Prompt Generator', () => {
 
   test('should generate system prompt with developer name and rules', async () => {
     const question = 'What experience do you have with React?';
-    const recruiterData = {
+    const recruiterData: RecruiterData = {
+      linkId: 'test-link',
       recruiterName: 'Jane Smith',
       companyName: 'Tech Corp',
       jobTitle: 'Senior Frontend Developer',
@@ -115,7 +120,8 @@ describe('AI Advocate Prompt Generator', () => {
 
   test('should generate user prompt with recruiter context and question', async () => {
     const question = 'What experience do you have with React?';
-    const recruiterData = {
+    const recruiterData: RecruiterData = {
+      linkId: 'test-link',
       recruiterName: 'Jane Smith',
       companyName: 'Tech Corp',
       jobTitle: 'Senior Frontend Developer',
@@ -137,7 +143,8 @@ describe('AI Advocate Prompt Generator', () => {
 
   test('should highlight matching skills when recruiter skills match developer skills', async () => {
     const question = 'Tell me about your TypeScript experience';
-    const recruiterData = {
+    const recruiterData: RecruiterData = {
+      linkId: 'test-link',
       recruiterName: 'Jane Smith',
       companyName: 'Tech Corp',
       requiredSkills: ['TypeScript', 'React']
@@ -151,7 +158,8 @@ describe('AI Advocate Prompt Generator', () => {
 
   test('should include conversation history when available', async () => {
     const question = 'Can you elaborate more on your AWS experience?';
-    const recruiterData = {
+    const recruiterData: RecruiterData = {
+      linkId: 'test-link',
       recruiterName: 'Jane Smith',
       companyName: 'Tech Corp',
       conversationHistory: [

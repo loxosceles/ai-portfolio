@@ -6,7 +6,7 @@ import * as cdk from 'aws-cdk-lib';
 import { WebStack } from '../lib/stacks/web-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { SharedStack } from '../lib/stacks/shared-stack';
-import { JobMatchingStack } from '../lib/stacks/job-matching-stack';
+import { AIAdvocateStack } from '../lib/stacks/ai-advocate-stack';
 import { PipelineStack } from '../lib/stacks/pipeline-stack';
 
 const environment = process.env.ENVIRONMENT;
@@ -46,7 +46,7 @@ const sharedStack = new SharedStack(app, `PortfolioSharedStack-${stage}`, {
 });
 
 // Create combined website stack in us-east-1 first to get the CloudFront domain
-const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
+new WebStack(app, `PortfolioWebStack-${stage}`, {
   stage,
   env: {
     account: env.account,
@@ -54,22 +54,19 @@ const webStack = new WebStack(app, `PortfolioWebStack-${stage}`, {
   }
 });
 
-// Create Job Matching stack with CloudFront domain
-const jobMatchingStack = new JobMatchingStack(app, `JobMatchingStack-${stage}`, {
-  stage,
-  env,
-  userPool: sharedStack.userPool,
-  cloudfrontDomain: `https://${webStack.distribution.distributionDomainName}`,
-  crossRegionReferences: true
-});
-
-// Create API stack with job matching table and recruiter profiles table
+// Create API stack
 const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
   stage,
   env,
-  userPool: sharedStack.userPool,
-  jobMatchingTable: jobMatchingStack.matchingTable,
-  recruiterProfilesTable: jobMatchingStack.recruiterProfilesTable
+  userPool: sharedStack.userPool
+});
+
+// Create AI Advocate stack
+new AIAdvocateStack(app, `AIAdvocateStack-${stage}`, {
+  stage,
+  env,
+  developerTable: apiStack.developerTable,
+  projectsTable: apiStack.projectsTable
 });
 
 // Create pipeline stacks (separate from application deployment)
@@ -102,9 +99,6 @@ if (!skipPipeline) {
 }
 
 // Add dependencies
-jobMatchingStack.addDependency(sharedStack);
-jobMatchingStack.addDependency(webStack); // Job matching depends on web stack for CloudFront domain
 apiStack.addDependency(sharedStack);
-apiStack.addDependency(jobMatchingStack);
 
 app.synth();

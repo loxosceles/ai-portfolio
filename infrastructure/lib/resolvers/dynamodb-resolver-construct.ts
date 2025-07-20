@@ -19,6 +19,7 @@ export class DynamoDBResolverConstruct extends Construct {
 
     const resolverConfig = this.getResolverConfig(props);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const resolverProps: any = {
       typeName: props.typeName,
       fieldName: props.fieldName,

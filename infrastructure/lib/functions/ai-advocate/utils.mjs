@@ -1,11 +1,12 @@
 /**
  * Utility functions for the AI advocate
- * 
+ *
  * This module contains utility functions for formatting and processing data
  * for the AI advocate prompt generator.
  */
 
 import PROMPT_RULES from './prompt-rules.mjs';
+import GREETING_RULES from './greeting-rules.mjs';
 
 /**
  * Find matching skills between recruiter interests and developer skills
@@ -123,12 +124,14 @@ export function formatProjectsSection(projects) {
   if (!projects || projects.length === 0) {
     return '- No projects available';
   }
-  
+
   // Extract and format project information
-  return projects.map(project => {
-    const technologies = project.tech?.map(t => t.S || t).join(', ') || 'Various technologies';
-    return `- ${project.title}: ${technologies}`;
-  }).join('\n');
+  return projects
+    .map((project) => {
+      const technologies = project.tech?.map((t) => t.S || t).join(', ') || 'Various technologies';
+      return `- ${project.title}: ${technologies}`;
+    })
+    .join('\n');
 }
 
 /**
@@ -175,25 +178,82 @@ export function buildRulesSection(developerName) {
     ...PROMPT_RULES.accuracy,
     ...PROMPT_RULES.style,
     ...PROMPT_RULES.special
-  ].filter(rule => rule);
+  ].filter((rule) => rule);
 
-  const highPriorityRules = allRules.filter(rule => rule.priority === 'high');
-  const mediumPriorityRules = allRules.filter(rule => rule.priority === 'medium');
-  const lowPriorityRules = allRules.filter(rule => rule.priority === 'low');
+  const highPriorityRules = allRules.filter((rule) => rule.priority === 'high');
+  const mediumPriorityRules = allRules.filter((rule) => rule.priority === 'medium');
+  const lowPriorityRules = allRules.filter((rule) => rule.priority === 'low');
 
   let formattedRules = '';
   if (highPriorityRules.length > 0) {
-    formattedRules += 'High Priority:\n' + 
-      highPriorityRules.map(rule => `- ${rule.rule.replace(/\[name\]/g, developerName)}`).join('\n') + '\n\n';
+    formattedRules +=
+      'High Priority:\n' +
+      highPriorityRules
+        .map((rule) => `- ${rule.rule.replace(/\[name\]/g, developerName)}`)
+        .join('\n') +
+      '\n\n';
   }
   if (mediumPriorityRules.length > 0) {
-    formattedRules += 'Medium Priority:\n' + 
-      mediumPriorityRules.map(rule => `- ${rule.rule.replace(/\[name\]/g, developerName)}`).join('\n') + '\n\n';
+    formattedRules +=
+      'Medium Priority:\n' +
+      mediumPriorityRules
+        .map((rule) => `- ${rule.rule.replace(/\[name\]/g, developerName)}`)
+        .join('\n') +
+      '\n\n';
   }
   if (lowPriorityRules.length > 0) {
-    formattedRules += 'Low Priority:\n' + 
-      lowPriorityRules.map(rule => `- ${rule.rule.replace(/\[name\]/g, developerName)}`).join('\n');
+    formattedRules +=
+      'Low Priority:\n' +
+      lowPriorityRules
+        .map((rule) => `- ${rule.rule.replace(/\[name\]/g, developerName)}`)
+        .join('\n');
   }
 
   return `Response Guidelines:\n${formattedRules.trim()}`;
+}
+
+/**
+ * Build greeting-specific rules section
+ * @param {string} developerName - Developer's name for personalization
+ * @returns {string} - Formatted rules section for greetings
+ */
+export function buildGreetingRulesSection(developerName) {
+  // Define greeting-specific rules
+  const greetingRules = GREETING_RULES.map((rule) => {
+    return {
+      priority: rule.priority,
+      rule: rule.rule.replace(/\[name\]/g, developerName)
+    };
+  }).filter((rule) => rule);
+
+  const highPriorityRules = greetingRules.filter((rule) => rule.priority === 'high');
+  const mediumPriorityRules = greetingRules.filter((rule) => rule.priority === 'medium');
+  const lowPriorityRules = greetingRules.filter((rule) => rule.priority === 'low');
+
+  let formattedRules = '';
+  if (highPriorityRules.length > 0) {
+    formattedRules +=
+      'High Priority:\n' +
+      highPriorityRules
+        .map((rule) => `- ${rule.rule.replace(/\[name\]/g, developerName)}`)
+        .join('\n') +
+      '\n\n';
+  }
+  if (mediumPriorityRules.length > 0) {
+    formattedRules +=
+      'Medium Priority:\n' +
+      mediumPriorityRules
+        .map((rule) => `- ${rule.rule.replace(/\[name\]/g, developerName)}`)
+        .join('\n') +
+      '\n\n';
+  }
+  if (lowPriorityRules.length > 0) {
+    formattedRules +=
+      'Low Priority:\n' +
+      lowPriorityRules
+        .map((rule) => `- ${rule.rule.replace(/\[name\]/g, developerName)}`)
+        .join('\n');
+  }
+
+  return `Greeting Guidelines:\n${formattedRules.trim()}`;
 }

@@ -56,7 +56,7 @@ export class AWSManager extends BaseManager {
           allParameters = [...allParameters, ...response.Parameters];
         }
         // Type assertion for NextToken since TypeScript doesn't recognize it on all response types
-        nextToken = (response as any).NextToken;
+        nextToken = response.NextToken;
       } while (nextToken);
 
       return allParameters;

@@ -5,8 +5,8 @@
   "main": "generate-link.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "create-link": "node link-creator.js",
-    "create-link-with-data": "node link-creator.js --create-job-matching"
+    "create-link": "ENVIRONMENT=dev link-creator.js",
+    "create-link-with-data": "ENVIRONMENT=dev node link-creator.mjs --create-job-matching"
   },
   "author": "",
   "license": "MIT",

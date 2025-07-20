@@ -14,8 +14,6 @@ import { addStackOutputs, getRequiredEnvVars } from './stack-helpers';
 interface IApiStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
   stage: 'dev' | 'prod';
-  jobMatchingTable: dynamodb.ITable;
-  recruiterProfilesTable: dynamodb.ITable;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -26,9 +24,12 @@ export class ApiStack extends cdk.Stack {
   private dataBucketName: string;
   private awsRegionDefault: string;
 
+  public readonly developerTable: dynamodb.Table;
+  public readonly projectsTable: dynamodb.Table;
+
   constructor(scope: Construct, id: string, props: IApiStackProps) {
     super(scope, id, props);
-    const { stage, userPool, jobMatchingTable, recruiterProfilesTable } = props;
+    const { stage, userPool } = props;
     this.stage = stage;
 
     if (!['dev', 'prod'].includes(this.stage)) {
@@ -37,14 +38,6 @@ export class ApiStack extends cdk.Stack {
 
     if (!userPool) {
       throw new Error('userPool is required');
-    }
-
-    if (!jobMatchingTable) {
-      throw new Error('jobMatchingTable is required');
-    }
-
-    if (!recruiterProfilesTable) {
-      throw new Error('recruiterProfilesTable is required');
     }
 
     // Get required environment variables
@@ -63,10 +56,12 @@ export class ApiStack extends cdk.Stack {
     const isProd = this.stage === 'prod';
 
     // Create DynamoDB tables
-    const { developerTable, projectsTable } = this.createDynamoDBTables(isProd);
+    const tables = this.createDynamoDBTables(isProd);
+    this.developerTable = tables.developerTable;
+    this.projectsTable = tables.projectsTable;
 
     // Create AppSync DataSources
-    const dataSources = this.createDataSources(developerTable, projectsTable);
+    const dataSources = this.createDataSources(this.developerTable, this.projectsTable);
 
     // Add resolvers using construct
     new APIResolverConstruct(this, 'APIResolvers', {
@@ -76,7 +71,18 @@ export class ApiStack extends cdk.Stack {
     });
 
     // Create data loader to populate DynamoDB tables from S3
-    this.createDataLoader(developerTable, projectsTable);
+    this.createDataLoader(this.developerTable, this.projectsTable);
+
+    // Export GraphQL API ID and URL for cross-stack references
+    new cdk.CfnOutput(this, 'GraphQLApiId', {
+      value: this.api.apiId,
+      exportName: `GraphQLApiId-${this.stage}`
+    });
+
+    new cdk.CfnOutput(this, 'GraphQLApiUrl', {
+      value: this.api.graphqlUrl,
+      exportName: `GraphQLApiUrl-${this.stage}`
+    });
 
     // Add API outputs
     addStackOutputs(this, this.stage, [
