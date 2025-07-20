@@ -1,3 +1,10 @@
+import {
+  EdgeFunctionModule,
+  CloudFrontEvent,
+  CloudFrontHeaders,
+  CloudFrontRequest
+} from '../types';
+
 // Mock AWS SDK modules
 jest.mock('@aws-sdk/client-ssm', () => ({
   SSMClient: jest.fn().mockImplementation(() => ({
@@ -45,16 +52,21 @@ jest.mock('@aws-sdk/lib-dynamodb', () => ({
 }));
 
 // Use dynamic import for ES modules
-let edgeFunction: any;
+let edgeFunction: EdgeFunctionModule;
 
 describe('Lambda@Edge Function', () => {
   beforeAll(async () => {
     // Dynamically import the module under test
-    edgeFunction = await import('../../lib/functions/visitor-context/dev/index.mjs');
+    edgeFunction = (await import(
+      '../../lib/functions/visitor-context/dev/index.mjs'
+    )) as EdgeFunctionModule;
   });
 
   // Helper function to create viewer-request event
-  const createViewerRequestEvent = (querystring = '', headers = {}) => ({
+  const createViewerRequestEvent = (
+    querystring = '',
+    headers: CloudFrontHeaders = {}
+  ): CloudFrontEvent => ({
     Records: [
       {
         cf: {
@@ -72,7 +84,10 @@ describe('Lambda@Edge Function', () => {
   });
 
   // Helper function to create viewer-response event
-  const createViewerResponseEvent = (requestHeaders = {}, responseHeaders = {}) => ({
+  const createViewerResponseEvent = (
+    requestHeaders: CloudFrontHeaders = {},
+    responseHeaders: CloudFrontHeaders = {}
+  ): CloudFrontEvent => ({
     Records: [
       {
         cf: {
@@ -81,6 +96,7 @@ describe('Lambda@Edge Function', () => {
           },
           request: {
             uri: '/test-page',
+            querystring: '',
             headers: requestHeaders
           },
           response: {
@@ -96,7 +112,7 @@ describe('Lambda@Edge Function', () => {
       const event = createViewerRequestEvent('visitor=test-link-id');
       event.Records[0].cf.request.uri = '/_next/static/chunks/main.js';
 
-      const result = await edgeFunction.handler(event);
+      const result = (await edgeFunction.handler(event)) as CloudFrontRequest;
       expect(result.uri).toBe('/_next/static/chunks/main.js');
     });
 
@@ -104,7 +120,7 @@ describe('Lambda@Edge Function', () => {
       const event = createViewerRequestEvent('visitor=test-link-id');
       event.Records[0].cf.request.uri = '/script.js';
 
-      const result = await edgeFunction.handler(event);
+      const result = (await edgeFunction.handler(event)) as CloudFrontRequest;
       expect(result.uri).toBe('/script.js');
     });
 
@@ -112,7 +128,7 @@ describe('Lambda@Edge Function', () => {
       const event = createViewerRequestEvent('visitor=test-link-id');
       event.Records[0].cf.request.uri = '/styles.css';
 
-      const result = await edgeFunction.handler(event);
+      const result = (await edgeFunction.handler(event)) as CloudFrontRequest;
       expect(result.uri).toBe('/styles.css');
     });
   });
@@ -120,7 +136,7 @@ describe('Lambda@Edge Function', () => {
   describe('Event Type Handling', () => {
     test('should handle viewer-request events with visitor parameter', async () => {
       const event = createViewerRequestEvent('visitor=test-link-id');
-      const result = await edgeFunction.handler(event);
+      const result = (await edgeFunction.handler(event)) as CloudFrontRequest;
 
       // Should add auth tokens to headers
       expect(result.headers['x-auth-tokens']).toBeDefined();
@@ -129,7 +145,7 @@ describe('Lambda@Edge Function', () => {
 
     test('should handle viewer-request events without visitor parameter', async () => {
       const event = createViewerRequestEvent();
-      const result = await edgeFunction.handler(event);
+      const result = (await edgeFunction.handler(event)) as CloudFrontRequest;
 
       // Should not add auth tokens to headers
       expect(result.headers?.['x-auth-tokens']).toBeUndefined();
@@ -152,7 +168,7 @@ describe('Lambda@Edge Function', () => {
         },
         {}
       );
-      const result = await edgeFunction.handler(event);
+      const result = (await edgeFunction.handler(event)) as CloudFrontResponse;
 
       // Should add cookies to response
       expect(result.headers['set-cookie']).toBeDefined();
@@ -161,7 +177,7 @@ describe('Lambda@Edge Function', () => {
 
     test('should handle viewer-response events without auth tokens', async () => {
       const event = createViewerResponseEvent({}, {});
-      const result = await edgeFunction.handler(event);
+      const result = (await edgeFunction.handler(event)) as CloudFrontResponse;
 
       // Should not modify the response
       expect(result.headers['set-cookie']).toBeUndefined();
@@ -171,7 +187,7 @@ describe('Lambda@Edge Function', () => {
   describe('Error Handling', () => {
     test('should handle errors gracefully and return original request/response', async () => {
       // Test with malformed event
-      const malformedEvent = {
+      const malformedEvent: CloudFrontEvent = {
         Records: [
           {
             cf: {

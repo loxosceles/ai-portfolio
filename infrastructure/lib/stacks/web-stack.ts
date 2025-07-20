@@ -52,7 +52,7 @@ export class WebStack extends cdk.Stack {
     const isProd = this.stage === 'prod';
 
     // Create DynamoDB table for visitor context
-    const visitorTable = new dynamodb.Table(this, 'VisitorLinkTable', {
+    new dynamodb.Table(this, 'VisitorLinkTable', {
       tableName: `${visitorTableName}-${this.stage}`,
       partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
       timeToLiveAttribute: 'ttl', // Add TTL for link expiration
@@ -126,7 +126,9 @@ export class WebStack extends cdk.Stack {
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['dynamodb:GetItem'],
-        resources: [visitorTable.tableArn]
+        resources: [
+          `arn:aws:dynamodb:${this.region}:${this.account}:table/${visitorTableName}-${this.stage}`
+        ]
       })
     );
 

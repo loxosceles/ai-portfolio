@@ -7,7 +7,7 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import { ModelRegistry } from './adapters/model-registry.mjs';
-import { generateDynamicPrompt } from './prompt-generator.mjs';
+import { generateDynamicPrompt, generateGreetingPrompt } from './prompt-generator.mjs';
 
 // Configuration constants
 const MAX_CONVERSATION_MESSAGES = 40; // Maximum number of messages to keep in conversation history
@@ -20,7 +20,7 @@ const docClient = DynamoDBDocumentClient.from(dynamodb);
 // Note: Bedrock availability varies by AWS account - ensure your account has access to Bedrock in eu-central-1
 const bedrockClient = new BedrockRuntimeClient({ region: 'eu-central-1' }); // Using Bedrock in the same region as other backend services
 
-// Default response object for job matching
+// Default response object for advocate greeting
 const createDefaultResponse = (linkId = 'unknown') => ({
   linkId,
   companyName: null,
@@ -44,9 +44,6 @@ export const handler = async (event) => {
     switch (fieldName) {
       case 'getAdvocateGreeting':
         return await handleGetAdvocateGreeting(event);
-
-      case 'getAdvocateGreetingByLinkId':
-        return await handleGetAdvocateGreetingByLinkId(event);
 
       case 'askAIQuestion':
         return await handleAskAIQuestion(event);
@@ -94,65 +91,45 @@ async function handleGetAdvocateGreeting(event) {
   // Get recruiter profile data from DynamoDB
   const recruiterData = await getRecruiterProfile(linkId);
 
-  // If no recruiter profile found, try the legacy table as fallback
+  // If no recruiter profile found, return default response
+  // This should not happen in normal operation as the auth flow ensures
+  // a recruiter profile exists for every valid link
   if (!recruiterData) {
-    const tableName = process.env.MATCHING_TABLE_NAME;
-    if (tableName) {
-      const result = await getMatchingData(tableName, linkId);
-      if (result) {
-        console.log('Using legacy job matching data for greeting');
-        return result;
-      }
-    }
+    console.log(`No recruiter profile found for ${linkId}`);
     return createDefaultResponse(linkId);
   }
-
-  // Convert RecruiterProfile to JobMatching format for backward compatibility
-  return {
-    linkId: recruiterData.linkId,
-    companyName: recruiterData.companyName,
-    recruiterName: recruiterData.recruiterName,
-    context: recruiterData.context,
-    greeting: recruiterData.greeting,
-    message: recruiterData.message,
-    skills: recruiterData.requiredSkills || recruiterData.preferredSkills || []
-  };
+  
+  try {
+    // Generate AI greeting
+    const aiGreeting = await generateAIGreeting(recruiterData);
+    
+    // Convert RecruiterProfile to JobMatching format with AI-generated greeting
+    return {
+      linkId: recruiterData.linkId,
+      companyName: recruiterData.companyName,
+      recruiterName: recruiterData.recruiterName,
+      context: recruiterData.context,
+      greeting: recruiterData.greeting,
+      message: aiGreeting || recruiterData.message, // Use AI greeting if available, fallback to static
+      skills: recruiterData.requiredSkills || recruiterData.preferredSkills || []
+    };
+  } catch (error) {
+    console.error('Error generating AI greeting:', error);
+    
+    // Fallback to static content if AI generation fails
+    return {
+      linkId: recruiterData.linkId,
+      companyName: recruiterData.companyName,
+      recruiterName: recruiterData.recruiterName,
+      context: recruiterData.context,
+      greeting: recruiterData.greeting,
+      message: recruiterData.message,
+      skills: recruiterData.requiredSkills || recruiterData.preferredSkills || []
+    };
+  }
 }
 
-async function handleGetAdvocateGreetingByLinkId(event) {
-  const linkId = event.arguments?.linkId;
-
-  if (!linkId) {
-    return createDefaultResponse();
-  }
-
-  // Get recruiter profile data from DynamoDB
-  const recruiterData = await getRecruiterProfile(linkId);
-
-  // If no recruiter profile found, try the legacy table as fallback
-  if (!recruiterData) {
-    const tableName = process.env.MATCHING_TABLE_NAME;
-    if (tableName) {
-      const result = await getMatchingData(tableName, linkId);
-      if (result) {
-        console.log('Using legacy job matching data for greeting by linkId');
-        return result;
-      }
-    }
-    return createDefaultResponse(linkId);
-  }
-
-  // Convert RecruiterProfile to JobMatching format for backward compatibility
-  return {
-    linkId: recruiterData.linkId,
-    companyName: recruiterData.companyName,
-    recruiterName: recruiterData.recruiterName,
-    context: recruiterData.context,
-    greeting: recruiterData.greeting,
-    message: recruiterData.message,
-    skills: recruiterData.requiredSkills || recruiterData.preferredSkills || []
-  };
-}
+// handleGetAdvocateGreetingByLinkId function removed as it's not used by the frontend
 
 async function handleAskAIQuestion(event) {
   const question = event.arguments?.question;
@@ -229,21 +206,7 @@ async function handleAskAIQuestion(event) {
   }
 }
 
-// Get matching data from DynamoDB
-async function getMatchingData(tableName, linkId) {
-  try {
-    const command = new GetCommand({
-      TableName: tableName,
-      Key: { linkId }
-    });
-
-    const response = await docClient.send(command);
-    return response.Item;
-  } catch (error) {
-    console.error('DynamoDB error:', error);
-    return null;
-  }
-}
+// getMatchingData function removed as it's no longer needed
 
 // Get recruiter profile data from DynamoDB
 async function getRecruiterProfile(linkId) {
@@ -283,6 +246,51 @@ async function getRecruiterProfile(linkId) {
       name: error.name
     });
     return null;
+  }
+}
+
+// Generate AI greeting using Amazon Bedrock
+async function generateAIGreeting(recruiterData) {
+  try {
+    // Get model ID from environment variables
+    const modelId = process.env.BEDROCK_MODEL_ID;
+    if (!modelId) {
+      throw new Error('BEDROCK_MODEL_ID environment variable is not set');
+    }
+
+    // Get the appropriate adapter for this model
+    console.log('Using Bedrock model ID for greeting:', modelId);
+    const adapter = ModelRegistry.getAdapter(modelId);
+
+    // Generate greeting-specific prompt
+    const promptData = await generateGreetingPrompt(recruiterData);
+
+    // Format the payload using the adapter
+    const payload = adapter.formatPrompt(
+      promptData,
+      {
+        maxTokens: 150,
+        temperature: 0.4, // Slightly higher temperature for more creative greetings
+        topP: 0.9
+      }
+    );
+
+    const command = new InvokeModelCommand({
+      modelId,
+      body: JSON.stringify(payload),
+      contentType: 'application/json',
+      accept: 'application/json'
+    });
+
+    const response = await bedrockClient.send(command);
+    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+
+    // Parse the response using the adapter
+    return adapter.parseResponse(responseBody);
+  } catch (error) {
+    console.error('AI greeting generation error:', error.message);
+    console.error('Full error:', error);
+    throw error; // Propagate error to be handled by the calling function
   }
 }
 
