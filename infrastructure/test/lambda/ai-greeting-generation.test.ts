@@ -13,7 +13,8 @@ interface AIAdvocateModule {
 
 // Mock the global TextDecoder
 class MockTextDecoder {
-  decode(buffer: Uint8Array | ArrayBuffer): string {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  decode(_: Uint8Array | ArrayBuffer): string {
     return JSON.stringify({ completion: 'Mocked response' });
   }
 }

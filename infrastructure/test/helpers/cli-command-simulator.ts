@@ -12,6 +12,12 @@ interface IUploadResult {
   errorCount: number;
 }
 
+interface IUploadOptions {
+  region?: string;
+  dryRun?: boolean;
+  verbose?: boolean;
+}
+
 // Export wrapped command handlers that can be easily mocked
 export const ssmCommandHandlers = {
   upload: ssmCommands.handleUploadParameters,
@@ -32,15 +38,13 @@ export const publishCommandHandlers = {
   publish: publishCommands.handlePublishWepApp
 };
 
-// Environment is set in test/setup/environment.js
-
 // Function to simulate SSM CLI execution without spawning a process
 export async function simulateSSMCLI(
   command: string,
-  options: Record<string, any> = {}
+  options: IUploadOptions | IExportOptions = {}
 ): Promise<IUploadResult | IExportResult> {
   if (command === 'upload') {
-    return await ssmCommandHandlers.upload(options);
+    return await ssmCommandHandlers.upload(options as IUploadOptions);
   } else if (command === 'export') {
     return await ssmCommandHandlers.export(options as IExportOptions);
   }
