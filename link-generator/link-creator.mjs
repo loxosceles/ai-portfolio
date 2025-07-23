@@ -189,9 +189,13 @@ async function createLink() {
     );
 
     const cleanDomainUrl = config.domainUrl.replace(/\/+$/, '');
-    const linkUrl = cleanDomainUrl.startsWith('http')
-      ? `${cleanDomainUrl}/?visitor=${linkId}`
-      : `https://${cleanDomainUrl}/?visitor=${linkId}`;
+    let linkUrl;
+    try {
+      const parsedUrl = new URL(cleanDomainUrl);
+      linkUrl = `${parsedUrl.origin}/?visitor=${linkId}`;
+    } catch {
+      linkUrl = `https://${cleanDomainUrl}/?visitor=${linkId}`;
+    }
 
     await fs.writeFile(config.outputFilePath, `${linkUrl}\n`, 'utf8');
 
