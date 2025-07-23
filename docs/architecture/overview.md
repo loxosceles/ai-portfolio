@@ -1,15 +1,8 @@
-# AI Portfolio
+# Architecture Overview
 
-## Overview
+The AI Portfolio application follows a serverless architecture pattern with a static frontend and cloud-based backend services.
 
-A serverless application that creates personalized professional portfolio experiences for recruiters through:
-
-- **Personalized Access Links**: Unique links with AI-generated personalized greetings for recruiters
-- **"Invisible" Authentication**: Seamless authentication via CloudFront and Lambda@Edge without requiring login
-- **AI-Powered Interaction**: Personalized responses to recruiter questions using AWS Bedrock
-- **Cost-optimized AWS Serverless Infrastructure**: Leveraging S3, CloudFront, Lambda, AppSync, and DynamoDB
-
-## Architecture
+## System Architecture Diagram
 
 ```
 ┌─────────────────┐     ┌───────────────┐     ┌───────────────┐
@@ -46,50 +39,58 @@ A serverless application that creates personalized professional portfolio experi
                         └───────────────┘
 ```
 
-## Key Features
+## Key Components
 
-✅ **Personalized Recruiter Experience**
+### Frontend
 
-- Unique access links for each recruiter with personalized content
-- AI-generated greetings tailored to the recruiter's company and role
-- Contextual responses based on recruiter profile and job requirements
+- **Next.js Static Site**: Hosted on S3, distributed via CloudFront
+- **Apollo Client**: GraphQL client for data fetching
+- **Auth Context**: Centralized authentication management
 
-✅ **AI Advocate**
+### Backend
 
-- AI speaks in third-person as an advocate for the portfolio owner
-- Answers recruiter questions about skills, experience, and projects
-- Maintains conversation history for contextual follow-up questions
+- **AppSync API**: GraphQL API for data access
+- **Lambda Resolvers**: Business logic for API operations
+- **DynamoDB**: NoSQL database for data storage
 
-✅ **Serverless Architecture**
+### Authentication
 
-- Static Next.js frontend hosted on S3 with CloudFront distribution
-- GraphQL API with AppSync and Lambda resolvers
-- DynamoDB for data storage
-- AWS Bedrock for AI capabilities
+- **Lambda@Edge**: Intercepts requests to handle authentication
+- **Cognito**: Manages virtual users for personalized links
+- **Cookie-based Auth**: Sets secure cookies for client-side auth
 
-## Tech Stack
+### AI Integration
 
-| Layer          | Technologies                                       |
-| -------------- | -------------------------------------------------- |
-| Frontend       | Next.js, TypeScript, Tailwind CSS, Apollo Client   |
-| Backend        | AWS Lambda, AppSync, CloudFront, Cognito, DynamoDB |
-| AI Integration | AWS Bedrock with Claude models                     |
-| Infrastructure | AWS CDK, TypeScript                                |
+- **AWS Bedrock**: Provides AI capabilities via Claude models
+- **Model Adapters**: Abstract different AI model interfaces
+- **Prompt Generation**: Creates context-aware prompts
 
 ## Core Workflows
 
-1. **Link Generation**: Creates personalized URLs with tokens for recruiters
-2. **Authentication Flow**: Lambda@Edge intercepts requests, validates tokens, and sets auth cookies
-3. **Frontend Experience**: Next.js frontend with Apollo client uses auth tokens for personalized content
-4. **AI Interaction**: AWS Bedrock provides AI capabilities for personalized interactions
+### Personalized Link Flow
 
-## Documentation
+1. Generate unique link with visitor token
+2. Store link data in DynamoDB with Cognito credentials
+3. Share link with recruiter
 
-Comprehensive documentation is available in the [docs](docs/README.md) directory.
+### Authentication Flow
 
-Key documentation sections:
+1. Recruiter clicks personalized link
+2. Lambda@Edge intercepts request and validates token
+3. Authentication cookies are set in the response
+4. Frontend uses cookies for authenticated API requests
 
-- [Architecture & Implementation](docs/README.md#architecture)
-- [Deployment & Operations](docs/README.md#guides)
-- [Reference](docs/README.md#reference)
-- [Contributing](docs/README.md#contributing)
+### AI Interaction Flow
+
+1. Recruiter asks question through the interface
+2. Question is sent to AppSync API with auth token
+3. Lambda resolver generates context-aware prompt
+4. AWS Bedrock generates personalized response
+5. Response is returned to the frontend
+
+## Detailed Documentation
+
+- [Frontend Architecture](frontend.md)
+- [Authentication Architecture](authentication.md)
+- [AI Integration Architecture](ai-integration.md)
+- [Infrastructure Architecture](infrastructure/overview.md)

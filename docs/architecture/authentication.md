@@ -1,8 +1,8 @@
-# Authentication Flow
+# Authentication Architecture
 
 ## Overview
 
-The AI Portfolio implements a sophisticated "invisible authentication" system that provides personalized experiences without requiring visitors to explicitly log in. This document explains the authentication flow and how personalized links work.
+The AI Portfolio implements a streamlined authentication approach that provides personalized experiences without requiring visitors to explicitly log in. This document explains the authentication architecture and how personalized links work.
 
 ## Link-Based Authentication System
 
@@ -13,19 +13,16 @@ The system uses personalized links containing tokens that authenticate visitors 
 ### Components
 
 1. **Link Generator Tool**
-
    - Creates personalized URLs for specific visitors/recruiters
    - Associates each link with visitor metadata (company, role, etc.)
    - Stores link-visitor associations in DynamoDB
 
 2. **Virtual Cognito Users**
-
    - Each personalized link corresponds to a virtual user in AWS Cognito
    - These users exist solely to provide authentication context
    - No password or explicit login is required
 
 3. **Lambda@Edge Function**
-
    - Intercepts requests to CloudFront
    - Validates tokens from URL parameters
    - Sets authentication cookies for the browser session
@@ -38,19 +35,16 @@ The system uses personalized links containing tokens that authenticate visitors 
 ## Authentication Flow
 
 1. **Link Creation**
-
    - Portfolio owner creates a personalized link for a recruiter
    - System creates a virtual Cognito user and generates access tokens
    - Link with embedded token is shared with the recruiter
 
 2. **Visitor Access**
-
    - Recruiter clicks the personalized link
    - CloudFront receives the request with the token parameter
    - Lambda@Edge validates the token and sets `AccessToken` and `IdToken` cookies
 
 3. **Frontend Authentication**
-
    - Next.js frontend loads with authentication cookies already set
    - Apollo client extracts tokens from cookies
    - GraphQL requests include the token in the Authorization header
@@ -68,6 +62,8 @@ The system uses personalized links containing tokens that authenticate visitors 
 - **Cookie Security**: Authentication cookies use SameSite=Strict to prevent CSRF attacks
 - **Content Security Policy**: Headers mitigate XSS risks
 - **Short Token Expiration**: Tokens have limited validity periods
+- **Client-Side Authentication**: Tokens are processed in the browser for static site compatibility
+- **Security Scope**: Designed for tamper-proofing personalized content, not for highly sensitive data
 
 ## Direct URL Access
 
@@ -82,7 +78,7 @@ This is by design - the system expects visitors to use personalized links for th
 
 ## Technical Implementation
 
-The authentication flow is implemented across several components:
+The authentication flow is implemented across several components. The system is designed to work in both deployed environments (with real authentication) and local development (with mock data):
 
 ### Architecture Overview
 
@@ -97,10 +93,10 @@ The authentication flow is implemented across several components:
     ┌─────────────┼─────────────┐
     │             │             │
 ┌───▼───┐    ┌───▼───┐    ┌───▼───┐
-│Local  │    │Job    │    │AI     │
-│Inter- │    │Match  │    │Advo-  │
-│ceptor │    │Hooks  │    │cate   │
-│(Mock) │    │       │    │Hooks  │
+│Local  │    │Advocate│    │AI     │
+│Inter- │    │Greeting│    │Advo-  │
+│ceptor │    │Hooks   │    │cate   │
+│(Mock) │    │        │    │Hooks  │
 └───────┘    └───────┘    └───────┘
 ```
 
@@ -146,15 +142,27 @@ const getAuthHeaders = (routeType: RouteType) => {
 ```typescript
 // Generic interceptor for local development
 export function useLocalRequestInterceptor() {
+  const { environment } = useAuth();
+  const searchParams = useSearchParams();
+  const visitorParam = searchParams?.get('visitor');
+
+  // Should intercept if in local environment with visitor parameter
   const shouldIntercept = environment === 'local' && !!visitorParam;
 
   return {
     shouldIntercept,
-    getJobMatchingMock: () => ({
-      /* mock data */
+    getAdvocateGreetingMock: () => ({
+      linkId: 'local-interceptor',
+      companyName: 'Local Demo Company',
+      recruiterName: `Local Visitor ${visitorParam?.substring(0, 6)}`,
+      context: 'local development',
+      greeting: 'Welcome to local development!',
+      message: 'This is mock data from the local request interceptor.',
+      skills: ['React', 'TypeScript', 'AWS', 'Node.js', 'GraphQL']
     }),
     getAIAdvocateMock: (question) => ({
-      /* mock response */
+      answer: 'This is a simulated AI response for local development.',
+      context: 'Local interceptor response'
     })
   };
 }
@@ -164,12 +172,21 @@ export function useLocalRequestInterceptor() {
 
 ```typescript
 // All data fetching uses centralized auth
-export function useJobMatching() {
-  const { getQueryContext } = useAuth();
+export function useAdvocateGreeting() {
+  const { isAuthenticated, getQueryContext } = useAuth();
 
-  return useQuery(GET_JOB_MATCHING, {
+  const { data, loading, error } = useQuery(GET_ADVOCATE_GREETING, {
+    skip: !isAuthenticated,
+    fetchPolicy: 'cache-and-network',
     context: getQueryContext('protected')
   });
+
+  return {
+    greetingData: data?.getAdvocateGreeting,
+    isLoading: loading,
+    error: error?.message || null,
+    isAuthenticated
+  };
 }
 ```
 
@@ -179,4 +196,31 @@ export function useJobMatching() {
 - **Deployed Dev**: `NEXT_PUBLIC_ENVIRONMENT=dev` (set in deploy script)
 - **Production**: `NEXT_PUBLIC_ENVIRONMENT=prod` (set in deploy script)
 
-This authentication flow provides a seamless, secure experience for visitors while maintaining strict access control and personalization capabilities.
+### 6. **Component Integration**:
+
+```typescript
+// Example of how components integrate with the auth system
+function AdvocateGreetingComponent() {
+  // Check for local interception first
+  const interceptor = useLocalRequestInterceptor();
+  const { isAuthenticated } = useAuth();
+
+  // Use the standard query if authenticated
+  const { greetingData: realGreetingData, isLoading } = useAdvocateGreeting();
+
+  // Use interceptor data if available, otherwise use real data
+  const greetingData = interceptor.shouldIntercept
+    ? interceptor.getAdvocateGreetingMock()
+    : realGreetingData;
+
+  // Component rendering logic...
+}
+```
+
+This authentication architecture provides a seamless, secure experience for visitors while maintaining strict access control and personalization capabilities. The local development mode allows for rapid UI development without needing real authentication tokens.
+
+## Related Documentation
+
+- [Frontend Architecture](frontend.md) - How the frontend integrates with the authentication system
+- [Infrastructure Architecture](infrastructure/overview.md) - How the infrastructure supports the authentication system
+- [Local Development Guide](../guides/local-development.md) - How to use the local development mode
