@@ -3,12 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "deploy:full:dev": "./scripts/deploy.sh dev",
-    "deploy:full:prod": "./scripts/deploy.sh prod",
-    "deploy:infra:dev": "pnpm --filter=infrastructure run deploy:dev",
-    "deploy:infra:prod": "pnpm --filter=infrastructure run deploy:prod",
+    "deploy:dev": "scripts/deploy.sh",
+    "deploy:prod": "echo 'Production deployment not allowed' && exit 1",
     "upload-static-data:dev": "pnpm --filter=infrastructure run upload-static-data:dev",
     "upload-static-data:prod": "pnpm --filter=infrastructure run upload-static-data:prod",
+    "download-static-data:dev": "pnpm --filter=infrastructure run download-static-data:dev",
+    "download-static-data:prod": "pnpm --filter=infrastructure run download-static-data:prod",
+    "export-stack-params:dev": "pnpm --filter=infrastructure run export-stack-params:dev",
+    "export-stack-params:prod": "pnpm --filter=infrastructure run export-stack-params:prod",
+    "upload-stack-params:dev": "pnpm --filter=infrastructure run upload-stack-params:dev",
+    "upload-stack-params:prod": "pnpm --filter=infrastructure run upload-stack-params:prod",
     "dev": "pnpm --filter=frontend run dev",
     "build": "pnpm --filter=frontend run build",
     "test": "pnpm --filter='..' run test",
@@ -29,7 +33,6 @@
     "@eslint/json": "^0.12.0",
     "@eslint/markdown": "^6.5.0",
     "@next/eslint-plugin-next": "^15.3.3",
-    "@types/aws-sdk": "^2.7.4",
     "@types/node": "^24.0.0",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
@@ -64,5 +67,8 @@
       "prettier --write --end-of-line auto"
     ]
   },
-  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac"
+  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac",
+  "dependencies": {
+    "@aws-sdk/client-cloudfront": "^3.844.0"
+  }
 }

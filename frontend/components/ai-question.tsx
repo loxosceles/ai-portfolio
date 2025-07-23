@@ -5,13 +5,13 @@ import { useAIAdvocate } from '@/lib/ai-advocate/use-ai-advocate';
 import { useAIAdvocateDev } from '@/lib/ai-advocate/use-ai-advocate-dev';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useLocalRequestInterceptor } from '@/lib/local/use-local-request-interceptor';
-import { AIResponse } from '@/lib/ai-advocate/use-ai-advocate';
+import { IAIResponse } from '@/lib/ai-advocate/use-ai-advocate';
 
-interface AIQuestionProps {
+interface IAIQuestionProps {
   onClose: () => void;
 }
 
-export default function AIQuestion({ onClose }: AIQuestionProps) {
+export default function AIQuestion({ onClose }: IAIQuestionProps) {
   const [question, setQuestion] = useState('');
   // Check for local interception first
   const interceptor = useLocalRequestInterceptor();
@@ -32,7 +32,7 @@ export default function AIQuestion({ onClose }: AIQuestionProps) {
   } = realHook;
 
   // Create intercepted ask function
-  const [interceptedResponse, setInterceptedResponse] = useState<AIResponse | null>(null);
+  const [interceptedResponse, setInterceptedResponse] = useState<IAIResponse | null>(null);
   const [interceptedLoading, setInterceptedLoading] = useState(false);
 
   const ask = interceptor.shouldIntercept

@@ -6,82 +6,114 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as logs from 'aws-cdk-lib/aws-logs';
-import { DynamoDBResolverConstruct } from '../resolvers/dynamodb-resolver-construct';
-import { AIAdvocateResolverConstruct } from '../resolvers/ai-advocate-resolver-construct';
+import { APIResolverConstruct } from '../resolvers/api-resolver-construct';
 import { Construct } from 'constructs';
 import * as path from 'path';
-import { addStackOutputs } from '../utils/stack-outputs';
+import { addStackOutputs, getRequiredEnvVars } from './stack-helpers';
 
-interface ApiStackProps extends cdk.StackProps {
+interface IApiStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
   stage: 'dev' | 'prod';
-  jobMatchingTable?: dynamodb.ITable;
-  recruiterProfilesTable?: dynamodb.ITable;
-  bedrockModelId?: string;
 }
 
 export class ApiStack extends cdk.Stack {
   public readonly api: appsync.GraphqlApi;
   private readonly stage: string;
+  private developerTableName: string;
+  private projectsTableName: string;
+  private dataBucketName: string;
+  private awsRegionDefault: string;
 
-  constructor(scope: Construct, id: string, props: ApiStackProps) {
+  public readonly developerTable: dynamodb.Table;
+  public readonly projectsTable: dynamodb.Table;
+
+  constructor(scope: Construct, id: string, props: IApiStackProps) {
     super(scope, id, props);
-    const { stage, userPool, jobMatchingTable, recruiterProfilesTable } = props;
+    const { stage, userPool } = props;
     this.stage = stage;
 
     if (!['dev', 'prod'].includes(this.stage)) {
       throw new Error('Stage must be either "dev" or "prod"');
     }
 
+    if (!userPool) {
+      throw new Error('userPool is required');
+    }
+
+    // Get required environment variables
+    const { developerTableName, projectsTableName, dataBucketName, awsRegionDefault } =
+      getRequiredEnvVars(
+        ['DEVELOPER_TABLE_NAME', 'PROJECTS_TABLE_NAME', 'DATA_BUCKET_NAME', 'AWS_REGION_DEFAULT'],
+        this.stage
+      );
+    this.developerTableName = developerTableName;
+    this.projectsTableName = projectsTableName;
+    this.dataBucketName = dataBucketName;
+    this.awsRegionDefault = awsRegionDefault;
+
     // Create AppSync API
-    this.api = this.createAppSyncApi(userPool, stage);
+    this.api = this.createAppSyncApi(userPool);
     const isProd = this.stage === 'prod';
 
     // Create DynamoDB tables
-    const { developerTable, projectTable } = this.createDynamoDBTables(stage, isProd);
+    const tables = this.createDynamoDBTables(isProd);
+    this.developerTable = tables.developerTable;
+    this.projectsTable = tables.projectsTable;
 
     // Create AppSync DataSources
-    const dataSources = this.createDataSources(this.api, developerTable, projectTable);
+    const dataSources = this.createDataSources(this.developerTable, this.projectsTable);
 
-    // Add resolvers
-    this.createResolvers(dataSources);
-
-    // Create AI-powered resolvers (separate from basic CRUD operations)
-    this.createAIResolvers(jobMatchingTable, recruiterProfilesTable, props.bedrockModelId);
+    // Add resolvers using construct
+    new APIResolverConstruct(this, 'APIResolvers', {
+      api: this.api,
+      developerDataSource: dataSources.developerDS,
+      projectsDataSource: dataSources.projectsDS
+    });
 
     // Create data loader to populate DynamoDB tables from S3
-    this.createDataLoader(stage, developerTable, projectTable);
+    this.createDataLoader(this.developerTable, this.projectsTable);
+
+    // Export GraphQL API ID and URL for cross-stack references
+    new cdk.CfnOutput(this, 'GraphQLApiId', {
+      value: this.api.apiId,
+      exportName: `GraphQLApiId-${this.stage}`
+    });
+
+    new cdk.CfnOutput(this, 'GraphQLApiUrl', {
+      value: this.api.graphqlUrl,
+      exportName: `GraphQLApiUrl-${this.stage}`
+    });
 
     // Add API outputs
-    addStackOutputs(this, stage, [
+    addStackOutputs(this, this.stage, [
       {
         id: 'AppSyncApiUrl',
         value: this.api.graphqlUrl,
         description: 'The URL of the GraphQL API',
-        exportName: `appsync-url-${stage}`,
-        paramName: 'NEXT_PUBLIC_APPSYNC_URL'
+        exportName: `appsync-url-${this.stage}`,
+        paramName: 'APPSYNC_URL'
       },
       {
         id: 'AppSyncApiKey',
         value: this.api.apiKey || '',
         description: 'API Key for development access',
-        exportName: `appsync-api-key-${stage}`,
-        paramName: 'NEXT_PUBLIC_APPSYNC_API_KEY'
+        exportName: `appsync-api-key-${this.stage}`,
+        paramName: 'APPSYNC_API_KEY'
       },
       {
-        id: 'AppSyncRegion',
+        id: 'AwsRegionDefault',
         value: this.region,
-        description: 'AWS Region for AppSync API',
-        exportName: `appsync-region-${stage}`,
-        paramName: 'NEXT_PUBLIC_AWS_REGION'
+        description: 'AWS default region for services',
+        exportName: `aws-region-default-${this.stage}`,
+        paramName: 'AWS_REGION_DEFAULT'
       }
     ]);
   }
 
-  private createAppSyncApi(userPool: cognito.UserPool, stage: string): appsync.GraphqlApi {
+  private createAppSyncApi(userPool: cognito.UserPool): appsync.GraphqlApi {
     // Create the AppSync API using the L2 construct
     const api = new appsync.GraphqlApi(this, 'PortfolioApi', {
-      name: `portfolio-api-${stage}`,
+      name: `portfolio-api-${this.stage}`,
       definition: appsync.Definition.fromSchema(
         appsync.SchemaFile.fromAsset(path.join(__dirname, '../schema/schema.graphql'))
       ),
@@ -101,181 +133,51 @@ export class ApiStack extends cdk.Stack {
           }
         ]
       },
-      // Enable X-Ray for tracing
-      xrayEnabled: true
+      xrayEnabled: false
     });
 
     return api;
   }
 
-  private createDynamoDBTables(stage: string, isProd: boolean) {
+  private createDynamoDBTables(isProd: boolean) {
     const developerTable = new dynamodb.Table(this, 'DeveloperTable', {
-      tableName: `PortfolioDevelopers-${stage}`,
+      tableName: `${this.developerTableName}-${this.stage}`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
       deletionProtection: isProd
     });
 
-    const projectTable = new dynamodb.Table(this, 'ProjectTable', {
-      tableName: `PortfolioProjects-${stage}`,
+    const projectsTable = new dynamodb.Table(this, 'ProjectsTable', {
+      tableName: `${this.projectsTableName}-${this.stage}`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
       deletionProtection: isProd
     });
 
-    projectTable.addGlobalSecondaryIndex({
+    projectsTable.addGlobalSecondaryIndex({
       indexName: 'byDeveloperId',
       partitionKey: { name: 'developerId', type: dynamodb.AttributeType.STRING }
     });
 
-    return { developerTable, projectTable };
+    return { developerTable, projectsTable };
   }
 
-  private createDataSources(
-    api: appsync.GraphqlApi,
-    developerTable: dynamodb.Table,
-    projectTable: dynamodb.Table
-  ) {
-    const developerDS = api.addDynamoDbDataSource('DeveloperDataSource', developerTable);
-    const projectDS = api.addDynamoDbDataSource('ProjectDataSource', projectTable);
+  private createDataSources(developerTable: dynamodb.Table, projectsTable: dynamodb.Table) {
+    const developerDS = this.api.addDynamoDbDataSource('DeveloperDataSource', developerTable);
+    const projectsDS = this.api.addDynamoDbDataSource('ProjectsDataSource', projectsTable);
 
-    return { developerDS, projectDS };
-  }
-
-  private createResolvers(dataSources: {
-    developerDS: appsync.DynamoDbDataSource;
-    projectDS: appsync.DynamoDbDataSource;
-  }) {
-    // Developer Resolvers (Public - API key)
-    new DynamoDBResolverConstruct(this, 'GetDeveloper', {
-      dataSource: dataSources.developerDS,
-      typeName: 'Query',
-      fieldName: 'getDeveloper',
-      operation: 'get'
-    });
-
-    new DynamoDBResolverConstruct(this, 'ListDevelopers', {
-      dataSource: dataSources.developerDS,
-      typeName: 'Query',
-      fieldName: 'listDevelopers',
-      operation: 'list'
-    });
-
-    new DynamoDBResolverConstruct(this, 'CreateDeveloper', {
-      dataSource: dataSources.developerDS,
-      typeName: 'Mutation',
-      fieldName: 'createDeveloper',
-      operation: 'create'
-    });
-
-    new DynamoDBResolverConstruct(this, 'UpdateDeveloper', {
-      dataSource: dataSources.developerDS,
-      typeName: 'Mutation',
-      fieldName: 'updateDeveloper',
-      operation: 'update'
-    });
-
-    new DynamoDBResolverConstruct(this, 'DeleteDeveloper', {
-      dataSource: dataSources.developerDS,
-      typeName: 'Mutation',
-      fieldName: 'deleteDeveloper',
-      operation: 'delete'
-    });
-
-    // Project Resolvers (Public - API key)
-    new DynamoDBResolverConstruct(this, 'GetProject', {
-      dataSource: dataSources.projectDS,
-      typeName: 'Query',
-      fieldName: 'getProject',
-      operation: 'get'
-    });
-
-    new DynamoDBResolverConstruct(this, 'ListProjects', {
-      dataSource: dataSources.projectDS,
-      typeName: 'Query',
-      fieldName: 'listProjects',
-      operation: 'list'
-    });
-
-    // For Developer.projects relationship (Public - no auth required)
-    dataSources.projectDS.createResolver('DeveloperProjectsResolver', {
-      typeName: 'Developer',
-      fieldName: 'projects',
-      requestMappingTemplate: appsync.MappingTemplate.fromString(`
-    {
-      "version": "2018-05-29",
-      "operation": "Query",
-      "query": {
-        "expression": "developerId = :developerId",
-        "expressionValues": {
-          ":developerId": $util.dynamodb.toDynamoDBJson($ctx.source.id)
-        }
-      },
-      "index": "byDeveloperId"
-    }
-  `),
-      responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultList()
-    });
-
-    // For Project.developers relationship (Public - no auth required)
-    dataSources.developerDS.createResolver('ProjectDeveloperResolver', {
-      typeName: 'Project',
-      fieldName: 'developer',
-      requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem('id', 'developerId'),
-      responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem()
-    });
-  }
-
-  /**
-   * Creates AI-powered resolvers that use Lambda functions with external services.
-   * These are separate from basic CRUD operations as they:
-   * - Depend on external tables from other stacks
-   * - Use Lambda data sources with complex logic (Bedrock AI)
-   * - Are conditionally created based on feature availability
-   */
-  private createAIResolvers(
-    jobMatchingTable?: dynamodb.ITable,
-    recruiterProfilesTable?: dynamodb.ITable,
-    bedrockModelId?: string
-  ) {
-    if (jobMatchingTable) {
-      // Find the developer table that was created in createDynamoDBTables
-      const developerTable = this.node.findChild('DeveloperTable') as dynamodb.Table;
-
-      if (!developerTable) {
-        throw new Error('Developer table not found. Make sure it is created before AI resolvers.');
-      }
-
-      new AIAdvocateResolverConstruct(this, 'AIAdvocateResolver', {
-        api: this.api,
-        jobMatchingTable,
-        recruiterProfilesTable,
-        developerTable,
-        stage: this.stage,
-        bedrockModelId
-      });
-    }
+    return { developerDS, projectsDS };
   }
 
   /**
    * Creates a Lambda function that loads data from S3 to DynamoDB tables.
    * This is triggered during CloudFormation deployment via a custom resource.
    */
-  private createDataLoader(
-    stage: string,
-    developerTable: dynamodb.Table,
-    projectTable: dynamodb.Table
-  ) {
-    // Determine bucket name based on stage
-    const bucketName =
-      stage === 'prod'
-        ? process.env.PROD_DATA_BUCKET_NAME || 'portfolio-production-data'
-        : process.env.DEV_DATA_BUCKET_NAME || 'portfolio-development-data';
-
+  private createDataLoader(developerTable: dynamodb.Table, projectsTable: dynamodb.Table) {
     // Reference the existing S3 bucket
-    const dataBucket = s3.Bucket.fromBucketName(this, 'DataBucket', bucketName);
+    const dataBucket = s3.Bucket.fromBucketName(this, 'DataBucket', this.dataBucketName);
 
     // Create the data loader Lambda
     const dataLoaderLambda = new lambda.Function(this, 'DataLoaderFunction', {
@@ -284,16 +186,18 @@ export class ApiStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(__dirname, '../functions/data-loader')),
       timeout: cdk.Duration.minutes(5),
       environment: {
-        ENVIRONMENT: stage,
-        PROD_DATA_BUCKET_NAME: process.env.PROD_DATA_BUCKET_NAME || 'portfolio-production-data',
-        DEV_DATA_BUCKET_NAME: process.env.DEV_DATA_BUCKET_NAME || 'portfolio-development-data'
+        ENVIRONMENT: this.stage,
+        DATA_BUCKET_NAME: this.dataBucketName,
+        DEVELOPER_TABLE_NAME: `${this.developerTableName}-${this.stage}`,
+        PROJECTS_TABLE_NAME: `${this.projectsTableName}-${this.stage}`,
+        AWS_REGION_DEFAULT: this.awsRegionDefault
       }
     });
 
     // Grant permissions to the Lambda
     dataBucket.grantRead(dataLoaderLambda);
     developerTable.grantWriteData(dataLoaderLambda);
-    projectTable.grantWriteData(dataLoaderLambda);
+    projectsTable.grantWriteData(dataLoaderLambda);
 
     // Create a custom resource to trigger the Lambda during deployment
     const dataLoaderProvider = new cr.Provider(this, 'DataLoaderProvider', {
@@ -305,7 +209,7 @@ export class ApiStack extends cdk.Stack {
     new cdk.CustomResource(this, 'DataLoaderResource', {
       serviceToken: dataLoaderProvider.serviceToken,
       properties: {
-        environment: stage,
+        environment: this.stage,
         // Add a timestamp to ensure the resource is updated on each deployment
         timestamp: new Date().toISOString()
       }

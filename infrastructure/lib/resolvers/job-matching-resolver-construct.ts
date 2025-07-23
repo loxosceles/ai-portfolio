@@ -5,7 +5,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as path from 'path';
 
-export interface JobMatchingResolverProps {
+export interface IJobMatchingResolverProps {
   api: appsync.GraphqlApi;
   jobMatchingTable: dynamodb.ITable;
   stage: string;
@@ -14,7 +14,7 @@ export interface JobMatchingResolverProps {
 export class JobMatchingResolverConstruct extends Construct {
   public readonly dataSource: appsync.LambdaDataSource;
 
-  constructor(scope: Construct, id: string, props: JobMatchingResolverProps) {
+  constructor(scope: Construct, id: string, props: IJobMatchingResolverProps) {
     super(scope, id);
 
     // Create Lambda function

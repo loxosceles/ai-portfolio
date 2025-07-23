@@ -1,152 +1,95 @@
-# AI-Powered Dynamic Professional Profile with RAG
+# AI Portfolio
 
 ## Overview
 
-A serverless application that generates personalized hiring manager experiences by combining:
+A serverless application that creates personalized professional portfolio experiences for recruiters through:
 
-- **Retrieval-Augmented Generation (RAG)** for precise matching of Magnus's professional history
-- Unique access links with AI-generated third-person introductions
-- Cost-optimized AWS serverless infrastructure
+- **Personalized Access Links**: Unique links with AI-generated personalized greetings for recruiters
+- **"Invisible" Authentication**: Seamless authentication via CloudFront and Lambda@Edge without requiring login
+- **AI-Powered Interaction**: Personalized responses to recruiter questions using AWS Bedrock
+- **Cost-optimized AWS Serverless Infrastructure**: Leveraging S3, CloudFront, Lambda, AppSync, and DynamoDB
+
+## Architecture
+
+```
+┌─────────────────┐     ┌───────────────┐     ┌───────────────┐
+│                 │     │               │     │               │
+│    Recruiter    │────▶│  CloudFront   │────▶│  S3 Bucket    │
+│                 │     │  Distribution │     │  (Frontend)   │
+└─────────────────┘     └───────┬───────┘     └───────────────┘
+                                │
+                                ▼
+┌─────────────────┐     ┌───────────────┐     ┌───────────────┐
+│                 │     │               │     │               │
+│  Lambda@Edge    │◀───▶│    Cognito    │     │    AppSync    │
+│  (Auth)         │     │  User Pool    │     │  GraphQL API  │
+└─────────────────┘     └───────────────┘     └───────┬───────┘
+                                                      │
+                                                      ▼
+                                            ┌───────────────────┐
+                                            │                   │
+                                            │  Lambda Resolvers │
+                                            │                   │
+                                            └─────────┬─────────┘
+                                                      │
+                        ┌───────────────┐             │
+                        │               │             │
+                        │  AWS Bedrock  │◀────────────┘
+                        │  (AI Models)  │
+                        └───────┬───────┘
+                                │
+                                ▼
+                        ┌───────────────┐
+                        │               │
+                        │   DynamoDB    │
+                        │   Tables      │
+                        └───────────────┘
+```
 
 ## Key Features
 
-✅ **RAG-Powered Personalization**
+✅ **Personalized Recruiter Experience**
 
-- Semantic search across the applicant's professional artifacts (CV, GitHub, projects)
-- Always references the most relevant achievements for each job
+- Unique access links for each recruiter with personalized content
+- AI-generated greetings tailored to the recruiter's company and role
+- Contextual responses based on recruiter profile and job requirements
 
-✅ **Virtual Professional Advocate**
+✅ **AI Advocate**
 
-- AI speaks in third-person: "Bob's work on [Project X] demonstrates..."
-- Subtly showcases technical capabilities through the system itself
+- AI speaks in third-person as an advocate for the portfolio owner
+- Answers recruiter questions about skills, experience, and projects
+- Maintains conversation history for contextual follow-up questions
 
-✅ **Future Chat Feature**
+✅ **Serverless Architecture**
 
-- Recruiters can ask questions about applicant's experience
-- Answers generated via RAG with source citations
-- Privacy-protected (only public artifacts referenced)
-
-## MVP Phases
-
-### Phase 1: Core Infrastructure (Week 1-2)
-
-```mermaid
-graph TD
-    A[Static Next.js Profile] -->|Hosted on| B[AWS Amplify]
-    C[PostgreSQL + PGVector] -->|Stores| D[The Applicant's Professional Artifacts]
-    E[API Gateway] -->|Triggers| F[Lambda Functions]
-```
-
-**Tasks:**
-
-1. Set up Amplify hosting for static profile
-2. Configure RDS PostgreSQL with PGVector extension
-3. Deploy base API Gateway + Lambda skeleton
-
-### Phase 2: Knowledge Base Setup (Week 3)
-
-```mermaid
-graph LR
-    A[CV.pdf] -->|Textract| B[Chunks]
-    C[GitHub] -->|API| D[Markdown]
-    E[Projects] -->|Manual| F[YAML]
-    G[All Artifacts] -->|Embed| H[PGVector]
-```
-
-**Artifact Processing:**
-
-1. **Ingestion**:
-   - PDFs → AWS Textract
-   - GitHub → API scraper
-   - Manual entries → Structured YAML
-2. **Chunking**:
-   - 500-token segments with metadata (source, date)
-3. **Embedding**:
-   - AWS Titan Embeddings (free tier)
-   - Store in PGVector with cosine similarity index
-
-### Phase 3: RAG Integration (Week 4-5)
-
-**Flow:**
-
-```python
-def generate_response(token):
-    # Retrieve job context
-    job_desc = db.get_job_description(token)
-
-    # RAG retrieval
-    query = f"Relevant experience for: {job_desc}"
-    results = vector_search(query, limit=3)
-
-    # AI generation
-    prompt = f"""
-    As Bob's advocate, highlight his fit for this role using:
-    {results}
-    """
-    return ai.generate(prompt)
-```
-
-## Future Roadmap
-
-### Recruiter Chat Feature
-
-```mermaid
-graph TB
-    A[Recruiter Question] --> B[Semantic Search]
-    B --> C[Retrieve: CV, GitHub, Projects]
-    C --> D[Generate Answer]
-    D --> E[Cite Sources]
-    E --> F[Display in Chat UI]
-```
-
-**Implementation Notes:**
-
-1. **Database Additions**:
-
-   ```sql
-   CREATE TABLE chat_sessions (
-       session_id TEXT PRIMARY KEY,
-       token TEXT REFERENCES recruiter_access(token),
-       history JSONB
-   );
-   ```
-
-2. **Privacy Controls**:
-   - Automatic filtering of non-public artifacts
-   - Optional manual answer approval workflow
+- Static Next.js frontend hosted on S3 with CloudFront distribution
+- GraphQL API with AppSync and Lambda resolvers
+- DynamoDB for data storage
+- AWS Bedrock for AI capabilities
 
 ## Tech Stack
 
-| Layer           | Technologies                                       |
-| --------------- | -------------------------------------------------- |
-| Frontend        | Next.js, TypeScript/Javascript, Tailwind CSS, Jest |
-| Backend         | AWS Lambda, CloudFront, Cognito, DynamoDB, S3, CDK |
-| Dynamic Content | AWS Bedrock with Titan Text G1 - Express Model     |
+| Layer          | Technologies                                       |
+| -------------- | -------------------------------------------------- |
+| Frontend       | Next.js, TypeScript, Tailwind CSS, Apollo Client   |
+| Backend        | AWS Lambda, AppSync, CloudFront, Cognito, DynamoDB |
+| AI Integration | AWS Bedrock with Claude models                     |
+| Infrastructure | AWS CDK, TypeScript                                |
+
+## Core Workflows
+
+1. **Link Generation**: Creates personalized URLs with tokens for recruiters
+2. **Authentication Flow**: Lambda@Edge intercepts requests, validates tokens, and sets auth cookies
+3. **Frontend Experience**: Next.js frontend with Apollo client uses auth tokens for personalized content
+4. **AI Interaction**: AWS Bedrock provides AI capabilities for personalized interactions
 
 ## Documentation
 
-### Architecture & Implementation
+Comprehensive documentation is available in the [docs](docs/README.md) directory.
 
-- [AI Portfolio Detailed](docs/ai-portfolio-detailed.md)
-- [AI Advocate Implementation Plan](docs/ai-advocate-implementation-plan.md)
-- [Authentication Flow](docs/auth-flow.md)
-- [Model Adapters for AI Advocate](docs/model-adapters.md)
+Key documentation sections:
 
-### Features
-
-- [Image Processor Card](docs/image-processor-card.md)
-- [Image Processor Detailed](docs/image-processor-detailed.md)
-- [Web3 Snapshot Card](docs/web3snapshot-card.md)
-- [Web3 Snapshot Detailed](docs/web3snapshot-detailed.md)
-
-### Deployment & Operations
-
-- [Deployment Guide](docs/deployment.md)
-- [Deployment Pipeline](docs/deployment-pipeline.md)
-- [CodePipeline Deployment](docs/codepipeline-deployment.md)
-- [S3 Bucket Regions](docs/s3-bucket-regions.md)
-- [Security Policy](docs/security-policy.md)
-
-### Future Development
-
-- [Further Development Ideas](docs/further-development-ideas.md)
+- [Architecture & Implementation](docs/README.md#architecture)
+- [Deployment & Operations](docs/README.md#guides)
+- [Reference](docs/README.md#reference)
+- [Contributing](docs/README.md#contributing)

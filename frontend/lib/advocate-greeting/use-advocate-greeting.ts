@@ -2,7 +2,7 @@
 
 import { useQuery } from '@apollo/client';
 import { GET_ADVOCATE_GREETING } from '@/queries/advocate-greeting';
-import { AdvocateGreetingData } from './advocate-greeting-service';
+import { IAdvocateGreetingData } from './advocate-greeting-service';
 import { useAuth } from '@/lib/auth/auth-context';
 
 export function useAdvocateGreeting() {
@@ -15,7 +15,7 @@ export function useAdvocateGreeting() {
   });
 
   return {
-    greetingData: data?.getAdvocateGreeting as AdvocateGreetingData | null,
+    greetingData: data?.getAdvocateGreeting as IAdvocateGreetingData | null,
     isLoading: loading,
     error: error?.message || null,
     isAuthenticated

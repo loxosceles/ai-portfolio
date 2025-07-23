@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AIResponse } from './use-ai-advocate';
+import { IAIResponse } from './use-ai-advocate';
 
 // Mock responses for development
 const MOCK_RESPONSES: Record<string, string> = {
@@ -19,7 +19,7 @@ const MOCK_RESPONSES: Record<string, string> = {
 
 export function useAIAdvocateDev() {
   const [isLoading, setIsLoading] = useState(false);
-  const [response, setResponse] = useState<AIResponse | null>(null);
+  const [response, setResponse] = useState<IAIResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Function to simulate asking a question

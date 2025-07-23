@@ -3,7 +3,7 @@ import * as appsync from 'aws-cdk-lib/aws-appsync';
 
 export type DynamoDBOperation = 'get' | 'list' | 'create' | 'update' | 'delete';
 
-export interface DynamoDBResolverProps {
+export interface IDynamoDBResolverProps {
   dataSource: appsync.DynamoDbDataSource;
   typeName: string;
   fieldName: string;
@@ -14,11 +14,12 @@ export interface DynamoDBResolverProps {
 }
 
 export class DynamoDBResolverConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: DynamoDBResolverProps) {
+  constructor(scope: Construct, id: string, props: IDynamoDBResolverProps) {
     super(scope, id);
 
     const resolverConfig = this.getResolverConfig(props);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const resolverProps: any = {
       typeName: props.typeName,
       fieldName: props.fieldName,
@@ -36,7 +37,7 @@ export class DynamoDBResolverConstruct extends Construct {
     props.dataSource.createResolver(`${props.typeName}${props.fieldName}Resolver`, resolverProps);
   }
 
-  private getResolverConfig(props: DynamoDBResolverProps) {
+  private getResolverConfig(props: IDynamoDBResolverProps) {
     const pk = props.partitionKey || 'id';
 
     switch (props.operation) {

@@ -3,9 +3,6 @@ name: Infrastructure Tests
 on:
   pull_request:
     branches: [main, dev]
-    paths:
-      - 'infrastructure/**'
-      - '.github/workflows/infrastructure-tests.yml'
 
 jobs:
   test:
