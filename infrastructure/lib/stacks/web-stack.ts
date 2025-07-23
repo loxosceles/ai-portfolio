@@ -112,12 +112,14 @@ export class WebStack extends cdk.Stack {
       })
     );
 
-    // Add permissions for Cognito (using parameter from SSM)
+    // Add permissions for Cognito (using region-specific pattern)
     edgeFunctionRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['cognito-idp:AdminInitiateAuth', 'cognito-idp:AdminGetUser'],
-        resources: [`arn:aws:cognito-idp:*:${this.account}:userpool/*`]
+        resources: [
+          `arn:aws:cognito-idp:${process.env.AWS_DEFAULT_REGION}:${this.account}:userpool/*`
+        ]
       })
     );
 
