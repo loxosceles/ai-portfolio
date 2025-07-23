@@ -1,3 +1,5 @@
+// AI Advocate Lambda function - Documentation: https://github.com/loxosceles/ai-portfolio/blob/main/docs/architecture/ai-integration.md
+
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
   DynamoDBDocumentClient,
@@ -98,11 +100,11 @@ async function handleGetAdvocateGreeting(event) {
     console.log(`No recruiter profile found for ${linkId}`);
     return createDefaultResponse(linkId);
   }
-  
+
   try {
     // Generate AI greeting
     const aiGreeting = await generateAIGreeting(recruiterData);
-    
+
     // Convert RecruiterProfile to JobMatching format with AI-generated greeting
     return {
       linkId: recruiterData.linkId,
@@ -115,7 +117,7 @@ async function handleGetAdvocateGreeting(event) {
     };
   } catch (error) {
     console.error('Error generating AI greeting:', error);
-    
+
     // Fallback to static content if AI generation fails
     return {
       linkId: recruiterData.linkId,
@@ -266,14 +268,11 @@ async function generateAIGreeting(recruiterData) {
     const promptData = await generateGreetingPrompt(recruiterData);
 
     // Format the payload using the adapter
-    const payload = adapter.formatPrompt(
-      promptData,
-      {
-        maxTokens: 150,
-        temperature: 0.4, // Slightly higher temperature for more creative greetings
-        topP: 0.9
-      }
-    );
+    const payload = adapter.formatPrompt(promptData, {
+      maxTokens: 150,
+      temperature: 0.4, // Slightly higher temperature for more creative greetings
+      topP: 0.9
+    });
 
     const command = new InvokeModelCommand({
       modelId,
