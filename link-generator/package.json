@@ -2,10 +2,10 @@
   "name": "link-generator",
   "version": "0.1.0",
   "description": "Generate link for special visitors",
-  "main": "generate-link.js",
+  "main": "link-creator.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "create-link": "ENVIRONMENT=dev link-creator.js",
+    "create-link": "ENVIRONMENT=dev node link-creator.mjs",
     "create-link-with-data": "ENVIRONMENT=dev node link-creator.mjs --create-job-matching"
   },
   "author": "",
