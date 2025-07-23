@@ -2,6 +2,8 @@
 
 This directory contains the infrastructure code for the AI Portfolio application, built with AWS CDK and TypeScript.
 
+For detailed documentation, see [Infrastructure Architecture](../docs/architecture/infrastructure/overview.md).
+
 ## Project Structure
 
 - `lib/core/`: Core managers for AWS operations, environment handling, and configuration
@@ -86,3 +88,17 @@ The infrastructure follows a clean architecture pattern:
 - **Manager Layer**: AWS service abstractions and operations
 
 This separation enables comprehensive testing and maintainable code.
+
+## Module System Approach
+
+The project uses a hybrid module system approach:
+
+- **Infrastructure Code**: Written in TypeScript and compiled to CommonJS modules for compatibility with AWS CDK
+- **Lambda Functions**: Written as pure JavaScript ES modules (.mjs files) to avoid transpilation and minimize cold-start times
+
+This separation minimizes the interaction between the two systems, with only a few specific integration points:
+
+- **Model Validation**: TypeScript infrastructure code validates model IDs against a list in `supported-models.ts`
+- **Testing**: Dynamic imports are used in tests to validate consistency between systems
+
+This approach provides robust tooling for infrastructure while keeping Lambda functions lightweight and efficient.

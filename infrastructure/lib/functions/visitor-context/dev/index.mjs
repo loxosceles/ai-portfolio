@@ -1,4 +1,5 @@
-// Version 1.1 - Environment-specific Lambda@Edge function
+// Visitor Context Lambda@Edge function - Documentation: https://github.com/loxosceles/ai-portfolio/blob/main/docs/architecture/authentication.md
+
 import { SSMClient, GetParametersCommand } from '@aws-sdk/client-ssm';
 import {
   CognitoIdentityProviderClient,
