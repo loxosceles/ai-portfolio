@@ -18,29 +18,33 @@ fi
 
 echo "🚀 Starting full deployment for $ENVIRONMENT environment..."
 
+# Define directory paths
+INFRASTRUCTURE_DIR="${PROJECT_ROOT}/infrastructure"
+FRONTEND_DIR="${PROJECT_ROOT}/frontend"
+
 # Step 1: Provision infrastructure
 echo "📦 Provisioning infrastructure..."
-cd infrastructure && pnpm run provision:"$ENVIRONMENT" && cd ..
+(cd "$INFRASTRUCTURE_DIR" && pnpm run provision:"$ENVIRONMENT")
 
 # Step 1.5: Generate frontend environment variables
 echo "🔄 Generating frontend environment variables..."
-cd infrastructure && ts-node ./lib/cli/bin/ssm-params.ts export --target=frontend --output && cd ..
+(cd "$INFRASTRUCTURE_DIR" && ts-node ./lib/cli/bin/ssm-params.ts export --target=frontend --output)
 
 # Step 2: Build Next.js app
 echo "🏗️ Building Next.js application..."
-cd frontend && NEXT_PUBLIC_ENVIRONMENT=$ENVIRONMENT pnpm build && cd ..
+(cd "$FRONTEND_DIR" && NEXT_PUBLIC_ENVIRONMENT=$ENVIRONMENT pnpm build)
 
 # Step 3: Publish web app
 echo "🌐 Publishing web application..."
-cd "$PROJECT_ROOT/infrastructure" && pnpm run publish:web-app
+(cd "$INFRASTRUCTURE_DIR" && pnpm run publish:web-app)
 
 # Step 4: Invalidate CloudFront
 echo "🔄 Invalidating CloudFront cache..."
-cd "$PROJECT_ROOT/infrastructure" && pnpm run invalidate:cloudfront
+(cd "$INFRASTRUCTURE_DIR" && pnpm run invalidate:cloudfront)
 
 # Get CloudFront domain from stack outputs
 echo "📡 Retrieving deployment URL..."
-CLOUDFRONT_DOMAIN=$(cd "$PROJECT_ROOT/infrastructure" && pnpm run --silent stack-outputs:web CloudFrontDomain)
+CLOUDFRONT_DOMAIN=$(cd "$INFRASTRUCTURE_DIR" && pnpm run --silent stack-outputs:web CloudFrontDomain)
 
 echo "✅ Deployment completed successfully!"
 echo "Website is now live at: https://${CLOUDFRONT_DOMAIN}"
