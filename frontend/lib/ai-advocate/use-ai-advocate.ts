@@ -14,14 +14,14 @@ export const ASK_AI_QUESTION = gql`
   }
 `;
 
-export interface AIResponse {
+export interface IAIResponse {
   answer: string;
   context?: string;
 }
 
 export function useAIAdvocate() {
   const [isLoading, setIsLoading] = useState(false);
-  const [response, setResponse] = useState<AIResponse | null>(null);
+  const [response, setResponse] = useState<IAIResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Use lazy query to execute only when needed

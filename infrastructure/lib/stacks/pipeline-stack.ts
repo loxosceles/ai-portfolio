@@ -6,7 +6,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
-interface PipelineStackProps extends cdk.StackProps {
+interface IPipelineStackProps extends cdk.StackProps {
   stage: string;
   githubOwner: string;
   githubRepo: string;
@@ -14,7 +14,7 @@ interface PipelineStackProps extends cdk.StackProps {
 }
 
 export class PipelineStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: PipelineStackProps) {
+  constructor(scope: Construct, id: string, props: IPipelineStackProps) {
     super(scope, id, props);
 
     const { stage, githubOwner, githubRepo, githubBranch } = props;

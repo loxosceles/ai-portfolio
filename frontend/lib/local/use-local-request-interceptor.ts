@@ -2,11 +2,11 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
-import { AdvocateGreetingData } from '@/lib/advocate-greeting/advocate-greeting-service';
-import { AIResponse } from '@/lib/ai-advocate/use-ai-advocate';
+import { IAdvocateGreetingData } from '@/lib/advocate-greeting/advocate-greeting-service';
+import { IAIResponse } from '@/lib/ai-advocate/use-ai-advocate';
 
 // Mock data for advocate greeting
-const ADVOCATE_GREETING_MOCK: AdvocateGreetingData = {
+const ADVOCATE_GREETING_MOCK: IAdvocateGreetingData = {
   linkId: 'local-interceptor',
   companyName: 'Local Demo Company',
   recruiterName: 'Local Demo Recruiter',
@@ -43,7 +43,7 @@ export function useLocalRequestInterceptor() {
   const shouldIntercept = environment === 'local' && !!visitorParam;
 
   // Generate visitor-specific advocate greeting mock data
-  const getAdvocateGreetingMock = (): AdvocateGreetingData => {
+  const getAdvocateGreetingMock = (): IAdvocateGreetingData => {
     if (!visitorParam) return ADVOCATE_GREETING_MOCK;
 
     return {
@@ -55,7 +55,7 @@ export function useLocalRequestInterceptor() {
   };
 
   // Generate AI advocate mock response based on question
-  const getAIAdvocateMock = (question: string): AIResponse => {
+  const getAIAdvocateMock = (question: string): IAIResponse => {
     const lowerQuestion = question.toLowerCase();
     let answer = AI_ADVOCATE_MOCKS.default;
 

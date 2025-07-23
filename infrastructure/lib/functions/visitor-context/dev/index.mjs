@@ -1,4 +1,5 @@
-// Version 1.1 - Environment-specific Lambda@Edge function
+// Visitor Context Lambda@Edge function - Documentation: https://github.com/loxosceles/ai-portfolio/blob/main/docs/architecture/authentication.md
+
 import { SSMClient, GetParametersCommand } from '@aws-sdk/client-ssm';
 import {
   CognitoIdentityProviderClient,
@@ -21,16 +22,13 @@ async function getConfig(request) {
 
   // Fetch main app config from eu-central-1
   const mainConfigCommand = new GetParametersCommand({
-    Names: [
-      '/portfolio/dev/NEXT_PUBLIC_COGNITO_CLIENT_ID',
-      '/portfolio/dev/NEXT_PUBLIC_COGNITO_USER_POOL_ID'
-    ],
+    Names: ['/portfolio/dev/COGNITO_CLIENT_ID', '/portfolio/dev/COGNITO_USER_POOL_ID'],
     WithDecryption: true
   });
 
   // Fetch edge-specific config from us-east-1
   const edgeConfigCommand = new GetParametersCommand({
-    Names: ['/portfolio/dev/edge/visitor-table-name'],
+    Names: ['/portfolio/dev/stack/VISITOR_TABLE_NAME'],
     WithDecryption: true
   });
 
@@ -42,10 +40,9 @@ async function getConfig(request) {
   const allParameters = [...mainParameters.Parameters, ...edgeParameters.Parameters];
 
   config = {
-    clientId: allParameters.find((p) => p.Name.endsWith('NEXT_PUBLIC_COGNITO_CLIENT_ID')).Value,
-    userPoolId: allParameters.find((p) => p.Name.endsWith('NEXT_PUBLIC_COGNITO_USER_POOL_ID'))
-      .Value,
-    tableName: allParameters.find((p) => p.Name.endsWith('visitor-table-name')).Value
+    clientId: allParameters.find((p) => p.Name.endsWith('COGNITO_CLIENT_ID')).Value,
+    userPoolId: allParameters.find((p) => p.Name.endsWith('COGNITO_USER_POOL_ID')).Value,
+    tableName: `${allParameters.find((p) => p.Name.endsWith('VISITOR_TABLE_NAME')).Value}-dev`
   };
 
   return config;

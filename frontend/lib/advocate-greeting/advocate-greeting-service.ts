@@ -1,6 +1,6 @@
 'use client';
 
-export interface AdvocateGreetingData {
+export interface IAdvocateGreetingData {
   linkId: string;
   companyName?: string;
   recruiterName?: string;
@@ -11,7 +11,7 @@ export interface AdvocateGreetingData {
 }
 
 export const advocateGreetingService = {
-  async getAdvocateGreetingData(): Promise<AdvocateGreetingData | null> {
+  async getAdvocateGreetingData(): Promise<IAdvocateGreetingData | null> {
     return null;
   }
 };
