@@ -1,6 +1,6 @@
-# Security Policy
+# Security Guide
 
-This document outlines the security considerations and measures implemented in the AI Portfolio Frontend application.
+This document outlines the security considerations and measures implemented in the AI Portfolio application.
 
 ## Architecture Overview
 
@@ -15,13 +15,11 @@ The application uses a serverless architecture with the following components:
 ## Authentication Flow
 
 1. **Visitor Link Generation**:
-
    - Unique links are generated with format: `https://[domain]/?visitor=[linkId]`
    - Each link is associated with a temporary Cognito user account
    - Link data is stored in DynamoDB with an expiration time (TTL)
 
 2. **Authentication Process**:
-
    - When a visitor accesses a link, Lambda@Edge intercepts the request
    - The function retrieves credentials from DynamoDB based on the `linkId`
    - It authenticates with Cognito and obtains JWT tokens
@@ -31,6 +29,8 @@ The application uses a serverless architecture with the following components:
    - The frontend reads authentication tokens from cookies
    - These tokens are used for API requests to AppSync and API Gateway
 
+For more details on the authentication flow, see the [Authentication Architecture](../architecture/authentication.md) document.
+
 ## Security Considerations
 
 ### Cookie Security
@@ -38,7 +38,6 @@ The application uses a serverless architecture with the following components:
 Our application uses non-HttpOnly cookies for authentication tokens due to the static nature of the frontend deployment. This is a deliberate architectural decision with the following considerations:
 
 1. **Why non-HttpOnly cookies?**
-
    - Our frontend is statically deployed and requires client-side JavaScript to make authenticated API requests
    - HttpOnly cookies cannot be accessed by JavaScript, which would prevent our application from functioning
 
@@ -83,7 +82,6 @@ These headers are applied at the edge, providing:
 ### API Security
 
 1. **AppSync GraphQL API**:
-
    - Secured with Cognito user pool authorization
    - Field-level authorization rules
    - Request validation with GraphQL schema
@@ -96,13 +94,11 @@ These headers are applied at the edge, providing:
 ### Infrastructure Security
 
 1. **CloudFront**:
-
    - HTTPS enforced with TLS 1.2+
    - Origin Access Control for S3 bucket access
    - Edge functions for request/response manipulation
 
 2. **Lambda Functions**:
-
    - Principle of least privilege IAM roles
    - Environment variables stored in SSM Parameter Store
    - Cross-region references properly secured
@@ -115,7 +111,6 @@ These headers are applied at the edge, providing:
 ## Data Privacy
 
 1. **Visitor Data**:
-
    - Only public professional information is stored and displayed
    - No personal data beyond basic contact information
    - All data has appropriate TTL settings
@@ -141,3 +136,9 @@ The application makes the following security trade-offs:
 2. Add IP-based rate limiting
 3. Consider server-side rendering options to enable HttpOnly cookies
 4. Implement enhanced monitoring and alerting
+
+## Related Documentation
+
+- [Authentication Architecture](../architecture/authentication.md) - Details on the authentication system
+- [Infrastructure Architecture](../architecture/infrastructure/overview.md) - Details on the infrastructure security
+- [Deployment Guide](deployment.md) - Information on secure deployment practices
