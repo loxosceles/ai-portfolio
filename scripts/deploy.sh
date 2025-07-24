@@ -27,8 +27,12 @@ echo "📦 Provisioning infrastructure..."
 (cd "$INFRASTRUCTURE_DIR" && pnpm run provision:"$ENVIRONMENT")
 
 # Step 1.5: Generate frontend environment variables
-echo "🔄 Generating frontend environment variables..."
-(cd "$INFRASTRUCTURE_DIR" && ts-node ./lib/cli/bin/ssm-params.ts export --target=frontend --output)
+SERVICES=("frontend" "link-generator")
+
+for service in "${SERVICES[@]}"; do
+  echo "🔄 Generating $service environment variables..."
+  (cd "$INFRASTRUCTURE_DIR" && ts-node ./lib/cli/bin/ssm-params.ts export --target="$service" --output)
+done
 
 # Step 2: Build Next.js app
 echo "🏗️ Building Next.js application..."
