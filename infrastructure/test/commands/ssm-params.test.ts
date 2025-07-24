@@ -4,7 +4,12 @@
  * Tests the command handlers directly as the CLI binaries do
  */
 import { mockClient } from 'aws-sdk-client-mock';
-import { SSMClient, GetParametersByPathCommand, PutParameterCommand } from '@aws-sdk/client-ssm';
+import {
+  SSMClient,
+  GetParametersByPathCommand,
+  PutParameterCommand,
+  DeleteParameterCommand
+} from '@aws-sdk/client-ssm';
 import { handleUploadParameters, handleExportParameters } from '../../lib/cli/commands/ssm-params';
 
 // Mock AWS SDK clients
@@ -49,6 +54,8 @@ describe('SSM Parameters Command Tests', () => {
       Version: 1,
       Tier: 'Standard'
     });
+
+    ssmMock.on(DeleteParameterCommand).resolves({});
 
     ssmMock.on(GetParametersByPathCommand).resolves({
       Parameters: [
@@ -163,5 +170,38 @@ describe('SSM Parameters Command Tests', () => {
     expect(result.success).toBe(false);
     expect(result.message).toContain('target is required');
     expect(result.errorCount).toBe(1);
+  });
+
+  test('should cleanup parameters before upload', async () => {
+    const result = await handleUploadParameters({
+      verbose: false,
+      dryRun: false,
+      region: undefined,
+      target: 'infrastructure'
+    });
+
+    expect(result.success).toBe(true);
+    // Should have both delete and put calls
+    const deleteCalls = ssmMock.commandCalls(DeleteParameterCommand);
+    const putCalls = ssmMock.commandCalls(PutParameterCommand);
+    expect(deleteCalls.length).toBeGreaterThan(0);
+    expect(putCalls.length).toBeGreaterThan(0);
+  });
+
+  test('should skip cleanup when flag is set', async () => {
+    const result = await handleUploadParameters({
+      verbose: false,
+      dryRun: false,
+      region: undefined,
+      target: 'infrastructure',
+      skipCleanup: true
+    });
+
+    expect(result.success).toBe(true);
+    // Should only have put calls, no delete calls
+    const deleteCalls = ssmMock.commandCalls(DeleteParameterCommand);
+    const putCalls = ssmMock.commandCalls(PutParameterCommand);
+    expect(deleteCalls.length).toBe(0);
+    expect(putCalls.length).toBeGreaterThan(0);
   });
 });
