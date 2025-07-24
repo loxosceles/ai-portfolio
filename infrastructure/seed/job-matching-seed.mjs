@@ -17,7 +17,6 @@ const linkDocClient = DynamoDBDocumentClient.from(linkDynamoDB);
 
 // Get stage from environment
 const stage = process.env.ENVIRONMENT || 'dev';
-const jobMatchingTableName = `JobMatching-${stage}`;
 const linkTableName = `portfolio-visitor-links-${stage}`;
 
 // Sample job matching templates
