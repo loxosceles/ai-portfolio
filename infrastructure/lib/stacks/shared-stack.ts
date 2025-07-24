@@ -25,10 +25,6 @@ export class SharedStack extends cdk.Stack {
     this.userPoolDomain = this.createUserPoolDomain();
 
     const cognitoAuthority = `https://${this.userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`;
-    const redirectUri =
-      process.env.ENVIRONMENT === 'development'
-        ? 'http://localhost:3000/auth/callback'
-        : 'https://your-production-domain/auth/callback';
 
     addStackOutputs(this, this.stage, [
       {
@@ -58,13 +54,6 @@ export class SharedStack extends cdk.Stack {
         description: 'Cognito Authority URL',
         exportName: 'cognito-authority',
         paramName: 'COGNITO_AUTHORITY'
-      },
-      {
-        id: 'RedirectUri',
-        value: redirectUri,
-        description: 'OAuth Redirect URI',
-        exportName: 'redirect-uri',
-        paramName: 'REDIRECT_URI'
       },
       // TODO: AWS Admin ARN will be used for a bucket policy when creating the data bucket
       {
