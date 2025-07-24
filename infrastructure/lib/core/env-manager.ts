@@ -53,9 +53,10 @@ export class EnvironmentManager extends BaseManager {
       result[camelCaseKey] = env[varName];
     }
 
-    // Safe type assertion: we've validated all required vars exist and converted them to camelCase
-    // Double assertion through 'unknown' is needed because TypeScript can't verify structural compatibility
-    // between Record<string, string> and the specific stack environment interfaces at compile time
+    // Runtime validation + double assertion: ensures object structure is correct before type casting
+    if (!this.isValidStackEnv(result, stackName)) {
+      throw new Error(`Result object does not match the expected type for stack: ${stackName}`);
+    }
     return result as unknown as StackEnvMap[T];
   }
 
@@ -100,6 +101,30 @@ export class EnvironmentManager extends BaseManager {
   validateEnv(env: Record<string, string>, required: string[]): string[] {
     const missing = required.filter((key) => !env[key]);
     return missing;
+  }
+
+  /**
+   * Validate that result object has all required properties for the stack type
+   */
+  private isValidStackEnv<T extends keyof StackEnvMap>(
+    result: Record<string, string>,
+    stackName: T
+  ): boolean {
+    // All stack environments must have stage
+    if (!result.stage) return false;
+
+    // Get stack service config to validate required properties
+    const stackService = this.envConfig.serviceConfigs.stack;
+    if (!stackService || stackService.type !== 'stack') return false;
+
+    const requiredVars = stackService.stackConfigs[stackName]?.requiredVars;
+    if (!requiredVars) return false;
+
+    // Check that all required variables have been converted to camelCase properties
+    return requiredVars.every((varName) => {
+      const camelCaseKey = this.toCamelCase(varName);
+      return result[camelCaseKey] !== undefined;
+    });
   }
 
   /**
