@@ -2,24 +2,27 @@ import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { Construct } from 'constructs';
 import { addStackOutputs } from './stack-helpers';
+import { IStackEnv } from '../../types';
+
+interface ISharedStackEnv extends IStackEnv {
+  // No additional variables needed for shared stack currently
+}
 
 interface ISharedStackProps extends cdk.StackProps {
-  stage: 'dev' | 'prod';
+  stackEnv: ISharedStackEnv;
 }
 
 export class SharedStack extends cdk.Stack {
   public readonly userPool: cognito.UserPool;
   public readonly userPoolClient: cognito.UserPoolClient;
   private readonly userPoolDomain: cognito.UserPoolDomain;
+  private readonly stackEnv: ISharedStackEnv;
   private readonly stage: string;
 
   constructor(scope: Construct, id: string, props: ISharedStackProps) {
     super(scope, id, props);
-    this.stage = props.stage;
-
-    if (!['dev', 'prod'].includes(this.stage)) {
-      throw new Error('Stage must be either "dev" or "prod"');
-    }
+    this.stackEnv = props.stackEnv;
+    this.stage = this.stackEnv.stage;
 
     this.userPool = this.createUserPool();
     this.userPoolClient = this.createUserPoolClient();

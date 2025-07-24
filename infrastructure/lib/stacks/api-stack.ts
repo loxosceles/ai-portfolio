@@ -9,43 +9,38 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 import { APIResolverConstruct } from '../resolvers/api-resolver-construct';
 import { Construct } from 'constructs';
 import * as path from 'path';
-import { addStackOutputs, getRequiredEnvVars } from './stack-helpers';
+import { addStackOutputs } from './stack-helpers';
+import { IApiStackEnv } from '../../types';
 
 interface IApiStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
-  stage: 'dev' | 'prod';
+  stackEnv: IApiStackEnv;
 }
 
 export class ApiStack extends cdk.Stack {
   public readonly api: appsync.GraphqlApi;
   private readonly stage: string;
-  private developerTableName: string;
-  private projectsTableName: string;
-  private dataBucketName: string;
-  private awsRegionDefault: string;
+  private readonly stackEnv: IApiStackEnv;
+  private readonly developerTableName: string;
+  private readonly projectsTableName: string;
+  private readonly dataBucketName: string;
+  private readonly awsRegionDefault: string;
 
   public readonly developerTable: dynamodb.Table;
   public readonly projectsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props: IApiStackProps) {
     super(scope, id, props);
-    const { stage, userPool } = props;
-    this.stage = stage;
-
-    if (!['dev', 'prod'].includes(this.stage)) {
-      throw new Error('Stage must be either "dev" or "prod"');
-    }
+    const { userPool, stackEnv } = props;
+    this.stackEnv = stackEnv;
+    this.stage = this.stackEnv.stage;
 
     if (!userPool) {
       throw new Error('userPool is required');
     }
 
-    // Get required environment variables
     const { developerTableName, projectsTableName, dataBucketName, awsRegionDefault } =
-      getRequiredEnvVars(
-        ['DEVELOPER_TABLE_NAME', 'PROJECTS_TABLE_NAME', 'DATA_BUCKET_NAME', 'AWS_REGION_DEFAULT'],
-        this.stage
-      );
+      this.stackEnv;
     this.developerTableName = developerTableName;
     this.projectsTableName = projectsTableName;
     this.dataBucketName = dataBucketName;

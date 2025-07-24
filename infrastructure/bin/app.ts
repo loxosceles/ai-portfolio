@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-import * as dotenv from 'dotenv';
-import * as path from 'path';
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { WebStack } from '../lib/stacks/web-stack';
@@ -8,17 +6,10 @@ import { ApiStack } from '../lib/stacks/api-stack';
 import { SharedStack } from '../lib/stacks/shared-stack';
 import { AIAdvocateStack } from '../lib/stacks/ai-advocate-stack';
 import { PipelineStack } from '../lib/stacks/pipeline-stack';
+import { EnvironmentManager } from '../lib/core/env-manager';
+import { stackManagerConfig } from '../configs/stack-config';
 
-const environment = process.env.ENVIRONMENT;
-
-dotenv.config({
-  path: path.join(__dirname, '..', `.env.${environment}`)
-});
-
-// Load common variables from default .env file
-dotenv.config({
-  path: path.join(__dirname, '..', '.env')
-});
+// Environment manager handles loading environment variables
 
 const app = new cdk.App();
 
@@ -29,35 +20,36 @@ const env = {
 };
 
 // Get environment manager
+const envManager = new EnvironmentManager(stackManagerConfig);
 
 // Create shared infrastructure
-const sharedStack = new SharedStack(app, `PortfolioSharedStack-${stage}`, {
-  stage,
-  env
+const sharedStack = new SharedStack(app, `PortfolioSharedStack-${envManager.getStage()}`, {
+  env,
+  stackEnv: envManager.getStackEnv('shared')
 });
 
 // Create combined website stack in us-east-1 first to get the CloudFront domain
-new WebStack(app, `PortfolioWebStack-${stage}`, {
-  stage,
+new WebStack(app, `PortfolioWebStack-${envManager.getStage()}`, {
   env: {
     account: env.account,
     region: 'us-east-1' // Lambda@Edge must be in us-east-1
-  }
+  },
+  stackEnv: envManager.getStackEnv('web')
 });
 
 // Create API stack
-const apiStack = new ApiStack(app, `PortfolioApiStack-${stage}`, {
-  stage,
+const apiStack = new ApiStack(app, `PortfolioApiStack-${envManager.getStage()}`, {
   env,
-  userPool: sharedStack.userPool
+  userPool: sharedStack.userPool,
+  stackEnv: envManager.getStackEnv('api')
 });
 
 // Create AI Advocate stack
-new AIAdvocateStack(app, `AIAdvocateStack-${stage}`, {
-  stage,
+new AIAdvocateStack(app, `AIAdvocateStack-${envManager.getStage()}`, {
   env,
   developerTable: apiStack.developerTable,
-  projectsTable: apiStack.projectsTable
+  projectsTable: apiStack.projectsTable,
+  stackEnv: envManager.getStackEnv('aiAdvocate')
 });
 
 // Create pipeline stacks (separate from application deployment)
@@ -72,20 +64,20 @@ if (!skipPipeline) {
 
   // Create dev pipeline
   new PipelineStack(app, 'PortfolioPipelineStack-dev', {
-    stage: 'dev',
     env,
     githubOwner,
     githubRepo,
-    githubBranch: 'dev'
+    githubBranch: 'dev',
+    stackEnv: { stage: 'dev' }
   });
 
   // Create prod pipeline
   new PipelineStack(app, 'PortfolioPipelineStack-prod', {
-    stage: 'prod',
     env,
     githubOwner,
     githubRepo,
-    githubBranch: 'main'
+    githubBranch: 'main',
+    stackEnv: { stage: 'prod' }
   });
 }
 

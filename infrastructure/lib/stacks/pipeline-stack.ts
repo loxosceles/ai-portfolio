@@ -6,18 +6,25 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
+import { IStackEnv } from '../../types';
+
+interface IPipelineStackEnv extends IStackEnv {
+  // No additional variables needed for pipeline stack currently
+}
+
 interface IPipelineStackProps extends cdk.StackProps {
-  stage: string;
   githubOwner: string;
   githubRepo: string;
   githubBranch: string;
+  stackEnv: IPipelineStackEnv;
 }
 
 export class PipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: IPipelineStackProps) {
     super(scope, id, props);
 
-    const { stage, githubOwner, githubRepo, githubBranch } = props;
+    const { githubOwner, githubRepo, githubBranch, stackEnv } = props;
+    const stage = stackEnv.stage;
 
     // S3 bucket for pipeline artifacts
     const artifactsBucket = new s3.Bucket(this, 'PipelineArtifacts', {
