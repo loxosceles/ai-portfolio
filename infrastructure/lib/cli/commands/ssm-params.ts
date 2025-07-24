@@ -16,9 +16,15 @@ export async function handleUploadParameters(options: {
   region?: string;
   dryRun?: boolean;
   verbose?: boolean;
+  target?: string;
 }) {
   try {
-    const { region, dryRun = false, verbose = false } = options;
+    const { region, dryRun = false, verbose = false, target } = options;
+
+    if (!target) {
+      throw new Error('target is required for upload command');
+    }
+
     const stage = awsManager.getStage();
 
     // Load environment variables using EnvironmentManager
@@ -60,6 +66,11 @@ export async function handleUploadParameters(options: {
 export async function handleExportParameters(options: IExportOptions): Promise<IExportResult> {
   try {
     const { regions, scope, format = 'env', target, output, outputPath, verbose = false } = options;
+
+    if (!target) {
+      throw new Error('target is required for export command');
+    }
+
     const stage = awsManager.getStage();
 
     // Process regions
@@ -198,14 +209,7 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
 
         finalOutputPath = path.join(awsManagerConfig.projectRoot, serviceConfig.envPath);
       } else {
-        // Default to infrastructure path when no target specified
-        const isCI = process.env.CODEBUILD_BUILD_ID || process.env.CI;
-        finalOutputPath = isCI
-          ? path.join(awsManagerConfig.projectRoot, envManagerConfig.infrastructureEnvPaths.runtime)
-          : path.join(
-              awsManagerConfig.projectRoot,
-              envManagerConfig.infrastructureEnvPaths.stage(stage)
-            );
+        throw new Error('Cannot determine output path: target is required');
       }
 
       // Handle overwrite protection based on environment and target type

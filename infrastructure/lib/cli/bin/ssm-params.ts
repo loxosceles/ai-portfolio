@@ -5,6 +5,7 @@ interface IUploadCommandOptions {
   region?: string;
   dryRun?: boolean;
   verbose?: boolean;
+  target?: string;
 }
 
 interface IExportCommandOptions {
@@ -27,6 +28,10 @@ program
 program
   .command('upload')
   .description('Upload parameters from environment files to SSM Parameter Store')
+  .requiredOption(
+    '--target <target>',
+    'Target for parameters (infrastructure|frontend|link-generator)'
+  )
   .option('-r, --region <region>', 'Upload to specific region only (eu-central-1|us-east-1)')
   .option('-d, --dry-run', 'Show what would be uploaded without actually uploading')
   .option('-v, --verbose', 'Enable verbose logging')
@@ -35,7 +40,8 @@ program
       const result = await handleUploadParameters({
         region: options.region,
         dryRun: options.dryRun,
-        verbose: options.verbose
+        verbose: options.verbose,
+        target: options.target
       });
 
       // eslint-disable-next-line no-console
@@ -64,10 +70,13 @@ program
 program
   .command('export')
   .description('Export parameters from SSM Parameter Store')
+  .requiredOption(
+    '--target <target>',
+    'Target for parameters (infrastructure|frontend|link-generator)'
+  )
   .option('-r, --regions <regions>', 'Comma-separated list of regions to download from')
   .option('-s, --scope <scope>', 'Parameter scope (e.g., stack)')
   .option('-f, --format <format>', 'Output format (env|json)', 'env')
-  .option('--target <target>', 'Target for parameters (infrastructure|frontend|link-generator)')
   .option('-o, --output', 'Write to file instead of console output')
   .option('--output-path <path>', 'Custom output file path')
   .option('-v, --verbose', 'Enable verbose logging')
