@@ -67,7 +67,8 @@ describe('SSM Parameters Command Tests', () => {
     const result = await handleUploadParameters({
       verbose: false,
       dryRun: false,
-      region: undefined
+      region: undefined,
+      target: 'infrastructure'
     });
 
     expect(result.success).toBe(true);
@@ -80,7 +81,8 @@ describe('SSM Parameters Command Tests', () => {
     const result = await handleUploadParameters({
       verbose: false,
       dryRun: true,
-      region: undefined
+      region: undefined,
+      target: 'infrastructure'
     });
 
     expect(result.success).toBe(true);
@@ -94,7 +96,8 @@ describe('SSM Parameters Command Tests', () => {
     const result = await handleExportParameters({
       verbose: false,
       format: 'env',
-      output: false
+      output: false,
+      target: 'infrastructure'
     });
 
     expect(result.success).toBe(true);
@@ -108,7 +111,8 @@ describe('SSM Parameters Command Tests', () => {
     const result = await handleExportParameters({
       verbose: false,
       format: 'json',
-      output: false
+      output: false,
+      target: 'infrastructure'
     });
 
     expect(result.success).toBe(true);
@@ -129,11 +133,35 @@ describe('SSM Parameters Command Tests', () => {
 
   test('should handle region option', async () => {
     const result = await handleUploadParameters({
-      verbose: false, // Reduce console output
-      region: 'eu-west-1'
+      verbose: false,
+      region: 'eu-west-1',
+      target: 'infrastructure'
     });
 
     expect(result.success).toBe(true);
-    // The region test works, we don't need to check SSM calls
+  });
+
+  test('should fail upload without target', async () => {
+    const result = await handleUploadParameters({
+      verbose: false,
+      dryRun: false,
+      region: undefined
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('target is required');
+    expect(result.errorCount).toBe(1);
+  });
+
+  test('should fail export without target', async () => {
+    const result = await handleExportParameters({
+      verbose: false,
+      format: 'env',
+      output: false
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('target is required');
+    expect(result.errorCount).toBe(1);
   });
 });

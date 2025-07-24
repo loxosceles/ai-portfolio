@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { handleUploadParameters, handleExportParameters } from '../commands/ssm-params';
+import { IUploadOptions, IExportOptions } from '../../../types/cli/ssm-params';
 
 interface IUploadCommandOptions {
   region?: string;
@@ -42,7 +43,7 @@ program
         dryRun: options.dryRun,
         verbose: options.verbose,
         target: options.target
-      });
+      } as IUploadOptions);
 
       // eslint-disable-next-line no-console
       console.log('\n=== Upload Summary ===');
@@ -90,7 +91,7 @@ program
         output: options.output,
         outputPath: options.outputPath,
         verbose: options.verbose
-      });
+      } as IExportOptions);
 
       if (!result.success) {
         console.error(result.message);

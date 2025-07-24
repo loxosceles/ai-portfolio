@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { IExportOptions, IExportResult } from '../../../types/cli/ssm-params';
+import { IUploadOptions, IExportOptions, IExportResult } from '../../../types/cli/ssm-params';
 import { AWSManager } from '../../core/aws-manager';
 import { EnvironmentManager } from '../../core/env-manager';
 import { awsManagerConfig } from '../../../configs/aws-config';
@@ -12,12 +12,7 @@ const envManager = new EnvironmentManager(envManagerConfig);
 /**
  * Handle upload parameters command
  */
-export async function handleUploadParameters(options: {
-  region?: string;
-  dryRun?: boolean;
-  verbose?: boolean;
-  target?: string;
-}) {
+export async function handleUploadParameters(options: IUploadOptions) {
   try {
     const { region, dryRun = false, verbose = false, target } = options;
 
