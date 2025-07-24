@@ -79,7 +79,6 @@ export const SERVICE_CONFIGS = {
       'COGNITO_CLIENT_ID',
       'COGNITO_DOMAIN_NAME',
       'COGNITO_AUTHORITY',
-      'REDIRECT_URI',
       'COGNITO_USER_POOL_ID'
     ],
     prefix: 'NEXT_PUBLIC_',
