@@ -2,11 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { Construct } from 'constructs';
 import { addStackOutputs } from './stack-helpers';
-import { IStackEnv } from '../../types';
-
-interface ISharedStackEnv extends IStackEnv {
-  // No additional variables needed for shared stack currently
-}
+import { ISharedStackEnv } from '../../types';
 
 interface ISharedStackProps extends cdk.StackProps {
   stackEnv: ISharedStackEnv;
@@ -70,16 +66,10 @@ export class SharedStack extends cdk.Stack {
         exportName: 'redirect-uri',
         paramName: 'REDIRECT_URI'
       },
-      {
-        id: 'AWSAccountId',
-        value: this.account,
-        description: 'AWS Account ID',
-        exportName: 'aws-account-id',
-        paramName: 'AWS_ACCOUNT_ID'
-      },
+      // TODO: AWS Admin ARN will be used for a bucket policy when creating the data bucket
       {
         id: 'AWSAdminArn',
-        value: process.env.AWS_ADMIN_ARN || `arn:aws:iam::${this.account}:user/loxosceles`,
+        value: this.stackEnv.awsAdminArn,
         description: 'AWS Admin ARN',
         exportName: 'aws-admin-arn',
         paramName: 'AWS_ADMIN_ARN'
