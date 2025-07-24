@@ -26,12 +26,14 @@ These scripts are defined in the root `package.json` file and provide a high-lev
 
 #### Parameter Management Scripts
 
-| Script                     | Description                                              |
-| -------------------------- | -------------------------------------------------------- |
-| `export-stack-params:dev`  | Export stack parameters from the development environment |
-| `export-stack-params:prod` | Export stack parameters from the production environment  |
-| `upload-stack-params:dev`  | Upload stack parameters to the development environment   |
-| `upload-stack-params:prod` | Upload stack parameters to the production environment    |
+| Script                              | Description                                            |
+| ----------------------------------- | ------------------------------------------------------ |
+| `export-ssm-params:dev`             | Export SSM parameters from the development environment |
+| `export-ssm-params:prod`            | Export SSM parameters from the production environment  |
+| `upload-ssm-params:dev`             | Upload SSM parameters to the development environment   |
+| `upload-ssm-params:prod`            | Upload SSM parameters to the production environment    |
+| `upload-ssm-params-no-cleanup:dev`  | Upload SSM parameters without cleanup (development)    |
+| `upload-ssm-params-no-cleanup:prod` | Upload SSM parameters without cleanup (production)     |
 
 #### Development Scripts
 
@@ -82,14 +84,14 @@ These scripts are defined in the `infrastructure/package.json` file and provide 
 
 #### Parameter Management Scripts
 
-| Script                       | Description                                                 |
-| ---------------------------- | ----------------------------------------------------------- |
-| `upload-stack-params:dev`    | Upload parameters to SSM in the development environment     |
-| `upload-stack-params:prod`   | Upload parameters to SSM in the production environment      |
-| `export-stack-params:dev`    | Export parameters from SSM in the development environment   |
-| `export-stack-params:prod`   | Export parameters from SSM in the production environment    |
-| `download-stack-params:dev`  | Download parameters from SSM in the development environment |
-| `download-stack-params:prod` | Download parameters from SSM in the production environment  |
+| Script                              | Description                                               |
+| ----------------------------------- | --------------------------------------------------------- |
+| `upload-ssm-params:dev`             | Upload parameters to SSM in the development environment   |
+| `upload-ssm-params:prod`            | Upload parameters to SSM in the production environment    |
+| `upload-ssm-params-no-cleanup:dev`  | Upload parameters to SSM without cleanup (development)    |
+| `upload-ssm-params-no-cleanup:prod` | Upload parameters to SSM without cleanup (production)     |
+| `export-ssm-params:dev`             | Export parameters from SSM in the development environment |
+| `export-ssm-params:prod`            | Export parameters from SSM in the production environment  |
 
 #### Data Management Scripts
 
@@ -124,21 +126,35 @@ These commands are implemented in the `infrastructure/lib/cli/bin/` directory an
 
 ```bash
 # Upload parameters to SSM
-ts-node lib/cli/bin/ssm-params.ts upload --verbose
+ts-node lib/cli/bin/ssm-params.ts upload --target=infrastructure --verbose
+
+# Upload parameters without cleanup
+ts-node lib/cli/bin/ssm-params.ts upload --target=infrastructure --skip-cleanup --verbose
+
+# Dry run (show what would be uploaded)
+ts-node lib/cli/bin/ssm-params.ts upload --target=infrastructure --dry-run --verbose
 
 # Export parameters from SSM
 ts-node lib/cli/bin/ssm-params.ts export --target=frontend --output
 ```
 
-**Options**:
+**Upload Options**:
 
-- `--target <target>` - Filter for specific target (infrastructure|frontend|link-generator)
-- `--scope <scope>` - Parameter scope (stack for infrastructure)
-- `--format <format>` - Output format (env|json)
-- `--output` - Write to file
+- `--target <target>` - Target for parameters (infrastructure|frontend|link-generator) [required]
+- `--region <region>` - Upload to specific region only (eu-central-1|us-east-1)
+- `--dry-run` - Show what would be uploaded without actually uploading
+- `--skip-cleanup` - Skip cleanup of existing parameters before upload
+- `--verbose` - Enable verbose logging
+
+**Export Options**:
+
+- `--target <target>` - Target for parameters (infrastructure|frontend|link-generator) [required]
+- `--regions <regions>` - Comma-separated list of regions to download from
+- `--scope <scope>` - Parameter scope (e.g., stack)
+- `--format <format>` - Output format (env|json), defaults to env
+- `--output` - Write to file instead of console output
 - `--output-path <path>` - Custom output file path
-- `--regions <regions>` - Comma-separated regions
-- `--verbose` - Verbose logging
+- `--verbose` - Enable verbose logging
 
 ### Data Management (`data-management.ts`)
 
