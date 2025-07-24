@@ -2,34 +2,29 @@ import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { Construct } from 'constructs';
 import { addStackOutputs } from './stack-helpers';
+import { ISharedStackEnv } from '../../types';
 
 interface ISharedStackProps extends cdk.StackProps {
-  stage: 'dev' | 'prod';
+  stackEnv: ISharedStackEnv;
 }
 
 export class SharedStack extends cdk.Stack {
   public readonly userPool: cognito.UserPool;
   public readonly userPoolClient: cognito.UserPoolClient;
   private readonly userPoolDomain: cognito.UserPoolDomain;
+  private readonly stackEnv: ISharedStackEnv;
   private readonly stage: string;
 
   constructor(scope: Construct, id: string, props: ISharedStackProps) {
     super(scope, id, props);
-    this.stage = props.stage;
-
-    if (!['dev', 'prod'].includes(this.stage)) {
-      throw new Error('Stage must be either "dev" or "prod"');
-    }
+    this.stackEnv = props.stackEnv;
+    this.stage = this.stackEnv.stage;
 
     this.userPool = this.createUserPool();
     this.userPoolClient = this.createUserPoolClient();
     this.userPoolDomain = this.createUserPoolDomain();
 
     const cognitoAuthority = `https://${this.userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`;
-    const redirectUri =
-      process.env.ENVIRONMENT === 'development'
-        ? 'http://localhost:3000/auth/callback'
-        : 'https://your-production-domain/auth/callback';
 
     addStackOutputs(this, this.stage, [
       {
@@ -60,23 +55,10 @@ export class SharedStack extends cdk.Stack {
         exportName: 'cognito-authority',
         paramName: 'COGNITO_AUTHORITY'
       },
-      {
-        id: 'RedirectUri',
-        value: redirectUri,
-        description: 'OAuth Redirect URI',
-        exportName: 'redirect-uri',
-        paramName: 'REDIRECT_URI'
-      },
-      {
-        id: 'AWSAccountId',
-        value: this.account,
-        description: 'AWS Account ID',
-        exportName: 'aws-account-id',
-        paramName: 'AWS_ACCOUNT_ID'
-      },
+      // TODO: AWS Admin ARN will be used for a bucket policy when creating the data bucket
       {
         id: 'AWSAdminArn',
-        value: process.env.AWS_ADMIN_ARN || `arn:aws:iam::${this.account}:user/loxosceles`,
+        value: this.stackEnv.awsAdminArn,
         description: 'AWS Admin ARN',
         exportName: 'aws-admin-arn',
         paramName: 'AWS_ADMIN_ARN'
