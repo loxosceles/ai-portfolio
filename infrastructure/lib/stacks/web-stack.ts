@@ -25,13 +25,7 @@ export class WebStack extends cdk.Stack {
   private readonly stackEnv: IWebStackEnv;
 
   constructor(scope: Construct, id: string, props: IWebStackProps) {
-    super(scope, id, {
-      ...props,
-      env: {
-        account: props.env?.account,
-        region: 'us-east-1' // Everything must be in us-east-1 for Lambda@Edge
-      }
-    });
+    super(scope, id, props);
     this.stackEnv = props.stackEnv;
     this.stage = this.stackEnv.stage;
 
