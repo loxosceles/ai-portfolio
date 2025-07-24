@@ -23,7 +23,6 @@ jest.mock('../../lib/core/env-manager', () => {
         DATA_BUCKET_NAME: 'test-bucket',
         DEVELOPER_TABLE_NAME: 'test-developers',
         PROJECTS_TABLE_NAME: 'test-projects',
-        MATCHING_TABLE_NAME: 'test-matching',
         RECRUITER_PROFILES_TABLE_NAME: 'test-recruiters',
         VISITOR_TABLE_NAME: 'test-visitors'
       }),
