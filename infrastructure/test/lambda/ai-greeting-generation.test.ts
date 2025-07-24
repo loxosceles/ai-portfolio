@@ -114,7 +114,6 @@ describe('AI Greeting Generation', () => {
     process.env.BEDROCK_MODEL_ID = 'anthropic.claude-v2';
     process.env.PROJECTS_TABLE_NAME = 'test-projects-table';
     process.env.RECRUITER_PROFILES_TABLE_NAME = 'test-recruiter-profiles-table';
-    process.env.MATCHING_TABLE_NAME = 'test-matching-table';
   });
 
   test('should handle getAdvocateGreeting request', async () => {
