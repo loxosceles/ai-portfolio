@@ -4,14 +4,36 @@
 import { IBaseManagerConfig } from './base-config';
 
 /**
- * Service configuration
+ * Service configuration types
  */
-export interface IServiceConfig {
+export interface IFrontendServiceConfig {
+  type: 'frontend';
   envPath: string;
   requiredParams: string[];
   prefix: string;
   additionalParams?: Record<string, string>;
 }
+
+export interface ILinkGeneratorServiceConfig {
+  type: 'link-generator';
+  envPath: string;
+  requiredParams: string[];
+  prefix: string;
+  additionalParams?: Record<string, string>;
+}
+
+export interface IStackServiceConfig {
+  type: 'stack';
+  stackConfigs: Record<string, { requiredVars: string[] }>;
+}
+
+/**
+ * Union type for all service configurations
+ */
+export type ServiceConfig =
+  | IFrontendServiceConfig
+  | ILinkGeneratorServiceConfig
+  | IStackServiceConfig;
 
 /**
  * Infrastructure environment paths configuration
@@ -27,5 +49,5 @@ export interface IInfrastructureEnvPaths {
  */
 export interface IEnvironmentManagerConfig extends IBaseManagerConfig {
   infrastructureEnvPaths: IInfrastructureEnvPaths;
-  serviceConfigs: Record<string, IServiceConfig>;
+  serviceConfigs: Record<string, ServiceConfig>;
 }

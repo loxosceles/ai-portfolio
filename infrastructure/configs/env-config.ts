@@ -14,6 +14,7 @@ export const INFRASTRUCTURE_ENV_PATHS = {
 // Service configurations
 export const SERVICE_CONFIGS = {
   frontend: {
+    type: 'frontend' as const,
     envPath: 'frontend/.env.local',
     requiredParams: [
       'APPSYNC_API_KEY',
@@ -29,6 +30,7 @@ export const SERVICE_CONFIGS = {
     additionalParams: {}
   },
   'link-generator': {
+    type: 'link-generator' as const,
     envPath: 'link-generator/.env',
     requiredParams: [
       'VISITOR_TABLE_NAME',
