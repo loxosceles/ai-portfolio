@@ -118,6 +118,11 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
           );
         }
 
+        // Skip stack services - they don't generate env files
+        if (serviceConfig.type === 'stack') {
+          throw new Error(`Cannot export parameters for stack service: ${target}`);
+        }
+
         // Filter to only required params for this service
         params = {};
         const missingParams: string[] = [];
@@ -185,6 +190,12 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
       } else if (target) {
         // Use service config path
         const serviceConfig = envManagerConfig.serviceConfigs[target];
+
+        // Skip stack services - they don't have envPath
+        if (serviceConfig.type === 'stack') {
+          throw new Error(`Cannot determine output path for stack service: ${target}`);
+        }
+
         finalOutputPath = path.join(awsManagerConfig.projectRoot, serviceConfig.envPath);
       } else {
         // Default to infrastructure path when no target specified
