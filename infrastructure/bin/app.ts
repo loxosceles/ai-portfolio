@@ -22,22 +22,13 @@ dotenv.config({
 
 const app = new cdk.App();
 
-// Validate required environment variables
-if (!process.env.CDK_DEFAULT_ACCOUNT || !process.env.CDK_DEFAULT_REGION) {
-  throw new Error('CDK_DEFAULT_ACCOUNT and CDK_DEFAULT_REGION must be set');
-}
-
+// Get AWS environment
 const env = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
   region: process.env.CDK_DEFAULT_REGION
 };
 
-// Get stage from context or environment
-const stage = app.node.tryGetContext('stage') || process.env.ENVIRONMENT || 'dev';
-
-if (!['dev', 'prod'].includes(stage)) {
-  throw new Error('Stage must be either "dev" or "prod"');
-}
+// Get environment manager
 
 // Create shared infrastructure
 const sharedStack = new SharedStack(app, `PortfolioSharedStack-${stage}`, {
