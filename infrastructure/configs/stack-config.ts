@@ -3,6 +3,7 @@
  */
 import { projectRoot, SUPPORTED_STAGES } from './base';
 import { IEnvironmentManagerConfig } from '../types/config';
+import { INFRASTRUCTURE_ENV_PATHS } from './env-config';
 
 // Define required variables for each stack
 export const STACK_CONFIGS = {
@@ -34,11 +35,7 @@ export const STACK_CONFIGS = {
 export const stackManagerConfig: IEnvironmentManagerConfig = {
   projectRoot,
   supportedStages: [...SUPPORTED_STAGES],
-  infrastructureEnvPaths: {
-    base: '.env',
-    stage: (stage: string) => `.env.${stage}`,
-    runtime: '.env'
-  },
+  infrastructureEnvPaths: INFRASTRUCTURE_ENV_PATHS,
   serviceConfigs: {
     stack: {
       type: 'stack' as const,
