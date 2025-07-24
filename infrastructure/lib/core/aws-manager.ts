@@ -1,4 +1,9 @@
-import { SSMClient, PutParameterCommand, GetParametersByPathCommand } from '@aws-sdk/client-ssm';
+import {
+  SSMClient,
+  PutParameterCommand,
+  GetParametersByPathCommand,
+  DeleteParameterCommand
+} from '@aws-sdk/client-ssm';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
@@ -32,6 +37,82 @@ export class AWSManager extends BaseManager {
       Overwrite: true
     });
     await client.send(command);
+  }
+
+  async deleteParameter(name: string, region: string): Promise<void> {
+    const client = new SSMClient({ region });
+    const command = new DeleteParameterCommand({ Name: name });
+    await client.send(command);
+  }
+
+  async deleteParametersByPath(
+    path: string,
+    region: string,
+    verbose: boolean = false
+  ): Promise<number> {
+    const parameters = await this.getParametersByPath(path, region);
+    let deleteCount = 0;
+
+    for (const param of parameters) {
+      if (param.Name) {
+        try {
+          await this.deleteParameter(param.Name, region);
+          deleteCount++;
+          if (verbose) {
+            // eslint-disable-next-line no-console
+            console.log(`Deleted: ${param.Name}`);
+          }
+        } catch (error) {
+          console.error(`Failed to delete ${param.Name}: ${error}`);
+        }
+      }
+    }
+
+    return deleteCount;
+  }
+
+  simulateDeleteParametersByPath(path: string, region: string, verbose: boolean = false): number {
+    // This would need the actual parameters to simulate, but for dry-run we'll just log
+    if (verbose) {
+      // eslint-disable-next-line no-console
+      console.log(`[DRY-RUN] Would delete all parameters under path: ${path} in ${region}`);
+    }
+    return 0;
+  }
+
+  async cleanupParametersForTarget(
+    stage: Stage,
+    target: string,
+    region: string,
+    dryRun: boolean = false,
+    verbose: boolean = false
+  ): Promise<number> {
+    let cleanupPath: string;
+
+    if (target === 'infrastructure') {
+      cleanupPath = `/portfolio/${stage}/stack`;
+    } else {
+      // For service targets, we would clean service parameters
+      // But we need to be careful not to delete stack parameters
+      cleanupPath = `/portfolio/${stage}`;
+      // TODO: Implement selective cleanup for service parameters
+      if (verbose) {
+        // eslint-disable-next-line no-console
+        console.log(`Service parameter cleanup not yet implemented for target: ${target}`);
+      }
+      return 0;
+    }
+
+    if (dryRun) {
+      return this.simulateDeleteParametersByPath(cleanupPath, region, verbose);
+    } else {
+      const deleteCount = await this.deleteParametersByPath(cleanupPath, region, verbose);
+      if (verbose && deleteCount > 0) {
+        // eslint-disable-next-line no-console
+        console.log(`✅ Cleaned up ${deleteCount} parameters from ${cleanupPath}`);
+      }
+      return deleteCount;
+    }
   }
 
   async getParametersByPath(

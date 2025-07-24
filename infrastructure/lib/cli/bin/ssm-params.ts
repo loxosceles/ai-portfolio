@@ -7,6 +7,7 @@ interface IUploadCommandOptions {
   dryRun?: boolean;
   verbose?: boolean;
   target?: string;
+  skipCleanup?: boolean;
 }
 
 interface IExportCommandOptions {
@@ -35,6 +36,7 @@ program
   )
   .option('-r, --region <region>', 'Upload to specific region only (eu-central-1|us-east-1)')
   .option('-d, --dry-run', 'Show what would be uploaded without actually uploading')
+  .option('--skip-cleanup', 'Skip cleanup of existing parameters before upload')
   .option('-v, --verbose', 'Enable verbose logging')
   .action(async (options: IUploadCommandOptions) => {
     try {
@@ -42,7 +44,8 @@ program
         region: options.region,
         dryRun: options.dryRun,
         verbose: options.verbose,
-        target: options.target
+        target: options.target,
+        skipCleanup: options.skipCleanup
       } as IUploadOptions);
 
       // eslint-disable-next-line no-console
