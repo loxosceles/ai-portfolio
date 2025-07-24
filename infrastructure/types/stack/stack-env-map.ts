@@ -23,7 +23,7 @@ export interface IAIAdvocateStackEnv extends IStackEnv {
 }
 
 export interface ISharedStackEnv extends IStackEnv {
-  // No additional variables needed for shared stack currently
+  awsAdminArn: string;
 }
 
 export interface IPipelineStackEnv extends IStackEnv {

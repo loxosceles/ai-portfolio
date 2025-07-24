@@ -16,7 +16,7 @@ export const STACK_CONFIGS = {
     ]
   },
   web: {
-    requiredVars: ['VISITOR_TABLE_NAME', 'AWS_REGION_DEFAULT']
+    requiredVars: ['VISITOR_TABLE_NAME']
   },
   aiAdvocate: {
     requiredVars: [
