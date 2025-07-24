@@ -24,7 +24,8 @@ jest.mock('../../lib/core/env-manager', () => {
         DEVELOPER_TABLE_NAME: 'test-developers',
         PROJECTS_TABLE_NAME: 'test-projects',
         RECRUITER_PROFILES_TABLE_NAME: 'test-recruiters',
-        VISITOR_TABLE_NAME: 'test-visitors'
+        VISITOR_TABLE_NAME: 'test-visitors',
+        AWS_ADMIN_ARN: 'arn:aws:iam::123456789012:role/test-admin'
       }),
       writeEnvFile: jest.fn().mockResolvedValue(undefined)
     }))
