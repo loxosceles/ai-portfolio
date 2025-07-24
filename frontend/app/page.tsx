@@ -38,6 +38,7 @@ const Portfolio = () => {
 
     if (isLocalEnvironment() && visitorQParam) {
       // Set cookies directly in local development
+      // eslint-disable-next-line no-console
       console.log('Setting development cookies for visitor:', visitorQParam);
       setDevelopmentCookies(visitorQParam);
     } else if (!visitorQParam) {
