@@ -11,6 +11,8 @@
     "download-static-data:prod": "pnpm --filter=infrastructure run download-static-data:prod",
     "upload-ssm-params:dev": "pnpm --filter=infrastructure run upload-ssm-params:dev",
     "upload-ssm-params:prod": "pnpm --filter=infrastructure run upload-ssm-params:prod",
+    "upload-ssm-params-no-cleanup:dev": "pnpm --filter=infrastructure run upload-ssm-params-no-cleanup:dev",
+    "upload-ssm-params-no-cleanup:prod": "pnpm --filter=infrastructure run upload-ssm-params-no-cleanup:prod",
     "export-ssm-params:dev": "pnpm --filter=infrastructure run export-ssm-params:dev",
     "export-ssm-params:prod": "pnpm --filter=infrastructure run export-ssm-params:prod",
     "dev": "pnpm --filter=frontend run dev",
