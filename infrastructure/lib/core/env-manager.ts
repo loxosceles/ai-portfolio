@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { BaseManager } from './base-manager';
 import { IEnvironmentManagerConfig } from '../../types/config';
+import { StackEnvMap } from '../../types';
 
 export class EnvironmentManager extends BaseManager {
   private envConfig: IEnvironmentManagerConfig;
@@ -11,6 +12,51 @@ export class EnvironmentManager extends BaseManager {
   constructor(config: IEnvironmentManagerConfig) {
     super(config);
     this.envConfig = config;
+  }
+
+  /**
+   * Get validated environment variables for a specific stack
+   *
+   * @param stackName - Name of the stack (api, web, aiAdvocate, shared)
+   * @returns Object with required environment variables for the stack
+   * @throws Error if any required variables are missing
+   */
+  getStackEnv<T extends keyof StackEnvMap>(stackName: T): StackEnvMap[T] {
+    const stage = this.getStage();
+    const env = this.loadEnv(stage);
+
+    // Get stack service config
+    const stackService = this.envConfig.serviceConfigs.stack;
+    if (!stackService || stackService.type !== 'stack') {
+      throw new Error('Stack service configuration not found');
+    }
+
+    const requiredVars = stackService.stackConfigs[stackName]?.requiredVars;
+    if (!requiredVars) {
+      throw new Error(`Unknown stack: ${stackName}`);
+    }
+
+    // Validate required variables
+    const missingVars = this.validateEnv(env, requiredVars);
+    if (missingVars.length > 0) {
+      throw new Error(
+        `Missing required environment variables for ${stackName} stack: ${missingVars.join(', ')}`
+      );
+    }
+
+    // Build result object with stage and camelCase environment variables
+    const result: Record<string, string> = { stage };
+
+    // Convert SNAKE_CASE env vars to camelCase properties
+    for (const varName of requiredVars) {
+      const camelCaseKey = this.toCamelCase(varName);
+      result[camelCaseKey] = env[varName];
+    }
+
+    // Safe type assertion: we've validated all required vars exist and converted them to camelCase
+    // Double assertion through 'unknown' is needed because TypeScript can't verify structural compatibility
+    // between Record<string, string> and the specific stack environment interfaces at compile time
+    return result as unknown as StackEnvMap[T];
   }
 
   /**
@@ -57,6 +103,13 @@ export class EnvironmentManager extends BaseManager {
   }
 
   /**
+   * Convert SNAKE_CASE to camelCase
+   */
+  private toCamelCase(str: string): string {
+    return str.toLowerCase().replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  }
+
+  /**
    * Write environment file
    */
   async writeEnvFile(filePath: string, content: string): Promise<void> {
@@ -72,6 +125,11 @@ export class EnvironmentManager extends BaseManager {
     const serviceConfig = this.envConfig.serviceConfigs[service];
     if (!serviceConfig) {
       throw new Error(`Unknown service: ${service}`);
+    }
+
+    // Only handle frontend and link-generator services (not stack service)
+    if (serviceConfig.type === 'stack') {
+      throw new Error(`Cannot generate env content for stack service: ${service}`);
     }
 
     // Generate environment file content

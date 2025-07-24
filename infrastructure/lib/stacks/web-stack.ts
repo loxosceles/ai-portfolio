@@ -7,14 +7,13 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
-import { addStackOutputs, getRequiredEnvVars } from './stack-helpers';
+import { addStackOutputs } from './stack-helpers';
 import * as path from 'path';
+import { IWebStackEnv } from '../../types';
 
 interface IWebStackProps extends cdk.StackProps {
-  stage: 'dev' | 'prod';
-  domainName?: string;
+  stackEnv: IWebStackEnv;
 }
-
 /**
  * Combined stack for website hosting, content delivery, and visitor context
  * This eliminates cross-region references and circular dependencies
@@ -23,6 +22,7 @@ export class WebStack extends cdk.Stack {
   public readonly websiteBucket: s3.Bucket;
   public readonly distribution: cloudfront.Distribution;
   private readonly stage: string;
+  private readonly stackEnv: IWebStackEnv;
 
   constructor(scope: Construct, id: string, props: IWebStackProps) {
     super(scope, id, {
@@ -32,22 +32,14 @@ export class WebStack extends cdk.Stack {
         region: 'us-east-1' // Everything must be in us-east-1 for Lambda@Edge
       }
     });
-    this.stage = props.stage;
+    this.stackEnv = props.stackEnv;
+    this.stage = this.stackEnv.stage;
 
-    if (!['dev', 'prod'].includes(this.stage)) {
-      throw new Error('Stage must be either "dev" or "prod"');
-    }
+    const { visitorTableName } = this.stackEnv;
 
-    // Get required environment variables
-    const envVars =
-      this.stage === 'prod'
-        ? getRequiredEnvVars(
-            ['VISITOR_TABLE_NAME', 'PROD_DOMAIN_NAME', 'PROD_CERTIFICATE_ARN'],
-            this.stage
-          )
-        : getRequiredEnvVars(['VISITOR_TABLE_NAME'], this.stage);
-
-    const { visitorTableName, prodDomainName, prodCertificateArn } = envVars;
+    // Get production-specific environment variables if needed
+    const prodDomainName = process.env.PROD_DOMAIN_NAME;
+    const prodCertificateArn = process.env.PROD_CERTIFICATE_ARN;
 
     const isProd = this.stage === 'prod';
 
@@ -107,7 +99,7 @@ export class WebStack extends cdk.Stack {
         effect: iam.Effect.ALLOW,
         actions: ['secretsmanager:GetSecretValue'],
         resources: [
-          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:/portfolio/${props.stage}/cognito/service-account-*`
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:/portfolio/${this.stage}/cognito/service-account-*`
         ]
       })
     );
