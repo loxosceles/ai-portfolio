@@ -5,12 +5,7 @@ import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
-
-import { IStackEnv } from '../../types';
-
-interface IPipelineStackEnv extends IStackEnv {
-  // No additional variables needed for pipeline stack currently
-}
+import { IPipelineStackEnv } from '../../types';
 
 interface IPipelineStackProps extends cdk.StackProps {
   githubOwner: string;
