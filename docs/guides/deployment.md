@@ -211,9 +211,20 @@ pnpm download-static-data:dev
 ### Frontend Only
 
 ```bash
-# Deploy frontend only
-pnpm deploy:frontend:dev
+# Publish frontend only (skips infrastructure provisioning)
+pnpm publish-frontend:dev
 ```
+
+> **Use Case**: When you've made changes to the frontend code and want to quickly
+> update the deployed website without reprovisioning the infrastructure.
+> This is much faster than a full deployment for iterative development.
+>
+> **What it does**:
+>
+> - Generates frontend environment variables from SSM
+> - Builds the Next.js application
+> - Uploads built files to S3
+> - Invalidates CloudFront cache
 
 ## Troubleshooting
 
