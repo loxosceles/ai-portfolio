@@ -86,7 +86,8 @@ describe('Data Management Command Tests', () => {
     // Mock AWSManager methods for proper integration testing
     jest
       .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
-      .mockImplementation((bucketName, key, region) => {
+      .mockImplementation((...args: unknown[]) => {
+        const key = args[1] as string;
         if (key.includes('developer.json')) {
           return Promise.resolve([
             {

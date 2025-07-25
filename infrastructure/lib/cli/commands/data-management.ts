@@ -1,6 +1,7 @@
 import { IDataManagementOptions, IDataManagementResult } from '../../../types/cli/data-management';
 import { EnvironmentManager } from '../../core/env-manager';
 import { AWSManager } from '../../core/aws-manager';
+import { BaseManager } from '../../core/base-manager';
 import { awsManagerConfig, DATA_CONFIG } from '../../../configs/aws-config';
 import { envManagerConfig } from '../../../configs/env-config';
 import * as fs from 'fs/promises';
@@ -136,7 +137,7 @@ function validateStaticData(data: IDataCollection<IDataItem>): boolean {
 export async function handleUploadData(
   options: IDataManagementOptions
 ): Promise<IDataManagementResult> {
-  const { verbose, region } = options;
+  const { verbose = false, region } = options;
   const stage = awsManager.getStage();
 
   try {
@@ -152,10 +153,7 @@ export async function handleUploadData(
       };
     }
 
-    if (verbose) {
-      // eslint-disable-next-line no-console
-      console.log(`Loading local data for ${stage} stage...`);
-    }
+    BaseManager.logVerbose(verbose, `Loading local data for ${stage} stage...`);
 
     // Load local data
     const localPath = DATA_CONFIG.localPathTemplate.replace('{stage}', stage);
@@ -187,10 +185,7 @@ export async function handleUploadData(
       };
     }
 
-    if (verbose) {
-      // eslint-disable-next-line no-console
-      console.log(`Uploading data to S3 bucket ${bucketName}...`);
-    }
+    BaseManager.logVerbose(verbose, `Uploading data to S3 bucket ${bucketName}...`);
 
     const targetRegion = region || awsManager.getRegionForService('data');
     const validatedRegion = awsManager.validateRegion(targetRegion);
@@ -232,7 +227,7 @@ export async function handleUploadData(
 export async function handleDownloadData(
   options: IDataManagementOptions
 ): Promise<IDataManagementResult> {
-  const { verbose, output, region } = options;
+  const { verbose = false, output, region } = options;
   const stage = awsManager.getStage();
 
   try {
@@ -248,10 +243,7 @@ export async function handleDownloadData(
       };
     }
 
-    if (verbose) {
-      // eslint-disable-next-line no-console
-      console.log(`Downloading data from S3 bucket ${bucketName}...`);
-    }
+    BaseManager.logVerbose(verbose, `Downloading data from S3 bucket ${bucketName}...`);
 
     const targetRegion = region || awsManager.getRegionForService('data');
     const validatedRegion = awsManager.validateRegion(targetRegion);
@@ -318,7 +310,7 @@ export async function handleDownloadData(
 export async function handlePopulateDynamoDB(
   options: IDataManagementOptions
 ): Promise<IDataManagementResult> {
-  const { verbose, region } = options;
+  const { verbose = false, region } = options;
   const stage = awsManager.getStage();
 
   try {
@@ -334,10 +326,7 @@ export async function handlePopulateDynamoDB(
       };
     }
 
-    if (verbose) {
-      // eslint-disable-next-line no-console
-      console.log(`Downloading data from S3 bucket ${bucketName}...`);
-    }
+    BaseManager.logVerbose(verbose, `Downloading data from S3 bucket ${bucketName}...`);
 
     const targetRegion = region || awsManager.getRegionForService('data');
     const validatedRegion = awsManager.validateRegion(targetRegion);
@@ -366,10 +355,7 @@ export async function handlePopulateDynamoDB(
       };
     }
 
-    if (verbose) {
-      // eslint-disable-next-line no-console
-      console.log(`Populating DynamoDB tables for ${stage} stage...`);
-    }
+    BaseManager.logVerbose(verbose, `Populating DynamoDB tables for ${stage} stage...`);
 
     // Populate DynamoDB tables
     await awsManager.populateDynamoDB(stage, data, validatedRegion);
