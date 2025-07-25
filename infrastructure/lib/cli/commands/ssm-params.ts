@@ -2,8 +2,10 @@ import * as path from 'path';
 import { IUploadOptions, IExportOptions, IExportResult } from '../../../types/cli/ssm-params';
 import { AWSManager } from '../../core/aws-manager';
 import { EnvironmentManager } from '../../core/env-manager';
+import { BaseManager } from '../../core/base-manager';
 import { awsManagerConfig, PARAMETER_SCHEMA } from '../../../configs/aws-config';
 import { envManagerConfig } from '../../../configs/env-config';
+import { buildSSMPath } from '../../../utils/ssm';
 
 // Create manager instances
 const awsManager = new AWSManager(awsManagerConfig);
@@ -32,23 +34,23 @@ export async function handleUploadParameters(options: IUploadOptions) {
 
     for (const r of regions) {
       // Cleanup existing stack parameters before upload
-      if (verbose) {
-        // eslint-disable-next-line no-console
-        console.log(`Cleaning up existing parameters for target '${target}' in ${r}...`);
-      }
+      BaseManager.logVerbose(
+        verbose,
+        `Cleaning up existing parameters for target '${target}' in ${r}...`
+      );
       try {
-        const cleanupPath = `/portfolio/${stage}/stack`;
+        const cleanupPath = buildSSMPath(stage, 'stack');
         if (dryRun) {
-          if (verbose) {
-            // eslint-disable-next-line no-console
-            console.log(`[DRY-RUN] Would delete all parameters under path: ${cleanupPath} in ${r}`);
-          }
+          BaseManager.logVerbose(
+            verbose,
+            `[DRY-RUN] Would delete all parameters under path: ${cleanupPath} in ${r}`
+          );
         } else {
           const deleteCount = await awsManager.deleteParametersByPath(cleanupPath, r, verbose);
-          if (verbose && deleteCount > 0) {
-            // eslint-disable-next-line no-console
-            console.log(`✅ Cleaned up ${deleteCount} parameters from ${cleanupPath}`);
-          }
+          BaseManager.logVerbose(
+            verbose && deleteCount > 0,
+            `✅ Cleaned up ${deleteCount} parameters from ${cleanupPath}`
+          );
         }
       } catch (error) {
         console.error(`Warning: Cleanup failed for ${r}: ${error}`);
@@ -58,10 +60,7 @@ export async function handleUploadParameters(options: IUploadOptions) {
       // Upload parameters
       const regionParams = PARAMETER_SCHEMA[stage][r];
       if (!regionParams || regionParams.length === 0) {
-        if (verbose) {
-          // eslint-disable-next-line no-console
-          console.log(`No parameters configured for ${stage} in ${r}`);
-        }
+        BaseManager.logVerbose(verbose, `No parameters configured for ${stage} in ${r}`);
         continue;
       }
 
@@ -69,16 +68,13 @@ export async function handleUploadParameters(options: IUploadOptions) {
         // eslint-disable-next-line no-console
         console.log(`[DRY-RUN] Would upload stack parameters for ${stage} stage to ${r}...`);
         for (const paramName of regionParams) {
-          if (verbose) {
-            // eslint-disable-next-line no-console
-            console.log(`Processing parameter: ${paramName}`);
-          }
+          BaseManager.logVerbose(verbose, `Processing parameter: ${paramName}`);
           if (!params[paramName]) {
             console.warn(`Warning: Parameter ${paramName} not found in environment files`);
             totalErrors++;
             continue;
           }
-          const paramPath = `/portfolio/${stage}/stack/${paramName}`;
+          const paramPath = buildSSMPath(stage, 'stack', paramName);
           const paramValue = params[paramName];
           // eslint-disable-next-line no-console
           console.log(`[DRY-RUN] Would upload: ${paramPath} = ${paramValue} (to ${r})`);
@@ -90,17 +86,14 @@ export async function handleUploadParameters(options: IUploadOptions) {
         let errorCount = 0;
 
         for (const paramName of regionParams) {
-          if (verbose) {
-            // eslint-disable-next-line no-console
-            console.log(`Processing parameter: ${paramName}`);
-          }
+          BaseManager.logVerbose(verbose, `Processing parameter: ${paramName}`);
           if (!params[paramName]) {
             console.warn(`Warning: Parameter ${paramName} not found in environment files`);
             errorCount++;
             continue;
           }
 
-          const paramPath = `/portfolio/${stage}/stack/${paramName}`;
+          const paramPath = buildSSMPath(stage, 'stack', paramName);
           const paramValue = params[paramName];
 
           try {
@@ -167,18 +160,15 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
         let paramPath;
         if (target === 'infrastructure') {
           // Infrastructure target always uses stack scope
-          paramPath = `/portfolio/${stage}/stack`;
+          paramPath = buildSSMPath(stage, 'stack');
         } else {
           // Other targets use provided scope or base path
-          paramPath = scope ? `/portfolio/${stage}/${scope}` : `/portfolio/${stage}`;
+          paramPath = scope ? buildSSMPath(stage, scope) : buildSSMPath(stage);
         }
         const path = paramPath;
 
         // Get parameters by path
-        if (verbose) {
-          // eslint-disable-next-line no-console
-          console.log(`Downloading parameters from region: ${r}`);
-        }
+        BaseManager.logVerbose(verbose, `Downloading parameters from region: ${r}`);
         const ssmParams = await awsManager.getParametersByPath(path, r);
 
         // Process parameters
@@ -187,10 +177,7 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
             // Extract parameter name from path
             const paramName = param.Name.split('/').pop() as string;
             allParams[paramName] = param.Value;
-            if (verbose) {
-              // eslint-disable-next-line no-console
-              console.log(`Downloaded: ${paramName} = ${param.Value}`);
-            }
+            BaseManager.logVerbose(verbose, `Downloaded: ${paramName} = ${param.Value}`);
           }
         }
       } catch (error) {

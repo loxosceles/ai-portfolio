@@ -1,9 +1,6 @@
 import { Command } from 'commander';
 import { handleUploadParameters, handleExportParameters } from '../commands/ssm-params';
 import { IUploadOptions, IExportOptions } from '../../../types/cli/ssm-params';
-import { AWSManager } from '../../core/aws-manager';
-import { awsManagerConfig } from '../../../configs/aws-config';
-import * as readline from 'readline';
 
 interface IUploadCommandOptions {
   region?: string;
@@ -42,48 +39,6 @@ program
   .option('-v, --verbose', 'Enable verbose logging')
   .action(async (options: IUploadCommandOptions) => {
     try {
-      // Interactive confirmation for cleanup
-      if (!options.dryRun) {
-        const awsManager = new AWSManager(awsManagerConfig);
-        const stage = awsManager.getStage();
-        const regions = options.region ? [options.region] : awsManager.getRegionsForStage();
-
-        console.log('\nThe following parameters will be deleted:');
-        let totalParams = 0;
-
-        for (const r of regions) {
-          const parameters = await awsManager.getParametersByPath(`/portfolio/${stage}/stack`, r);
-          if (parameters.length > 0) {
-            console.log(`\nRegion: ${r}`);
-            parameters.forEach((param) => {
-              if (param.Name) {
-                console.log(`  - ${param.Name}`);
-                totalParams++;
-              }
-            });
-          }
-        }
-
-        if (totalParams === 0) {
-          console.log('  (No existing parameters found)');
-        }
-
-        const rl = readline.createInterface({
-          input: process.stdin,
-          output: process.stdout
-        });
-
-        const answer = await new Promise<string>((resolve) => {
-          rl.question('\nContinue with deletion and upload? (y/N): ', resolve);
-        });
-        rl.close();
-
-        if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
-          console.log('Upload cancelled.');
-          process.exit(0);
-        }
-      }
-
       const result = await handleUploadParameters({
         region: options.region,
         dryRun: options.dryRun,
@@ -91,23 +46,12 @@ program
         target: options.target
       } as IUploadOptions);
 
-      // eslint-disable-next-line no-console
-      console.log('\n=== Upload Summary ===');
-      // eslint-disable-next-line no-console
-      console.log(`Stage: ${process.env.ENVIRONMENT}`);
-
-      if (options.dryRun) {
-        // eslint-disable-next-line no-console
-        console.log('Mode: DRY RUN (no actual uploads performed)');
-      } else {
-        // eslint-disable-next-line no-console
-        console.log(`Status: ${result.message}`);
+      if (!result.success) {
+        console.error(result.message);
+        process.exit(1);
       }
 
-      // eslint-disable-next-line no-console
-      console.log(`Parameters available at: /portfolio/${process.env.ENVIRONMENT}/stack/`);
-
-      process.exit(result.errorCount > 0 ? 1 : 0);
+      process.exit(0);
     } catch (error) {
       console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);

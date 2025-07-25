@@ -10,7 +10,7 @@ import { DynamoDBDocumentClient, BatchWriteCommand } from '@aws-sdk/lib-dynamodb
 import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
 import { CloudFrontClient, CreateInvalidationCommand } from '@aws-sdk/client-cloudfront';
 import { BaseManager } from './base-manager';
-import { IBaseManagerConfig } from '../../types/config';
+import { IAWSManagerConfig } from '../../types/config';
 import { IDataItem, IDataCollection } from '../../types/data';
 import { Stage } from '../../types/common';
 import * as fs from 'fs/promises';
@@ -22,8 +22,45 @@ import * as path from 'path';
  * Unified manager for all AWS service operations
  */
 export class AWSManager extends BaseManager {
-  constructor(config: IBaseManagerConfig) {
+  private awsConfig: IAWSManagerConfig;
+
+  constructor(config: IAWSManagerConfig) {
     super(config);
+    this.awsConfig = config;
+  }
+
+  /**
+   * Validate region parameter
+   */
+  public validateRegion(region: string): string {
+    if (!this.awsConfig.validRegions.includes(region)) {
+      throw new Error(
+        `Invalid region: ${region}. Valid regions: ${this.awsConfig.validRegions.join(', ')}`
+      );
+    }
+    return region;
+  }
+
+  /**
+   * Get regions for current stage from parameter schema
+   */
+  public getRegionsForStage(): string[] {
+    const stageSchema = this.awsConfig.parameterSchema[this.getStage()];
+    return Object.keys(stageSchema);
+  }
+
+  /**
+   * Get region for specific service
+   */
+  public getRegionForService(service: string): string {
+    return this.awsConfig.serviceRegions[service];
+  }
+
+  /**
+   * Get stack name for specific service
+   */
+  public getStackNameForService(service: string): string {
+    return `${this.awsConfig.stackPrefixes[service]}-${this.getStage()}`;
   }
 
   // SSM Operations
@@ -57,10 +94,7 @@ export class AWSManager extends BaseManager {
         try {
           await this.deleteParameter(param.Name, region);
           deleteCount++;
-          if (verbose) {
-            // eslint-disable-next-line no-console
-            console.log(`Deleted: ${param.Name}`);
-          }
+          this.logVerbose(verbose, `Deleted: ${param.Name}`);
         } catch (error) {
           console.error(`Failed to delete ${param.Name}: ${error}`);
         }

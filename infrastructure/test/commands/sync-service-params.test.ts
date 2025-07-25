@@ -10,7 +10,27 @@ import {
 
 // Mock the configs
 jest.mock('../../configs/aws-config', () => ({
-  awsManagerConfig: { projectRoot: '/test', supportedStages: ['test'] },
+  awsManagerConfig: {
+    projectRoot: '/test',
+    supportedStages: ['test'],
+    validRegions: ['eu-central-1', 'us-east-1'],
+    serviceRegions: {
+      api: 'eu-central-1',
+      shared: 'eu-central-1',
+      web: 'us-east-1'
+    },
+    stackPrefixes: {
+      api: 'PortfolioApiStack',
+      shared: 'PortfolioSharedStack',
+      web: 'PortfolioWebStack'
+    },
+    parameterSchema: {
+      test: {
+        'eu-central-1': ['PARAM1'],
+        'us-east-1': ['PARAM2']
+      }
+    }
+  },
   STACK_TYPES: ['api', 'shared', 'web'],
   STACK_PREFIXES: {
     api: 'PortfolioApiStack',
@@ -53,7 +73,8 @@ jest.mock('../../utils/generic', () => ({
 // Mock the base config
 jest.mock('../../configs/base', () => ({
   projectRoot: '/test',
-  SUPPORTED_STAGES: ['test']
+  SUPPORTED_STAGES: ['test'],
+  SSM_PARAMETER_PREFIX: 'portfolio'
 }));
 
 const cfMock = mockClient(CloudFormationClient);
