@@ -55,6 +55,7 @@ export async function handleSyncServiceParameters(
 
       for (const stackName of stacksForRegion) {
         if (verbose) {
+          // eslint-disable-next-line no-console
           console.log(`Getting outputs from stack: ${stackName}`);
         }
 

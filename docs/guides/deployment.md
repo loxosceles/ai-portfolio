@@ -14,7 +14,9 @@ pnpm deploy:dev
 pnpm deploy:prod
 ```
 
-> **Note**: The deploy command runs the `scripts/deploy.sh` script which handles the entire deployment pipeline automatically. The detailed steps below are provided for understanding what happens behind the scenes.
+> **Note**: The deploy command runs the `scripts/deploy.sh` script which handles
+> the entire local deployment pipeline automatically. The detailed steps below are
+> provided for understanding what happens behind the scenes.
 
 ## Deployment Workflows
 
@@ -66,11 +68,11 @@ pnpm upload-ssm-params:dev
 
 # For production environment
 pnpm upload-ssm-params:prod
-
-# Upload without cleanup (preserves existing parameters)
-pnpm upload-ssm-params-no-cleanup:dev
-pnpm upload-ssm-params-no-cleanup:prod
 ```
+
+> **Note**: The upload command now shows you exactly which parameters will be
+> deleted before asking for confirmation, ensuring you can make an informed
+> decision about the cleanup process.
 
 ### Step 3: Upload Static Data
 
@@ -189,11 +191,11 @@ If you need to deploy specific components:
 # Upload parameters
 pnpm upload-ssm-params:dev
 
-# Upload parameters without cleanup
-pnpm upload-ssm-params-no-cleanup:dev
-
 # Export parameters
 pnpm export-ssm-params:dev
+
+# Sync service parameters from deployed stacks
+pnpm sync-service-params:dev
 ```
 
 ### Static Data Only
