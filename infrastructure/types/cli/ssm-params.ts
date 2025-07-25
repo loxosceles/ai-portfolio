@@ -6,7 +6,6 @@ export interface IUploadOptions {
   dryRun?: boolean;
   verbose?: boolean;
   target?: string;
-  skipCleanup?: boolean;
 }
 
 /**

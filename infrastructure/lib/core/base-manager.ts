@@ -9,7 +9,7 @@ import {
   VALID_REGIONS,
   PARAMETER_SCHEMA,
   SERVICE_REGIONS,
-  STACK_NAME_PATTERNS
+  STACK_PREFIXES
 } from '../../configs/aws-config';
 import { SERVICE_CONFIGS } from '../../configs/env-config';
 
@@ -91,8 +91,8 @@ export abstract class BaseManager {
   /**
    * Get stack name for specific service
    */
-  public getStackNameForService(service: keyof typeof STACK_NAME_PATTERNS): string {
-    return STACK_NAME_PATTERNS[service](this.stage);
+  public getStackNameForService(service: keyof typeof STACK_PREFIXES): string {
+    return `${STACK_PREFIXES[service]}-${this.stage}`;
   }
 
   /**
