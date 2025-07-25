@@ -25,6 +25,20 @@ export class AWSManager extends BaseManager {
   constructor(config: IAWSManagerConfig) {
     super(config);
     this.awsConfig = config;
+
+    // Validate configuration
+    if (!config.validRegions || config.validRegions.length === 0) {
+      throw new Error('validRegions must be provided');
+    }
+    if (!config.serviceRegions) {
+      throw new Error('serviceRegions must be provided');
+    }
+    if (!config.stackPrefixes) {
+      throw new Error('stackPrefixes must be provided');
+    }
+    if (!config.parameterSchema) {
+      throw new Error('parameterSchema must be provided');
+    }
   }
 
   /**
@@ -51,14 +65,26 @@ export class AWSManager extends BaseManager {
    * Get region for specific service
    */
   public getRegionForService(service: string): string {
-    return this.awsConfig.serviceRegions[service];
+    const region = this.awsConfig.serviceRegions[service];
+    if (!region) {
+      throw new Error(
+        `Service '${service}' not configured. Available services: ${Object.keys(this.awsConfig.serviceRegions).join(', ')}`
+      );
+    }
+    return region;
   }
 
   /**
    * Get stack name for specific service
    */
   public getStackNameForService(service: string): string {
-    return `${this.awsConfig.stackPrefixes[service]}-${this.getStage()}`;
+    const prefix = this.awsConfig.stackPrefixes[service];
+    if (!prefix) {
+      throw new Error(
+        `Stack prefix for service '${service}' not configured. Available services: ${Object.keys(this.awsConfig.stackPrefixes).join(', ')}`
+      );
+    }
+    return `${prefix}-${this.getStage()}`;
   }
 
   // SSM Operations
