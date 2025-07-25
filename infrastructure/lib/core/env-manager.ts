@@ -13,6 +13,14 @@ export class EnvironmentManager extends BaseManager {
   constructor(config: IEnvironmentManagerConfig) {
     super(config);
     this.envConfig = config;
+
+    // Validate configuration
+    if (!config.infrastructureEnvPaths) {
+      throw new Error('infrastructureEnvPaths must be provided');
+    }
+    if (!config.serviceConfigs) {
+      throw new Error('serviceConfigs must be provided');
+    }
   }
 
   /**
@@ -27,7 +35,7 @@ export class EnvironmentManager extends BaseManager {
     const env = this.loadEnv(stage);
 
     // Get stack service config
-    const stackService = this.envConfig.serviceConfigs.stack;
+    const stackService = this.envConfig.serviceConfigs?.stack;
     if (!stackService || stackService.type !== 'stack') {
       throw new Error('Stack service configuration not found');
     }
@@ -141,9 +149,11 @@ export class EnvironmentManager extends BaseManager {
    * Generate environment file content for a service
    */
   generateServiceEnvContent(service: string, params: Record<string, string>): string {
-    const serviceConfig = this.envConfig.serviceConfigs[service];
+    const serviceConfig = this.envConfig.serviceConfigs?.[service];
     if (!serviceConfig) {
-      throw new Error(`Unknown service: ${service}`);
+      throw new Error(
+        `Service '${service}' not configured. Available services: ${Object.keys(this.envConfig.serviceConfigs || {}).join(', ')}`
+      );
     }
 
     // Only handle frontend and link-generator services (not stack service)

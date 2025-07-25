@@ -9,6 +9,7 @@ import * as path from 'path';
 import { IDataItem, IDataCollection } from '../../../types/data';
 import { IProject } from '../../../types/data/project';
 import { IDeveloper } from '../../../types/data';
+import { buildSSMPath } from '../../../utils/ssm';
 
 // Create manager instances
 const envManager = new EnvironmentManager(envManagerConfig);
@@ -357,15 +358,21 @@ export async function handlePopulateDynamoDB(
       };
     }
 
-    // Get table names from environment
-    const developerTableName = env.DEVELOPER_TABLE_NAME;
-    const projectsTableName = env.PROJECTS_TABLE_NAME;
+    // Get table names from SSM parameters instead of environment
+    const developerTableName = await awsManager.getParameter(
+      buildSSMPath(stage, 'DEVELOPER_TABLE_NAME'),
+      validatedRegion
+    );
+    const projectsTableName = await awsManager.getParameter(
+      buildSSMPath(stage, 'PROJECTS_TABLE_NAME'),
+      validatedRegion
+    );
 
     if (!developerTableName || !projectsTableName) {
       return {
         success: false,
-        message: 'Table name environment variables not set',
-        error: new Error('DEVELOPER_TABLE_NAME or PROJECTS_TABLE_NAME not set')
+        message: 'Table name parameters not found in SSM',
+        error: new Error('DEVELOPER_TABLE_NAME or PROJECTS_TABLE_NAME not found in SSM')
       };
     }
 

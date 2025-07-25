@@ -7,6 +7,7 @@ import * as path from 'path';
 import { Construct } from 'constructs';
 import { getSupportedModels } from '../resolvers/supported-models';
 import { AIAdvocateResolverConstruct } from '../resolvers/ai-advocate-resolver-construct';
+import { addStackOutputs } from './stack-helpers';
 import { IAIAdvocateStackEnv } from '../../types';
 
 interface IAIAdvocateStackProps extends cdk.StackProps {
@@ -76,10 +77,22 @@ export class AIAdvocateStack extends cdk.Stack {
       api,
       aiAdvocateLambda: this.aiAdvocateLambda
     });
+
+    // Add stack outputs
+    addStackOutputs(this, this.stage, [
+      {
+        id: 'RecruiterProfilesTableName',
+        value: this.recruiterProfilesTable.tableName,
+        description: 'Recruiter profiles DynamoDB table name',
+        exportName: `recruiter-profiles-table-name-${this.stage}`,
+        paramName: 'RECRUITER_PROFILES_TABLE_NAME'
+      }
+    ]);
   }
 
   private createAIAdvocateLambda(bedrockModelId: string): lambda.Function {
-    const { developerTableName, projectsTableName } = this.stackEnv;
+    const developerTableName = `PortfolioDevelopers-${this.stage}`;
+    const projectsTableName = `PortfolioProjects-${this.stage}`;
 
     return new lambda.Function(this, 'AIAdvocateFunction', {
       functionName: `ai-advocate-${this.stage}`,
@@ -87,8 +100,8 @@ export class AIAdvocateStack extends cdk.Stack {
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../functions/ai-advocate')),
       environment: {
-        DEVELOPER_TABLE_NAME: `${developerTableName}-${this.stage}`,
-        PROJECTS_TABLE_NAME: `${projectsTableName}-${this.stage}`,
+        DEVELOPER_TABLE_NAME: developerTableName,
+        PROJECTS_TABLE_NAME: projectsTableName,
         RECRUITER_PROFILES_TABLE_NAME: this.recruiterProfilesTable.tableName,
         BEDROCK_MODEL_ID: bedrockModelId
       },
@@ -124,9 +137,8 @@ export class AIAdvocateStack extends cdk.Stack {
    * @returns The created DynamoDB table
    */
   private createRecruiterProfilesTable(isProd: boolean): dynamodb.Table {
-    const recruiterProfilesTableName = 'recruiter-profiles';
     return new dynamodb.Table(this, 'RecruiterProfilesTable', {
-      tableName: `${recruiterProfilesTableName}-${this.stage}`,
+      tableName: `RecruiterProfiles-${this.stage}`,
       partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,

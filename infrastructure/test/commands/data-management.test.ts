@@ -119,6 +119,17 @@ describe('Data Management Command Tests', () => {
       .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'batchWriteToDynamoDB')
       .mockResolvedValue(undefined);
 
+    jest
+      .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'getParameter')
+      .mockImplementation((paramName: string) => {
+        if (paramName.includes('DEVELOPER_TABLE_NAME')) {
+          return Promise.resolve('test-developers');
+        } else if (paramName.includes('PROJECTS_TABLE_NAME')) {
+          return Promise.resolve('test-projects');
+        }
+        return Promise.reject(new Error(`Parameter ${paramName} not found`));
+      });
+
     dynamoDBMock.on(PutItemCommand).resolves({});
   });
 

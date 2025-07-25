@@ -13,6 +13,10 @@ export abstract class BaseManager {
   constructor(config: IBaseManagerConfig) {
     this.config = config;
 
+    if (!config.projectRoot) {
+      throw new Error('Project root must be specified in the configuration');
+    }
+
     // Validate environment at construction time
     const env = process.env.ENVIRONMENT;
     if (!env || !this.config.supportedStages.includes(env)) {

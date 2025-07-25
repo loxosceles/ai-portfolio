@@ -225,7 +225,7 @@ describe('EnvironmentManager', () => {
       };
 
       expect(() => envManager.generateServiceEnvContent('unknown', params)).toThrow(
-        'Unknown service: unknown'
+        "Service 'unknown' not configured. Available services: frontend, link-generator"
       );
     });
   });
