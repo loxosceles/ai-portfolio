@@ -25,7 +25,7 @@ The Web Stack (`portfolio-web-{stage}`) contains resources for hosting the front
 
 - **WebBucketName**: Name of the S3 bucket hosting the frontend
 - **CloudFrontDomainName**: Domain name of the CloudFront distribution
-- **CloudFrontDistributionId**: ID of the CloudFront distribution
+- **CloudfrontDistributionId**: ID of the CloudFront distribution
 
 ## API Stack
 
