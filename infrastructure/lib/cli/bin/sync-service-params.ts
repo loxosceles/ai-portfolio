@@ -18,9 +18,9 @@ program
   .action(async (options: ISyncServiceParametersCommandOptions) => {
     try {
       const result = await handleSyncServiceParameters({
-        verbose: options.verbose,
-        dryRun: options.dryRun,
-        cleanup: options.cleanup
+        verbose: options.verbose ?? false,
+        dryRun: options.dryRun ?? false,
+        cleanup: options.cleanup ?? false
       });
 
       if (!result.success) {
