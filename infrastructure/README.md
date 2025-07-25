@@ -60,8 +60,10 @@ All tests use proper AWS SDK mocking to prevent real AWS calls and ensure fast e
 
 ### Environment Management
 
-- `pnpm upload-stack-params:dev`: Upload parameters for dev stage
-- `pnpm upload-stack-params:prod`: Upload parameters for prod stage
+- `pnpm upload-ssm-params:dev`: Upload parameters for dev stage
+- `pnpm upload-ssm-params:prod`: Upload parameters for prod stage
+- `pnpm sync-service-params:dev`: Sync service parameters from deployed stacks for dev stage
+- `pnpm sync-service-params:prod`: Sync service parameters from deployed stacks for prod stage
 
 ### Data Management
 

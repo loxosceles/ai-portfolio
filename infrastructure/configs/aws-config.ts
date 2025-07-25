@@ -76,11 +76,19 @@ export const SERVICE_REGIONS = {
   data: 'eu-central-1'
 } as const;
 
-// Stack name patterns
-export const STACK_NAME_PATTERNS = {
-  web: (stage: string) => `PortfolioWebStack-${stage}`,
-  api: (stage: string) => `PortfolioApiStack-${stage}`,
-  shared: (stage: string) => `PortfolioSharedStack-${stage}`
+// Stack configuration constants
+export const STACK_TYPES = ['web', 'api', 'shared'] as const;
+
+export const STACK_PREFIXES = {
+  web: 'PortfolioWebStack',
+  api: 'PortfolioApiStack',
+  shared: 'PortfolioSharedStack'
+} as const;
+
+export const STACK_REGIONS = {
+  web: 'us-east-1',
+  api: 'eu-central-1',
+  shared: 'eu-central-1'
 } as const;
 
 // AWS Manager Configuration

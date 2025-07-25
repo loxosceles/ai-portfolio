@@ -4,13 +4,19 @@ This guide provides step-by-step instructions for deploying the AI Portfolio app
 
 ## Quick Start
 
+**For most deployments, use the main deploy command:**
+
 ```bash
 # Deploy to development environment
 pnpm deploy:dev
 
-# Deploy to production environment
+# Deploy to production environment (currently disabled)
 pnpm deploy:prod
 ```
+
+> **Note**: The deploy command runs the `scripts/deploy.sh` script which handles
+> the entire local deployment pipeline automatically. The detailed steps below are
+> provided for understanding what happens behind the scenes.
 
 ## Deployment Workflows
 
@@ -19,7 +25,9 @@ The application supports two deployment workflows:
 1. **Local Deployment**: Manual deployment from your local machine
 2. **CI/CD Pipeline**: Automated deployment via GitHub Actions and AWS CodePipeline
 
-## Local Deployment
+## Understanding the Deployment Process
+
+The following sections explain what happens when you run `pnpm deploy:dev`. These steps are automated by the deployment script, but understanding them helps with troubleshooting and customization.
 
 ### Step 1: Set Up Environment Files
 
@@ -56,11 +64,15 @@ For production, also add:
 
 ```bash
 # For development environment
-pnpm upload-stack-params:dev
+pnpm upload-ssm-params:dev
 
 # For production environment
-pnpm upload-stack-params:prod
+pnpm upload-ssm-params:prod
 ```
+
+> **Note**: The upload command now shows you exactly which parameters will be
+> deleted before asking for confirmation, ensuring you can make an informed
+> decision about the cleanup process.
 
 ### Step 3: Upload Static Data
 
@@ -91,16 +103,16 @@ cd ..
 ```bash
 # For development environment
 cd infrastructure
-pnpm run export-stack-params:dev
-ts-node lib/cli/bin/ssm-params.ts export --target=frontend --output
-ts-node lib/cli/bin/ssm-params.ts export --target=link-generator --output
+pnpm run export-ssm-params:dev
+ts-node lib/cli/bin/ssm-params.ts export --target=frontend --output --verbose
+ts-node lib/cli/bin/ssm-params.ts export --target=link-generator --output --verbose
 cd ..
 
 # For production environment
 cd infrastructure
-pnpm run export-stack-params:prod
-ts-node lib/cli/bin/ssm-params.ts export --target=frontend --output
-ts-node lib/cli/bin/ssm-params.ts export --target=link-generator --output
+pnpm run export-ssm-params:prod
+ts-node lib/cli/bin/ssm-params.ts export --target=frontend --output --verbose
+ts-node lib/cli/bin/ssm-params.ts export --target=link-generator --output --verbose
 cd ..
 ```
 
@@ -177,10 +189,13 @@ If you need to deploy specific components:
 
 ```bash
 # Upload parameters
-pnpm upload-stack-params:dev
+pnpm upload-ssm-params:dev
 
-# Download parameters
-pnpm download-stack-params:dev
+# Export parameters
+pnpm export-ssm-params:dev
+
+# Sync service parameters from deployed stacks
+pnpm sync-service-params:dev
 ```
 
 ### Static Data Only
@@ -196,9 +211,20 @@ pnpm download-static-data:dev
 ### Frontend Only
 
 ```bash
-# Deploy frontend only
-pnpm deploy:frontend:dev
+# Publish frontend only (skips infrastructure provisioning)
+pnpm publish-frontend:dev
 ```
+
+> **Use Case**: When you've made changes to the frontend code and want to quickly
+> update the deployed website without reprovisioning the infrastructure.
+> This is much faster than a full deployment for iterative development.
+>
+> **What it does**:
+>
+> - Generates frontend environment variables from SSM
+> - Builds the Next.js application
+> - Uploads built files to S3
+> - Invalidates CloudFront cache
 
 ## Troubleshooting
 
@@ -206,7 +232,7 @@ pnpm deploy:frontend:dev
 
 | Issue                                                            | Cause                                         | Solution                              |
 | ---------------------------------------------------------------- | --------------------------------------------- | ------------------------------------- |
-| "Missing required environment variables"                         | Pre-deployment parameters not uploaded to SSM | Run `pnpm upload-stack-params:dev`    |
+| "Missing required environment variables"                         | Pre-deployment parameters not uploaded to SSM | Run `pnpm upload-ssm-params:dev`      |
 | "Parameter not found: /portfolio/dev/CLOUDFRONT_DISTRIBUTION_ID" | Infrastructure deployment failed              | Re-deploy infrastructure              |
 | "No access token available in deployed environment"              | Wrong environment variable                    | Check `NEXT_PUBLIC_ENVIRONMENT` value |
 

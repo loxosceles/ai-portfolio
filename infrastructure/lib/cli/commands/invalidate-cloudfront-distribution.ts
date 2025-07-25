@@ -16,7 +16,7 @@ export async function handleInvalidateCloudFrontDistribution(
   try {
     const region = awsManager.getRegionForService('cloudfront');
     const stackName = awsManager.getStackNameForService('web');
-    const outputKey = 'CloudFrontDistributionId';
+    const outputKey = 'CloudfrontDistributionId';
 
     awsManager.logVerbose(
       verbose,
