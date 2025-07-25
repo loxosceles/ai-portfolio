@@ -5,6 +5,7 @@
   "scripts": {
     "deploy:dev": "scripts/deploy.sh",
     "deploy:prod": "echo 'Production deployment not allowed' && exit 1",
+    "publish-frontend:dev": "scripts/publish-frontend.sh",
     "upload-static-data:dev": "pnpm --filter=infrastructure run upload-static-data:dev",
     "upload-static-data:prod": "pnpm --filter=infrastructure run upload-static-data:prod",
     "download-static-data:dev": "pnpm --filter=infrastructure run download-static-data:dev",
