@@ -14,7 +14,7 @@ const envManager = new EnvironmentManager(envManagerConfig);
  */
 export async function handleUploadParameters(options: IUploadOptions) {
   try {
-    const { region, dryRun = false, verbose = false, target, skipCleanup = false } = options;
+    const { region, dryRun = false, verbose = false, target } = options;
 
     if (!target) {
       throw new Error('target is required for upload command');
@@ -31,18 +31,16 @@ export async function handleUploadParameters(options: IUploadOptions) {
     let totalErrors = 0;
 
     for (const r of regions) {
-      // Cleanup existing parameters before upload (unless skipped)
-      if (!skipCleanup) {
-        if (verbose) {
-          // eslint-disable-next-line no-console
-          console.log(`Cleaning up existing parameters for target '${target}' in ${r}...`);
-        }
-        try {
-          await awsManager.cleanupParametersForTarget(stage, target, r, dryRun, verbose);
-        } catch (error) {
-          console.error(`Warning: Cleanup failed for ${r}: ${error}`);
-          // Don't fail the entire operation due to cleanup issues
-        }
+      // Cleanup existing parameters before upload
+      if (verbose) {
+        // eslint-disable-next-line no-console
+        console.log(`Cleaning up existing parameters for target '${target}' in ${r}...`);
+      }
+      try {
+        await awsManager.cleanupParametersForTarget(stage, target, r, dryRun, verbose);
+      } catch (error) {
+        console.error(`Warning: Cleanup failed for ${r}: ${error}`);
+        // Don't fail the entire operation due to cleanup issues
       }
 
       // Upload parameters

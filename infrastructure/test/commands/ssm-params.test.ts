@@ -188,20 +188,58 @@ describe('SSM Parameters Command Tests', () => {
     expect(putCalls.length).toBeGreaterThan(0);
   });
 
-  test('should skip cleanup when flag is set', async () => {
+  test('should only cleanup stack parameters, not service parameters', async () => {
+    // Mock both stack and service parameters existing
+    ssmMock.on(GetParametersByPathCommand).resolves({
+      Parameters: [
+        { Name: '/portfolio/test/stack/BEDROCK_MODEL_ID', Value: 'old-model' },
+        { Name: '/portfolio/test/stack/CDK_DEFAULT_ACCOUNT', Value: 'old-account' },
+        { Name: '/portfolio/test/APPSYNC_URL', Value: 'https://old-api.com' },
+        { Name: '/portfolio/test/COGNITO_CLIENT_ID', Value: 'old-client-id' }
+      ]
+    });
+
     const result = await handleUploadParameters({
       verbose: false,
       dryRun: false,
       region: undefined,
-      target: 'infrastructure',
-      skipCleanup: true
+      target: 'infrastructure'
     });
 
     expect(result.success).toBe(true);
-    // Should only have put calls, no delete calls
+
+    // Verify that GetParametersByPath was called with the correct stack path
+    const getParametersCalls = ssmMock.commandCalls(GetParametersByPathCommand);
+    expect(getParametersCalls.length).toBeGreaterThan(0);
+
+    // Check that the path used for cleanup is only the stack path
+    const cleanupCall = getParametersCalls.find(
+      (call) => call.args[0].input.Path === '/portfolio/test/stack'
+    );
+    expect(cleanupCall).toBeDefined();
+
+    // Verify that service parameters path is NOT called for cleanup
+    const serviceCleanupCall = getParametersCalls.find(
+      (call) => call.args[0].input.Path === '/portfolio/test' && call.args[0].input.Recursive
+    );
+    expect(serviceCleanupCall).toBeUndefined();
+  });
+
+  test('should handle dry-run mode correctly', async () => {
+    const result = await handleUploadParameters({
+      verbose: false,
+      dryRun: true,
+      region: undefined,
+      target: 'infrastructure'
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain('All parameters uploaded successfully');
+
+    // Should not actually delete or upload parameters in dry-run
     const deleteCalls = ssmMock.commandCalls(DeleteParameterCommand);
     const putCalls = ssmMock.commandCalls(PutParameterCommand);
     expect(deleteCalls.length).toBe(0);
-    expect(putCalls.length).toBeGreaterThan(0);
+    expect(putCalls.length).toBe(0);
   });
 });

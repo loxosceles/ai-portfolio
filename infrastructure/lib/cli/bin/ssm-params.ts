@@ -1,13 +1,15 @@
 import { Command } from 'commander';
 import { handleUploadParameters, handleExportParameters } from '../commands/ssm-params';
 import { IUploadOptions, IExportOptions } from '../../../types/cli/ssm-params';
+import { AWSManager } from '../../core/aws-manager';
+import { awsManagerConfig } from '../../../configs/aws-config';
+import * as readline from 'readline';
 
 interface IUploadCommandOptions {
   region?: string;
   dryRun?: boolean;
   verbose?: boolean;
   target?: string;
-  skipCleanup?: boolean;
 }
 
 interface IExportCommandOptions {
@@ -36,16 +38,57 @@ program
   )
   .option('-r, --region <region>', 'Upload to specific region only (eu-central-1|us-east-1)')
   .option('-d, --dry-run', 'Show what would be uploaded without actually uploading')
-  .option('--skip-cleanup', 'Skip cleanup of existing parameters before upload')
+
   .option('-v, --verbose', 'Enable verbose logging')
   .action(async (options: IUploadCommandOptions) => {
     try {
+      // Interactive confirmation for cleanup
+      if (!options.dryRun) {
+        const awsManager = new AWSManager(awsManagerConfig);
+        const stage = awsManager.getStage();
+        const regions = options.region ? [options.region] : awsManager.getRegionsForStage();
+
+        console.log('\nThe following parameters will be deleted:');
+        let totalParams = 0;
+
+        for (const r of regions) {
+          const parameters = await awsManager.getParametersByPath(`/portfolio/${stage}/stack`, r);
+          if (parameters.length > 0) {
+            console.log(`\nRegion: ${r}`);
+            parameters.forEach((param) => {
+              if (param.Name) {
+                console.log(`  - ${param.Name}`);
+                totalParams++;
+              }
+            });
+          }
+        }
+
+        if (totalParams === 0) {
+          console.log('  (No existing parameters found)');
+        }
+
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        });
+
+        const answer = await new Promise<string>((resolve) => {
+          rl.question('\nContinue with deletion and upload? (y/N): ', resolve);
+        });
+        rl.close();
+
+        if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
+          console.log('Upload cancelled.');
+          process.exit(0);
+        }
+      }
+
       const result = await handleUploadParameters({
         region: options.region,
         dryRun: options.dryRun,
         verbose: options.verbose,
-        target: options.target,
-        skipCleanup: options.skipCleanup
+        target: options.target
       } as IUploadOptions);
 
       // eslint-disable-next-line no-console

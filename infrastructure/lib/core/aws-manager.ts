@@ -87,21 +87,8 @@ export class AWSManager extends BaseManager {
     dryRun: boolean = false,
     verbose: boolean = false
   ): Promise<number> {
-    let cleanupPath: string;
-
-    if (target === 'infrastructure') {
-      cleanupPath = `/portfolio/${stage}/stack`;
-    } else {
-      // For service targets, we would clean service parameters
-      // But we need to be careful not to delete stack parameters
-      cleanupPath = `/portfolio/${stage}`;
-      // TODO: Implement selective cleanup for service parameters
-      if (verbose) {
-        // eslint-disable-next-line no-console
-        console.log(`Service parameter cleanup not yet implemented for target: ${target}`);
-      }
-      return 0;
-    }
+    // Only clean stack parameters - service parameters are managed separately
+    const cleanupPath = `/portfolio/${stage}/stack`;
 
     if (dryRun) {
       return this.simulateDeleteParametersByPath(cleanupPath, region, verbose);
@@ -143,6 +130,26 @@ export class AWSManager extends BaseManager {
       return allParameters;
     } catch (error) {
       console.error(`Error getting parameters by path ${path}: ${error}`);
+      return [];
+    }
+  }
+
+  // CloudFormation Operations
+  async getStackOutputs(
+    stackName: string,
+    region: string
+  ): Promise<Array<{ OutputKey: string; OutputValue: string }>> {
+    const client = new CloudFormationClient({ region });
+    try {
+      const response = await client.send(new DescribeStacksCommand({ StackName: stackName }));
+      return (
+        response.Stacks?.[0]?.Outputs?.map((output) => ({
+          OutputKey: output.OutputKey || '',
+          OutputValue: output.OutputValue || ''
+        })) || []
+      );
+    } catch (error) {
+      console.error(`Error getting stack outputs for ${stackName}: ${error}`);
       return [];
     }
   }
