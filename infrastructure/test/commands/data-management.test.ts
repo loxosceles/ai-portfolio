@@ -22,7 +22,7 @@ jest.mock('../../lib/core/env-manager', () => {
     EnvironmentManager: jest.fn().mockImplementation(() => ({
       loadEnv: jest.fn().mockReturnValue({
         DATA_BUCKET_NAME: 'test-bucket',
-        DEVELOPERS_TABLE_NAME: 'test-developers',
+        DEVELOPER_TABLE_NAME: 'test-developers',
         PROJECTS_TABLE_NAME: 'test-projects'
       })
     }))
@@ -116,7 +116,7 @@ describe('Data Management Command Tests', () => {
       });
 
     jest
-      .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'populateDynamoDB')
+      .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'batchWriteToDynamoDB')
       .mockResolvedValue(undefined);
 
     dynamoDBMock.on(PutItemCommand).resolves({});

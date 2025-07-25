@@ -11,8 +11,6 @@ import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-clo
 import { CloudFrontClient, CreateInvalidationCommand } from '@aws-sdk/client-cloudfront';
 import { BaseManager } from './base-manager';
 import { IAWSManagerConfig } from '../../types/config';
-import { IDataItem, IDataCollection } from '../../types/data';
-import { Stage } from '../../types/common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -186,32 +184,20 @@ export class AWSManager extends BaseManager {
   }
 
   // DynamoDB Operations
-  async populateDynamoDB(
-    stage: Stage,
-    data: IDataCollection<IDataItem>,
+  async batchWriteToDynamoDB(
+    tableName: string,
+    items: Record<string, unknown>[],
     region: string
   ): Promise<void> {
     const client = new DynamoDBClient({ region });
     const docClient = DynamoDBDocumentClient.from(client);
 
-    if (data.developers && data.developers.length > 0) {
+    if (items.length > 0) {
       await docClient.send(
         new BatchWriteCommand({
           RequestItems: {
-            [`PortfolioDevelopers-${stage}`]: data.developers.map((dev) => ({
-              PutRequest: { Item: dev }
-            }))
-          }
-        })
-      );
-    }
-
-    if (data.projects && data.projects.length > 0) {
-      await docClient.send(
-        new BatchWriteCommand({
-          RequestItems: {
-            [`PortfolioProjects-${stage}`]: data.projects.map((proj) => ({
-              PutRequest: { Item: proj }
+            [tableName]: items.map((item) => ({
+              PutRequest: { Item: item }
             }))
           }
         })

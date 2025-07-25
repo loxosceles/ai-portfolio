@@ -268,17 +268,14 @@ describe('AWSManager', () => {
   });
 
   describe('DynamoDB Operations', () => {
-    test('should populate DynamoDB', async () => {
+    test('should batch write to DynamoDB', async () => {
       dynamoDBDocMock.on(BatchWriteCommand).resolves({});
 
-      const data = {
-        developers: [{ id: 'dev1', name: 'Test Dev' }],
-        projects: [{ id: 'proj1', title: 'Test Project' }]
-      };
+      const items = [{ id: 'dev1', name: 'Test Dev' }];
 
-      await awsManager.populateDynamoDB('dev', data, 'us-east-1');
+      await awsManager.batchWriteToDynamoDB('test-table', items, 'us-east-1');
 
-      expect(dynamoDBDocMock.calls()).toHaveLength(2);
+      expect(dynamoDBDocMock.calls()).toHaveLength(1);
     });
   });
 
