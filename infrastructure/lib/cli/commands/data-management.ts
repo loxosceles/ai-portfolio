@@ -357,18 +357,31 @@ export async function handlePopulateDynamoDB(
       };
     }
 
+    // Get table names from environment
+    const developerTableName = env.DEVELOPER_TABLE_NAME;
+    const projectsTableName = env.PROJECTS_TABLE_NAME;
+
+    if (!developerTableName || !projectsTableName) {
+      return {
+        success: false,
+        message: 'Table name environment variables not set',
+        error: new Error('DEVELOPER_TABLE_NAME or PROJECTS_TABLE_NAME not set')
+      };
+    }
+
     BaseManager.logVerbose(verbose, `Populating DynamoDB tables for ${stage} stage...`);
 
-    // Populate DynamoDB tables
-    await awsManager.populateDynamoDB(stage, data, validatedRegion);
+    // Populate tables separately
+    await awsManager.batchWriteToDynamoDB(developerTableName, data.developers, validatedRegion);
+    await awsManager.batchWriteToDynamoDB(projectsTableName, data.projects, validatedRegion);
 
     BaseManager.logVerbose(
       verbose,
-      `✅ Populated PortfolioDevelopers-${stage} with ${data.developers.length} items`
+      `✅ Populated ${developerTableName} with ${data.developers.length} items`
     );
     BaseManager.logVerbose(
       verbose,
-      `✅ Populated PortfolioProjects-${stage} with ${data.projects.length} items`
+      `✅ Populated ${projectsTableName} with ${data.projects.length} items`
     );
 
     return {
