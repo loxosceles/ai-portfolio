@@ -137,7 +137,7 @@ function validateStaticData(data: IDataCollection<IDataItem>): boolean {
 export async function handleUploadData(
   options: IDataManagementOptions
 ): Promise<IDataManagementResult> {
-  const { verbose = false, region } = options;
+  const { verbose, region } = options;
   const stage = awsManager.getStage();
 
   try {
@@ -227,7 +227,7 @@ export async function handleUploadData(
 export async function handleDownloadData(
   options: IDataManagementOptions
 ): Promise<IDataManagementResult> {
-  const { verbose = false, output, region } = options;
+  const { verbose, output, region } = options;
   const stage = awsManager.getStage();
 
   try {
@@ -310,7 +310,7 @@ export async function handleDownloadData(
 export async function handlePopulateDynamoDB(
   options: IDataManagementOptions
 ): Promise<IDataManagementResult> {
-  const { verbose = false, region } = options;
+  const { verbose, region } = options;
   const stage = awsManager.getStage();
 
   try {

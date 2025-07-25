@@ -41,8 +41,8 @@ program
     try {
       const result = await handleUploadParameters({
         region: options.region,
-        dryRun: options.dryRun,
-        verbose: options.verbose,
+        dryRun: options.dryRun ?? false,
+        verbose: options.verbose ?? false,
         target: options.target
       } as IUploadOptions);
 
@@ -76,11 +76,11 @@ program
       const result = await handleExportParameters({
         regions: options.regions ? options.regions.split(',') : undefined,
         scope: options.scope,
-        format: options.format as 'env' | 'json',
+        format: (options.format as 'env' | 'json') ?? 'env',
         target: options.target,
         output: options.output,
         outputPath: options.outputPath,
-        verbose: options.verbose
+        verbose: options.verbose ?? false
       } as IExportOptions);
 
       if (!result.success) {

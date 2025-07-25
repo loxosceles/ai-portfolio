@@ -137,7 +137,8 @@ describe('Sync Service Parameters Command Tests', () => {
   test('should sync only required service parameters', async () => {
     const result = await handleSyncServiceParameters({
       verbose: false,
-      dryRun: false
+      dryRun: false,
+      cleanup: false
     });
 
     expect(result.success).toBe(true);
@@ -225,7 +226,8 @@ describe('Sync Service Parameters Command Tests', () => {
 
     const result = await handleSyncServiceParameters({
       verbose: false,
-      dryRun: false
+      dryRun: false,
+      cleanup: false
     });
 
     expect(result.success).toBe(false);
@@ -237,7 +239,8 @@ describe('Sync Service Parameters Command Tests', () => {
   test('should process multiple regions correctly', async () => {
     const result = await handleSyncServiceParameters({
       verbose: true,
-      dryRun: false
+      dryRun: false,
+      cleanup: false
     });
 
     expect(result.success).toBe(true);

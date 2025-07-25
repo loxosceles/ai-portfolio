@@ -130,6 +130,7 @@ describe('SSM Parameters Command Tests', () => {
   test('should handle export with target option', async () => {
     const result = await handleExportParameters({
       verbose: false,
+      format: 'env',
       target: 'infrastructure',
       output: false
     });
@@ -141,6 +142,7 @@ describe('SSM Parameters Command Tests', () => {
   test('should handle region option', async () => {
     const result = await handleUploadParameters({
       verbose: false,
+      dryRun: false,
       region: 'eu-west-1',
       target: 'infrastructure'
     });
@@ -152,7 +154,8 @@ describe('SSM Parameters Command Tests', () => {
     const result = await handleUploadParameters({
       verbose: false,
       dryRun: false,
-      region: undefined
+      region: undefined,
+      target: undefined
     });
 
     expect(result.success).toBe(false);
@@ -164,7 +167,8 @@ describe('SSM Parameters Command Tests', () => {
     const result = await handleExportParameters({
       verbose: false,
       format: 'env',
-      output: false
+      output: false,
+      target: undefined
     });
 
     expect(result.success).toBe(false);

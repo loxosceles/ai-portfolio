@@ -16,7 +16,7 @@ const envManager = new EnvironmentManager(envManagerConfig);
  */
 export async function handleUploadParameters(options: IUploadOptions) {
   try {
-    const { region, dryRun = false, verbose = false, target } = options;
+    const { region, dryRun, verbose, target } = options;
 
     if (!target) {
       throw new Error('target is required for upload command');
@@ -139,7 +139,7 @@ export async function handleUploadParameters(options: IUploadOptions) {
  */
 export async function handleExportParameters(options: IExportOptions): Promise<IExportResult> {
   try {
-    const { regions, scope, format = 'env', target, output, outputPath, verbose = false } = options;
+    const { regions, scope, format, target, output, outputPath, verbose } = options;
 
     if (!target) {
       throw new Error('target is required for export command');

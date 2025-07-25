@@ -38,7 +38,7 @@ program
   .action(async (options: IUploadDataCommandOptions) => {
     try {
       const result = await handleUploadData({
-        verbose: options.verbose,
+        verbose: options.verbose ?? false,
         region: options.region
       });
 
@@ -64,7 +64,7 @@ program
   .action(async (options: IDownloadDataCommandOptions) => {
     try {
       const result = await handleDownloadData({
-        verbose: options.verbose,
+        verbose: options.verbose ?? false,
         output: options.output,
         region: options.region
       });
@@ -98,7 +98,7 @@ program
   .action(async (options: IPopulateDynamoDBWithStaticDataCommandOptions) => {
     try {
       const result = await handlePopulateDynamoDB({
-        verbose: options.verbose,
+        verbose: options.verbose ?? false,
         region: options.region
       });
 

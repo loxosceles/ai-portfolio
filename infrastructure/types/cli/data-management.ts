@@ -7,7 +7,7 @@ import { IDataCollection, IDataItem } from '../data';
  * Options for data management operations
  */
 export interface IDataManagementOptions {
-  verbose?: boolean;
+  verbose: boolean;
   output?: string;
   region?: string;
 }
