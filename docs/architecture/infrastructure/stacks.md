@@ -42,7 +42,7 @@ The API Stack (`portfolio-api-{stage}`) contains resources for the backend servi
 
 ### Outputs
 
-- **AppSyncApiKey**: API key for the AppSync API
+- **AppsyncApiKey**: API key for the AppSync API
 - **AppSyncUrl**: URL of the AppSync API
 - **DeveloperTableName**: Name of the DynamoDB table for developer profiles
 - **ProjectsTableName**: Name of the DynamoDB table for projects
