@@ -11,9 +11,9 @@ import { pascalToScreamingSnake } from '../../../utils/generic';
 import { buildSSMPath } from '../../../utils/ssm';
 
 interface ISyncServiceParametersOptions {
-  verbose?: boolean;
-  dryRun?: boolean;
-  cleanup?: boolean;
+  verbose: boolean;
+  dryRun: boolean;
+  cleanup: boolean;
 }
 
 interface ISyncServiceParametersResult {
@@ -29,7 +29,7 @@ export async function handleSyncServiceParameters(
   options: ISyncServiceParametersOptions
 ): Promise<ISyncServiceParametersResult> {
   try {
-    const { verbose = false, dryRun = false, cleanup = false } = options;
+    const { verbose, dryRun, cleanup } = options;
     const stage = awsManager.getStage();
     const regions = awsManager.getRegionsForStage();
 

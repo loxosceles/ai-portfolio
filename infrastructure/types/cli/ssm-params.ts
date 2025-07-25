@@ -3,8 +3,8 @@
  */
 export interface IUploadOptions {
   region?: string;
-  dryRun?: boolean;
-  verbose?: boolean;
+  dryRun: boolean;
+  verbose: boolean;
   target?: string;
 }
 
@@ -13,12 +13,12 @@ export interface IUploadOptions {
  */
 export interface IExportOptions {
   regions?: string[];
-  format?: 'env' | 'json';
+  format: 'env' | 'json';
   scope?: string;
   target?: string;
   output?: boolean;
   outputPath?: string;
-  verbose?: boolean;
+  verbose: boolean;
 }
 
 /**
