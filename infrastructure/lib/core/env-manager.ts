@@ -5,6 +5,7 @@ import * as path from 'path';
 import { BaseManager } from './base-manager';
 import { IEnvironmentManagerConfig } from '../../types/config';
 import { StackEnvMap } from '../../types';
+import { toCamelCase } from '../../utils/generic';
 
 export class EnvironmentManager extends BaseManager {
   private envConfig: IEnvironmentManagerConfig;
@@ -49,7 +50,7 @@ export class EnvironmentManager extends BaseManager {
 
     // Convert SNAKE_CASE env vars to camelCase properties
     for (const varName of requiredVars) {
-      const camelCaseKey = this.toCamelCase(varName);
+      const camelCaseKey = toCamelCase(varName);
       result[camelCaseKey] = env[varName];
     }
 
@@ -122,16 +123,9 @@ export class EnvironmentManager extends BaseManager {
 
     // Check that all required variables have been converted to camelCase properties
     return requiredVars.every((varName) => {
-      const camelCaseKey = this.toCamelCase(varName);
+      const camelCaseKey = toCamelCase(varName);
       return result[camelCaseKey] !== undefined;
     });
-  }
-
-  /**
-   * Convert SNAKE_CASE to camelCase
-   */
-  private toCamelCase(str: string): string {
-    return str.toLowerCase().replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
   }
 
   /**
