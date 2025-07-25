@@ -105,7 +105,6 @@ async function handleGetAdvocateGreeting(event) {
     // Generate AI greeting
     const aiGreeting = await generateAIGreeting(recruiterData);
 
-    // Convert RecruiterProfile to JobMatching format with AI-generated greeting
     return {
       linkId: recruiterData.linkId,
       companyName: recruiterData.companyName,

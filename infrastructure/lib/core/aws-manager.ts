@@ -1,4 +1,9 @@
-import { SSMClient, PutParameterCommand, GetParametersByPathCommand } from '@aws-sdk/client-ssm';
+import {
+  SSMClient,
+  PutParameterCommand,
+  GetParametersByPathCommand,
+  DeleteParameterCommand
+} from '@aws-sdk/client-ssm';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
@@ -34,6 +39,69 @@ export class AWSManager extends BaseManager {
     await client.send(command);
   }
 
+  async deleteParameter(name: string, region: string): Promise<void> {
+    const client = new SSMClient({ region });
+    const command = new DeleteParameterCommand({ Name: name });
+    await client.send(command);
+  }
+
+  async deleteParametersByPath(
+    path: string,
+    region: string,
+    verbose: boolean = false
+  ): Promise<number> {
+    const parameters = await this.getParametersByPath(path, region);
+    let deleteCount = 0;
+
+    for (const param of parameters) {
+      if (param.Name) {
+        try {
+          await this.deleteParameter(param.Name, region);
+          deleteCount++;
+          if (verbose) {
+            // eslint-disable-next-line no-console
+            console.log(`Deleted: ${param.Name}`);
+          }
+        } catch (error) {
+          console.error(`Failed to delete ${param.Name}: ${error}`);
+        }
+      }
+    }
+
+    return deleteCount;
+  }
+
+  simulateDeleteParametersByPath(path: string, region: string, verbose: boolean = false): number {
+    // This would need the actual parameters to simulate, but for dry-run we'll just log
+    if (verbose) {
+      // eslint-disable-next-line no-console
+      console.log(`[DRY-RUN] Would delete all parameters under path: ${path} in ${region}`);
+    }
+    return 0;
+  }
+
+  async cleanupParametersForTarget(
+    stage: Stage,
+    target: string,
+    region: string,
+    dryRun: boolean = false,
+    verbose: boolean = false
+  ): Promise<number> {
+    // Only clean stack parameters - service parameters are managed separately
+    const cleanupPath = `/portfolio/${stage}/stack`;
+
+    if (dryRun) {
+      return this.simulateDeleteParametersByPath(cleanupPath, region, verbose);
+    } else {
+      const deleteCount = await this.deleteParametersByPath(cleanupPath, region, verbose);
+      if (verbose && deleteCount > 0) {
+        // eslint-disable-next-line no-console
+        console.log(`✅ Cleaned up ${deleteCount} parameters from ${cleanupPath}`);
+      }
+      return deleteCount;
+    }
+  }
+
   async getParametersByPath(
     path: string,
     region: string
@@ -62,6 +130,26 @@ export class AWSManager extends BaseManager {
       return allParameters;
     } catch (error) {
       console.error(`Error getting parameters by path ${path}: ${error}`);
+      return [];
+    }
+  }
+
+  // CloudFormation Operations
+  async getStackOutputs(
+    stackName: string,
+    region: string
+  ): Promise<Array<{ OutputKey: string; OutputValue: string }>> {
+    const client = new CloudFormationClient({ region });
+    try {
+      const response = await client.send(new DescribeStacksCommand({ StackName: stackName }));
+      return (
+        response.Stacks?.[0]?.Outputs?.map((output) => ({
+          OutputKey: output.OutputKey || '',
+          OutputValue: output.OutputValue || ''
+        })) || []
+      );
+    } catch (error) {
+      console.error(`Error getting stack outputs for ${stackName}: ${error}`);
       return [];
     }
   }

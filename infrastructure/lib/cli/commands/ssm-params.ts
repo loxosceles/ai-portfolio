@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { IExportOptions, IExportResult } from '../../../types/cli/ssm-params';
+import { IUploadOptions, IExportOptions, IExportResult } from '../../../types/cli/ssm-params';
 import { AWSManager } from '../../core/aws-manager';
 import { EnvironmentManager } from '../../core/env-manager';
 import { awsManagerConfig } from '../../../configs/aws-config';
@@ -12,13 +12,14 @@ const envManager = new EnvironmentManager(envManagerConfig);
 /**
  * Handle upload parameters command
  */
-export async function handleUploadParameters(options: {
-  region?: string;
-  dryRun?: boolean;
-  verbose?: boolean;
-}) {
+export async function handleUploadParameters(options: IUploadOptions) {
   try {
-    const { region, dryRun = false, verbose = false } = options;
+    const { region, dryRun = false, verbose = false, target } = options;
+
+    if (!target) {
+      throw new Error('target is required for upload command');
+    }
+
     const stage = awsManager.getStage();
 
     // Load environment variables using EnvironmentManager
@@ -30,6 +31,19 @@ export async function handleUploadParameters(options: {
     let totalErrors = 0;
 
     for (const r of regions) {
+      // Cleanup existing parameters before upload
+      if (verbose) {
+        // eslint-disable-next-line no-console
+        console.log(`Cleaning up existing parameters for target '${target}' in ${r}...`);
+      }
+      try {
+        await awsManager.cleanupParametersForTarget(stage, target, r, dryRun, verbose);
+      } catch (error) {
+        console.error(`Warning: Cleanup failed for ${r}: ${error}`);
+        // Don't fail the entire operation due to cleanup issues
+      }
+
+      // Upload parameters
       if (dryRun) {
         totalErrors += awsManager.simulateUploadParameters(stage, params, r, verbose);
       } else {
@@ -60,6 +74,11 @@ export async function handleUploadParameters(options: {
 export async function handleExportParameters(options: IExportOptions): Promise<IExportResult> {
   try {
     const { regions, scope, format = 'env', target, output, outputPath, verbose = false } = options;
+
+    if (!target) {
+      throw new Error('target is required for export command');
+    }
+
     const stage = awsManager.getStage();
 
     // Process regions
@@ -198,14 +217,7 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
 
         finalOutputPath = path.join(awsManagerConfig.projectRoot, serviceConfig.envPath);
       } else {
-        // Default to infrastructure path when no target specified
-        const isCI = process.env.CODEBUILD_BUILD_ID || process.env.CI;
-        finalOutputPath = isCI
-          ? path.join(awsManagerConfig.projectRoot, envManagerConfig.infrastructureEnvPaths.runtime)
-          : path.join(
-              awsManagerConfig.projectRoot,
-              envManagerConfig.infrastructureEnvPaths.stage(stage)
-            );
+        throw new Error('Cannot determine output path: target is required');
       }
 
       // Handle overwrite protection based on environment and target type

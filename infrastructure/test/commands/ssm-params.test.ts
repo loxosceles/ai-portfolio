@@ -4,7 +4,12 @@
  * Tests the command handlers directly as the CLI binaries do
  */
 import { mockClient } from 'aws-sdk-client-mock';
-import { SSMClient, GetParametersByPathCommand, PutParameterCommand } from '@aws-sdk/client-ssm';
+import {
+  SSMClient,
+  GetParametersByPathCommand,
+  PutParameterCommand,
+  DeleteParameterCommand
+} from '@aws-sdk/client-ssm';
 import { handleUploadParameters, handleExportParameters } from '../../lib/cli/commands/ssm-params';
 
 // Mock AWS SDK clients
@@ -50,6 +55,8 @@ describe('SSM Parameters Command Tests', () => {
       Tier: 'Standard'
     });
 
+    ssmMock.on(DeleteParameterCommand).resolves({});
+
     ssmMock.on(GetParametersByPathCommand).resolves({
       Parameters: [
         { Name: '/portfolio/test/stack/TEST_PARAM', Value: 'test-value' },
@@ -67,7 +74,8 @@ describe('SSM Parameters Command Tests', () => {
     const result = await handleUploadParameters({
       verbose: false,
       dryRun: false,
-      region: undefined
+      region: undefined,
+      target: 'infrastructure'
     });
 
     expect(result.success).toBe(true);
@@ -80,7 +88,8 @@ describe('SSM Parameters Command Tests', () => {
     const result = await handleUploadParameters({
       verbose: false,
       dryRun: true,
-      region: undefined
+      region: undefined,
+      target: 'infrastructure'
     });
 
     expect(result.success).toBe(true);
@@ -94,7 +103,8 @@ describe('SSM Parameters Command Tests', () => {
     const result = await handleExportParameters({
       verbose: false,
       format: 'env',
-      output: false
+      output: false,
+      target: 'infrastructure'
     });
 
     expect(result.success).toBe(true);
@@ -108,7 +118,8 @@ describe('SSM Parameters Command Tests', () => {
     const result = await handleExportParameters({
       verbose: false,
       format: 'json',
-      output: false
+      output: false,
+      target: 'infrastructure'
     });
 
     expect(result.success).toBe(true);
@@ -129,11 +140,106 @@ describe('SSM Parameters Command Tests', () => {
 
   test('should handle region option', async () => {
     const result = await handleUploadParameters({
-      verbose: false, // Reduce console output
-      region: 'eu-west-1'
+      verbose: false,
+      region: 'eu-west-1',
+      target: 'infrastructure'
     });
 
     expect(result.success).toBe(true);
-    // The region test works, we don't need to check SSM calls
+  });
+
+  test('should fail upload without target', async () => {
+    const result = await handleUploadParameters({
+      verbose: false,
+      dryRun: false,
+      region: undefined
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('target is required');
+    expect(result.errorCount).toBe(1);
+  });
+
+  test('should fail export without target', async () => {
+    const result = await handleExportParameters({
+      verbose: false,
+      format: 'env',
+      output: false
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('target is required');
+    expect(result.errorCount).toBe(1);
+  });
+
+  test('should cleanup parameters before upload', async () => {
+    const result = await handleUploadParameters({
+      verbose: false,
+      dryRun: false,
+      region: undefined,
+      target: 'infrastructure'
+    });
+
+    expect(result.success).toBe(true);
+    // Should have both delete and put calls
+    const deleteCalls = ssmMock.commandCalls(DeleteParameterCommand);
+    const putCalls = ssmMock.commandCalls(PutParameterCommand);
+    expect(deleteCalls.length).toBeGreaterThan(0);
+    expect(putCalls.length).toBeGreaterThan(0);
+  });
+
+  test('should only cleanup stack parameters, not service parameters', async () => {
+    // Mock both stack and service parameters existing
+    ssmMock.on(GetParametersByPathCommand).resolves({
+      Parameters: [
+        { Name: '/portfolio/test/stack/BEDROCK_MODEL_ID', Value: 'old-model' },
+        { Name: '/portfolio/test/stack/CDK_DEFAULT_ACCOUNT', Value: 'old-account' },
+        { Name: '/portfolio/test/APPSYNC_URL', Value: 'https://old-api.com' },
+        { Name: '/portfolio/test/COGNITO_CLIENT_ID', Value: 'old-client-id' }
+      ]
+    });
+
+    const result = await handleUploadParameters({
+      verbose: false,
+      dryRun: false,
+      region: undefined,
+      target: 'infrastructure'
+    });
+
+    expect(result.success).toBe(true);
+
+    // Verify that GetParametersByPath was called with the correct stack path
+    const getParametersCalls = ssmMock.commandCalls(GetParametersByPathCommand);
+    expect(getParametersCalls.length).toBeGreaterThan(0);
+
+    // Check that the path used for cleanup is only the stack path
+    const cleanupCall = getParametersCalls.find(
+      (call) => call.args[0].input.Path === '/portfolio/test/stack'
+    );
+    expect(cleanupCall).toBeDefined();
+
+    // Verify that service parameters path is NOT called for cleanup
+    const serviceCleanupCall = getParametersCalls.find(
+      (call) => call.args[0].input.Path === '/portfolio/test' && call.args[0].input.Recursive
+    );
+    expect(serviceCleanupCall).toBeUndefined();
+  });
+
+  test('should handle dry-run mode correctly', async () => {
+    const result = await handleUploadParameters({
+      verbose: false,
+      dryRun: true,
+      region: undefined,
+      target: 'infrastructure'
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain('All parameters uploaded successfully');
+
+    // Should not actually delete or upload parameters in dry-run
+    const deleteCalls = ssmMock.commandCalls(DeleteParameterCommand);
+    const putCalls = ssmMock.commandCalls(PutParameterCommand);
+    expect(deleteCalls.length).toBe(0);
+    expect(putCalls.length).toBe(0);
   });
 });

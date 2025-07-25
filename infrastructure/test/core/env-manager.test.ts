@@ -25,12 +25,14 @@ describe('EnvironmentManager', () => {
     },
     serviceConfigs: {
       frontend: {
+        type: 'frontend' as const,
         envPath: 'frontend/.env.local',
         requiredParams: ['API_KEY', 'API_URL'],
         prefix: 'NEXT_PUBLIC_',
         additionalParams: {}
       },
       'link-generator': {
+        type: 'link-generator' as const,
         envPath: 'link-generator/.env',
         requiredParams: ['TABLE_NAME'],
         prefix: '',
