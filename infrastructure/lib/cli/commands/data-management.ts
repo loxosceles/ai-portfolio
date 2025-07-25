@@ -205,8 +205,7 @@ export async function handleUploadData(
         .replace('{fileName}', fileName);
       await awsManager.uploadJsonToS3(bucketName, s3Key, items, validatedRegion);
     }
-    // eslint-disable-next-line no-console
-    console.log(`✅ Uploaded data to s3://${bucketName}/${stage}/`);
+    BaseManager.logVerbose(verbose, `✅ Uploaded data to s3://${bucketName}/${stage}/`);
 
     return {
       success: true,
@@ -286,8 +285,11 @@ export async function handleDownloadData(
         }
         await fs.writeFile(path.join(output, fileName), JSON.stringify(items, null, 2));
       }
-      // eslint-disable-next-line no-console
-      console.log(`✅ Data saved to ${output}`);
+      BaseManager.logVerbose(verbose, `✅ Data saved to ${output}`);
+    } else {
+      // Output data to console if no output directory specified (for file redirection)
+      process.stdout.write('Developers: ' + JSON.stringify(data.developers, null, 2) + '\n');
+      process.stdout.write('Projects: ' + JSON.stringify(data.projects, null, 2) + '\n');
     }
 
     return {
@@ -359,6 +361,15 @@ export async function handlePopulateDynamoDB(
 
     // Populate DynamoDB tables
     await awsManager.populateDynamoDB(stage, data, validatedRegion);
+
+    BaseManager.logVerbose(
+      verbose,
+      `✅ Populated PortfolioDevelopers-${stage} with ${data.developers.length} items`
+    );
+    BaseManager.logVerbose(
+      verbose,
+      `✅ Populated PortfolioProjects-${stage} with ${data.projects.length} items`
+    );
 
     return {
       success: true,

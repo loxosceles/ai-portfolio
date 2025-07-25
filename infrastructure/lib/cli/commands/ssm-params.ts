@@ -65,8 +65,10 @@ export async function handleUploadParameters(options: IUploadOptions) {
       }
 
       if (dryRun) {
-        // eslint-disable-next-line no-console
-        console.log(`[DRY-RUN] Would upload stack parameters for ${stage} stage to ${r}...`);
+        BaseManager.logVerbose(
+          verbose,
+          `[DRY-RUN] Would upload stack parameters for ${stage} stage to ${r}...`
+        );
         for (const paramName of regionParams) {
           BaseManager.logVerbose(verbose, `Processing parameter: ${paramName}`);
           if (!params[paramName]) {
@@ -76,12 +78,13 @@ export async function handleUploadParameters(options: IUploadOptions) {
           }
           const paramPath = buildSSMPath(stage, 'stack', paramName);
           const paramValue = params[paramName];
-          // eslint-disable-next-line no-console
-          console.log(`[DRY-RUN] Would upload: ${paramPath} = ${paramValue} (to ${r})`);
+          BaseManager.logVerbose(
+            verbose,
+            `[DRY-RUN] Would upload: ${paramPath} = ${paramValue} (to ${r})`
+          );
         }
       } else {
-        // eslint-disable-next-line no-console
-        console.log(`Uploading stack parameters for ${stage} stage to ${r}...`);
+        BaseManager.logVerbose(verbose, `Uploading stack parameters for ${stage} stage to ${r}...`);
         let uploadCount = 0;
         let errorCount = 0;
 
@@ -97,8 +100,7 @@ export async function handleUploadParameters(options: IUploadOptions) {
           const paramValue = params[paramName];
 
           try {
-            // eslint-disable-next-line no-console
-            console.log(`Uploading: ${paramPath} = ${paramValue} (to ${r})`);
+            BaseManager.logVerbose(verbose, `Uploading: ${paramPath} = ${paramValue} (to ${r})`);
             await awsManager.putParameter(paramPath, paramValue, r);
             uploadCount++;
           } catch (error) {
@@ -108,8 +110,10 @@ export async function handleUploadParameters(options: IUploadOptions) {
         }
 
         if (errorCount === 0) {
-          // eslint-disable-next-line no-console
-          console.log(`✅ Successfully uploaded ${uploadCount} parameters to ${r}`);
+          BaseManager.logVerbose(
+            verbose,
+            `✅ Successfully uploaded ${uploadCount} parameters to ${r}`
+          );
         } else {
           console.error(`⚠️ Uploaded ${uploadCount} parameters to ${r} with ${errorCount} errors`);
         }
@@ -313,8 +317,7 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
       // CI environments can overwrite any file without restrictions
 
       await envManager.writeEnvFile(finalOutputPath, content);
-      // eslint-disable-next-line no-console
-      console.log(`✅ Parameters written to ${finalOutputPath}`);
+      BaseManager.logVerbose(verbose, `✅ Parameters written to ${finalOutputPath}`);
     }
 
     return {
