@@ -26,14 +26,18 @@ These scripts are defined in the root `package.json` file and provide a high-lev
 
 #### Parameter Management Scripts
 
-| Script                     | Description                                                |
-| -------------------------- | ---------------------------------------------------------- |
-| `export-ssm-params:dev`    | Export SSM parameters from the development environment     |
-| `export-ssm-params:prod`   | Export SSM parameters from the production environment      |
-| `upload-ssm-params:dev`    | Upload SSM parameters to the development environment       |
-| `upload-ssm-params:prod`   | Upload SSM parameters to the production environment        |
-| `sync-service-params:dev`  | Sync service parameters from deployed stacks (development) |
-| `sync-service-params:prod` | Sync service parameters from deployed stacks (production)  |
+| Script                             | Description                                                    |
+| ---------------------------------- | -------------------------------------------------------------- |
+| `export-ssm-params:dev`            | Export SSM parameters from the development environment         |
+| `export-ssm-params:prod`           | Export SSM parameters from the production environment          |
+| `upload-ssm-params:dev`            | Upload SSM parameters to the development environment           |
+| `upload-ssm-params:prod`           | Upload SSM parameters to the production environment            |
+| `sync-service-params-dry-run:dev`  | Preview service parameter sync with cleanup (development)      |
+| `sync-service-params-dry-run:prod` | Preview service parameter sync with cleanup (production)       |
+| `sync-service-params:dev`          | Sync required service parameters only (development)            |
+| `sync-service-params:prod`         | Sync required service parameters only (production)             |
+| `sync-service-params-cleanup:dev`  | Sync service parameters and delete obsolete ones (development) |
+| `sync-service-params-cleanup:prod` | Sync service parameters and delete obsolete ones (production)  |
 
 #### Development Scripts
 
@@ -84,14 +88,18 @@ These scripts are defined in the `infrastructure/package.json` file and provide 
 
 #### Parameter Management Scripts
 
-| Script                     | Description                                                |
-| -------------------------- | ---------------------------------------------------------- |
-| `upload-ssm-params:dev`    | Upload parameters to SSM in the development environment    |
-| `upload-ssm-params:prod`   | Upload parameters to SSM in the production environment     |
-| `export-ssm-params:dev`    | Export parameters from SSM in the development environment  |
-| `export-ssm-params:prod`   | Export parameters from SSM in the production environment   |
-| `sync-service-params:dev`  | Sync service parameters from deployed stacks (development) |
-| `sync-service-params:prod` | Sync service parameters from deployed stacks (production)  |
+| Script                             | Description                                                    |
+| ---------------------------------- | -------------------------------------------------------------- |
+| `upload-ssm-params:dev`            | Upload parameters to SSM in the development environment        |
+| `upload-ssm-params:prod`           | Upload parameters to SSM in the production environment         |
+| `export-ssm-params:dev`            | Export parameters from SSM in the development environment      |
+| `export-ssm-params:prod`           | Export parameters from SSM in the production environment       |
+| `sync-service-params-dry-run:dev`  | Preview service parameter sync with cleanup (development)      |
+| `sync-service-params-dry-run:prod` | Preview service parameter sync with cleanup (production)       |
+| `sync-service-params:dev`          | Sync required service parameters only (development)            |
+| `sync-service-params:prod`         | Sync required service parameters only (production)             |
+| `sync-service-params-cleanup:dev`  | Sync service parameters and delete obsolete ones (development) |
+| `sync-service-params-cleanup:prod` | Sync service parameters and delete obsolete ones (production)  |
 
 #### Data Management Scripts
 
@@ -215,16 +223,20 @@ ts-node lib/cli/bin/invalidate-cloudfront-distribution.ts --verbose
 **Usage**:
 
 ```bash
-# Sync service parameters from deployed stacks to SSM
+# Preview what would be synced and cleaned up (dry-run)
+ts-node lib/cli/bin/sync-service-params.ts --dry-run --cleanup --verbose
+
+# Sync only required service parameters (no deletion)
 ts-node lib/cli/bin/sync-service-params.ts --verbose
 
-# Preview what would be synced (dry-run)
-ts-node lib/cli/bin/sync-service-params.ts --dry-run --verbose
+# Sync service parameters and delete obsolete ones
+ts-node lib/cli/bin/sync-service-params.ts --cleanup --verbose
 ```
 
 **Options**:
 
 - `--dry-run` - Show what would be synced without making changes
+- `--cleanup` - Delete obsolete service parameters
 - `--verbose` - Enable verbose logging
 
-> **Purpose**: This command reads stack outputs from deployed CloudFormation stacks and syncs them to SSM Parameter Store. It's useful for restoring service parameters after they've been accidentally deleted or when stacks have been updated with new outputs.
+> **Purpose**: This command reads stack outputs from deployed CloudFormation stacks and syncs only the required service parameters to SSM Parameter Store. It filters out unnecessary parameters and can optionally clean up obsolete ones. The command uses service configuration to determine which parameters are actually needed by each service.
