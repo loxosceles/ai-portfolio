@@ -2,21 +2,13 @@
  * SSM Parameter Manager Configuration
  */
 import { IBaseManagerConfig } from './base-config';
-import { Stage } from '../common';
 
 /**
- * SSM Parameter Manager Configuration
+ * AWS Manager Configuration
  */
-export interface IAwsManagerConfig extends IBaseManagerConfig {
-  ssmBasePath: string;
+export interface IAWSManagerConfig extends IBaseManagerConfig {
   validRegions: string[];
-  paramConfig: Record<Stage, Record<string, string[]>>;
-  dataFiles: {
-    developers: string;
-    projects: string;
-  };
-  pathPatterns: {
-    s3Path: (stage: string, fileName: string) => string;
-    localPath: (stage: string) => string;
-  };
+  serviceRegions: Record<string, string>;
+  stackPrefixes: Record<string, string>;
+  parameterSchema: Record<string, Record<string, string[]>>;
 }

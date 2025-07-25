@@ -29,7 +29,7 @@ export class WebStack extends cdk.Stack {
     this.stackEnv = props.stackEnv;
     this.stage = this.stackEnv.stage;
 
-    const { visitorTableName } = this.stackEnv;
+    const visitorTableName = `PortfolioVisitorLinks-${this.stage}`;
 
     // Get production-specific environment variables if needed
     const prodDomainName = process.env.PROD_DOMAIN_NAME;
@@ -39,7 +39,7 @@ export class WebStack extends cdk.Stack {
 
     // Create DynamoDB table for visitor context
     new dynamodb.Table(this, 'VisitorLinkTable', {
-      tableName: `${visitorTableName}-${this.stage}`,
+      tableName: visitorTableName,
       partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
       timeToLiveAttribute: 'ttl', // Add TTL for link expiration
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -114,9 +114,7 @@ export class WebStack extends cdk.Stack {
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['dynamodb:GetItem'],
-        resources: [
-          `arn:aws:dynamodb:${this.region}:${this.account}:table/${visitorTableName}-${this.stage}`
-        ]
+        resources: [`arn:aws:dynamodb:${this.region}:${this.account}:table/${visitorTableName}`]
       })
     );
 
@@ -299,7 +297,7 @@ export class WebStack extends cdk.Stack {
       },
       {
         id: 'VisitorTableName',
-        value: `${visitorTableName}-${this.stage}`,
+        value: visitorTableName,
         description: 'DynamoDB table name for visitor context',
         exportName: 'visitor-table-name',
         paramName: 'VISITOR_TABLE_NAME'
