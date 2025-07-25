@@ -2,8 +2,10 @@ import * as path from 'path';
 import { IUploadOptions, IExportOptions, IExportResult } from '../../../types/cli/ssm-params';
 import { AWSManager } from '../../core/aws-manager';
 import { EnvironmentManager } from '../../core/env-manager';
-import { awsManagerConfig } from '../../../configs/aws-config';
+import { BaseManager } from '../../core/base-manager';
+import { awsManagerConfig, PARAMETER_SCHEMA } from '../../../configs/aws-config';
 import { envManagerConfig } from '../../../configs/env-config';
+import { buildSSMPath } from '../../../utils/ssm';
 
 // Create manager instances
 const awsManager = new AWSManager(awsManagerConfig);
@@ -14,7 +16,7 @@ const envManager = new EnvironmentManager(envManagerConfig);
  */
 export async function handleUploadParameters(options: IUploadOptions) {
   try {
-    const { region, dryRun = false, verbose = false, target } = options;
+    const { region, dryRun, verbose, target } = options;
 
     if (!target) {
       throw new Error('target is required for upload command');
@@ -31,23 +33,91 @@ export async function handleUploadParameters(options: IUploadOptions) {
     let totalErrors = 0;
 
     for (const r of regions) {
-      // Cleanup existing parameters before upload
-      if (verbose) {
-        // eslint-disable-next-line no-console
-        console.log(`Cleaning up existing parameters for target '${target}' in ${r}...`);
-      }
+      // Cleanup existing stack parameters before upload
+      BaseManager.logVerbose(
+        verbose,
+        `Cleaning up existing parameters for target '${target}' in ${r}...`
+      );
       try {
-        await awsManager.cleanupParametersForTarget(stage, target, r, dryRun, verbose);
+        const cleanupPath = buildSSMPath(stage, 'stack');
+        if (dryRun) {
+          BaseManager.logVerbose(
+            verbose,
+            `[DRY-RUN] Would delete all parameters under path: ${cleanupPath} in ${r}`
+          );
+        } else {
+          const deleteCount = await awsManager.deleteParametersByPath(cleanupPath, r, verbose);
+          BaseManager.logVerbose(
+            verbose && deleteCount > 0,
+            `✅ Cleaned up ${deleteCount} parameters from ${cleanupPath}`
+          );
+        }
       } catch (error) {
         console.error(`Warning: Cleanup failed for ${r}: ${error}`);
         // Don't fail the entire operation due to cleanup issues
       }
 
       // Upload parameters
+      const regionParams = PARAMETER_SCHEMA[stage][r];
+      if (!regionParams || regionParams.length === 0) {
+        BaseManager.logVerbose(verbose, `No parameters configured for ${stage} in ${r}`);
+        continue;
+      }
+
       if (dryRun) {
-        totalErrors += awsManager.simulateUploadParameters(stage, params, r, verbose);
+        BaseManager.logVerbose(
+          verbose,
+          `[DRY-RUN] Would upload stack parameters for ${stage} stage to ${r}...`
+        );
+        for (const paramName of regionParams) {
+          BaseManager.logVerbose(verbose, `Processing parameter: ${paramName}`);
+          if (!params[paramName]) {
+            console.warn(`Warning: Parameter ${paramName} not found in environment files`);
+            totalErrors++;
+            continue;
+          }
+          const paramPath = buildSSMPath(stage, 'stack', paramName);
+          const paramValue = params[paramName];
+          BaseManager.logVerbose(
+            verbose,
+            `[DRY-RUN] Would upload: ${paramPath} = ${paramValue} (to ${r})`
+          );
+        }
       } else {
-        totalErrors += await awsManager.uploadParameters(stage, params, r, verbose);
+        BaseManager.logVerbose(verbose, `Uploading stack parameters for ${stage} stage to ${r}...`);
+        let uploadCount = 0;
+        let errorCount = 0;
+
+        for (const paramName of regionParams) {
+          BaseManager.logVerbose(verbose, `Processing parameter: ${paramName}`);
+          if (!params[paramName]) {
+            console.warn(`Warning: Parameter ${paramName} not found in environment files`);
+            errorCount++;
+            continue;
+          }
+
+          const paramPath = buildSSMPath(stage, 'stack', paramName);
+          const paramValue = params[paramName];
+
+          try {
+            BaseManager.logVerbose(verbose, `Uploading: ${paramPath} = ${paramValue} (to ${r})`);
+            await awsManager.putParameter(paramPath, paramValue, r);
+            uploadCount++;
+          } catch (error) {
+            console.error(`Error: Failed to upload ${paramName} to ${r}: ${error}`);
+            errorCount++;
+          }
+        }
+
+        if (errorCount === 0) {
+          BaseManager.logVerbose(
+            verbose,
+            `✅ Successfully uploaded ${uploadCount} parameters to ${r}`
+          );
+        } else {
+          console.error(`⚠️ Uploaded ${uploadCount} parameters to ${r} with ${errorCount} errors`);
+        }
+        totalErrors += errorCount;
       }
     }
 
@@ -73,7 +143,7 @@ export async function handleUploadParameters(options: IUploadOptions) {
  */
 export async function handleExportParameters(options: IExportOptions): Promise<IExportResult> {
   try {
-    const { regions, scope, format = 'env', target, output, outputPath, verbose = false } = options;
+    const { regions, scope, format, target, output, outputPath, verbose } = options;
 
     if (!target) {
       throw new Error('target is required for export command');
@@ -94,14 +164,15 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
         let paramPath;
         if (target === 'infrastructure') {
           // Infrastructure target always uses stack scope
-          paramPath = `/portfolio/${stage}/stack`;
+          paramPath = buildSSMPath(stage, 'stack');
         } else {
           // Other targets use provided scope or base path
-          paramPath = scope ? `/portfolio/${stage}/${scope}` : `/portfolio/${stage}`;
+          paramPath = scope ? buildSSMPath(stage, scope) : buildSSMPath(stage);
         }
         const path = paramPath;
 
         // Get parameters by path
+        BaseManager.logVerbose(verbose, `Downloading parameters from region: ${r}`);
         const ssmParams = await awsManager.getParametersByPath(path, r);
 
         // Process parameters
@@ -110,10 +181,7 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
             // Extract parameter name from path
             const paramName = param.Name.split('/').pop() as string;
             allParams[paramName] = param.Value;
-            if (verbose) {
-              // eslint-disable-next-line no-console
-              console.log(`Downloaded: ${paramName} = ${param.Value}`);
-            }
+            BaseManager.logVerbose(verbose, `Downloaded: ${paramName} = ${param.Value}`);
           }
         }
       } catch (error) {
@@ -249,8 +317,7 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
       // CI environments can overwrite any file without restrictions
 
       await envManager.writeEnvFile(finalOutputPath, content);
-      // eslint-disable-next-line no-console
-      console.log(`✅ Parameters written to ${finalOutputPath}`);
+      BaseManager.logVerbose(verbose, `✅ Parameters written to ${finalOutputPath}`);
     }
 
     return {

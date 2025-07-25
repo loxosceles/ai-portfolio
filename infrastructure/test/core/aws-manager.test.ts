@@ -1,7 +1,12 @@
 import { AWSManager } from '../../lib/core/aws-manager';
 import { awsManagerConfig } from '../../configs/aws-config';
 import { mockClient } from 'aws-sdk-client-mock';
-import { SSMClient, GetParametersByPathCommand, PutParameterCommand } from '@aws-sdk/client-ssm';
+import {
+  SSMClient,
+  GetParametersByPathCommand,
+  PutParameterCommand,
+  DeleteParameterCommand
+} from '@aws-sdk/client-ssm';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import * as fs from 'fs/promises';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -118,6 +123,50 @@ describe('AWSManager', () => {
 
       expect(result).toEqual([]);
     });
+
+    test('should delete parameter', async () => {
+      ssmMock.on(DeleteParameterCommand).resolves({});
+
+      await awsManager.deleteParameter('/test/param', 'us-east-1');
+
+      expect(ssmMock.calls()).toHaveLength(1);
+      expect(ssmMock.call(0).args[0].input).toEqual({
+        Name: '/test/param'
+      });
+    });
+
+    test('should delete parameters by path', async () => {
+      ssmMock.on(GetParametersByPathCommand).resolves({
+        Parameters: [
+          { Name: '/test/param1', Value: 'value1' },
+          { Name: '/test/param2', Value: 'value2' }
+        ]
+      });
+      ssmMock.on(DeleteParameterCommand).resolves({});
+
+      const result = await awsManager.deleteParametersByPath('/test', 'us-east-1');
+
+      expect(result).toBe(2);
+      expect(ssmMock.commandCalls(DeleteParameterCommand)).toHaveLength(2);
+      expect(ssmMock.commandCalls(DeleteParameterCommand)[0].args[0].input.Name).toBe(
+        '/test/param1'
+      );
+      expect(ssmMock.commandCalls(DeleteParameterCommand)[1].args[0].input.Name).toBe(
+        '/test/param2'
+      );
+    });
+
+    test('should handle delete parameter errors gracefully', async () => {
+      ssmMock.on(GetParametersByPathCommand).resolves({
+        Parameters: [{ Name: '/test/param1', Value: 'value1' }]
+      });
+      ssmMock.on(DeleteParameterCommand).rejects(new Error('Delete failed'));
+
+      const result = await awsManager.deleteParametersByPath('/test', 'us-east-1');
+
+      expect(result).toBe(0);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to delete'));
+    });
   });
 
   describe('S3 Operations', () => {
@@ -219,17 +268,14 @@ describe('AWSManager', () => {
   });
 
   describe('DynamoDB Operations', () => {
-    test('should populate DynamoDB', async () => {
+    test('should batch write to DynamoDB', async () => {
       dynamoDBDocMock.on(BatchWriteCommand).resolves({});
 
-      const data = {
-        developers: [{ id: 'dev1', name: 'Test Dev' }],
-        projects: [{ id: 'proj1', title: 'Test Project' }]
-      };
+      const items = [{ id: 'dev1', name: 'Test Dev' }];
 
-      await awsManager.populateDynamoDB('dev', data, 'us-east-1');
+      await awsManager.batchWriteToDynamoDB('test-table', items, 'us-east-1');
 
-      expect(dynamoDBDocMock.calls()).toHaveLength(2);
+      expect(dynamoDBDocMock.calls()).toHaveLength(1);
     });
   });
 
@@ -249,6 +295,39 @@ describe('AWSManager', () => {
       const result = await awsManager.getStackOutput('test-stack', 'TestOutput', 'us-east-1');
 
       expect(result).toBe('test-value');
+    });
+
+    test('should get stack outputs', async () => {
+      cloudFormationMock.on(DescribeStacksCommand).resolves({
+        Stacks: [
+          {
+            StackName: 'test-stack',
+            CreationTime: new Date(),
+            StackStatus: 'CREATE_COMPLETE',
+            Outputs: [
+              { OutputKey: 'Output1', OutputValue: 'value1' },
+              { OutputKey: 'Output2', OutputValue: 'value2' }
+            ]
+          }
+        ]
+      });
+
+      const result = await awsManager.getStackOutputs('test-stack', 'us-east-1');
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({ OutputKey: 'Output1', OutputValue: 'value1' });
+      expect(result[1]).toEqual({ OutputKey: 'Output2', OutputValue: 'value2' });
+    });
+
+    test('should handle stack outputs errors', async () => {
+      cloudFormationMock.on(DescribeStacksCommand).rejects(new Error('Stack not found'));
+
+      const result = await awsManager.getStackOutputs('test-stack', 'us-east-1');
+
+      expect(result).toEqual([]);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Error getting stack outputs')
+      );
     });
   });
 

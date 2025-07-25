@@ -27,3 +27,6 @@ export const REGIONS: Record<Stage, IRegionConfig> = {
 };
 
 export const projectRoot = path.resolve(__dirname, '../..');
+
+// SSM Parameter Store prefix for all parameter paths
+export const SSM_PARAMETER_PREFIX = 'portfolio';

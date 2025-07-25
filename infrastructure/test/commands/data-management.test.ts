@@ -22,7 +22,7 @@ jest.mock('../../lib/core/env-manager', () => {
     EnvironmentManager: jest.fn().mockImplementation(() => ({
       loadEnv: jest.fn().mockReturnValue({
         DATA_BUCKET_NAME: 'test-bucket',
-        DEVELOPERS_TABLE_NAME: 'test-developers',
+        DEVELOPER_TABLE_NAME: 'test-developers',
         PROJECTS_TABLE_NAME: 'test-projects'
       })
     }))
@@ -85,33 +85,38 @@ describe('Data Management Command Tests', () => {
 
     // Mock AWSManager methods for proper integration testing
     jest
-      .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadDataFromS3')
-      .mockResolvedValue({
-        developers: [
-          {
-            id: 'dev1',
-            name: 'Test Developer',
-            title: 'Software Engineer',
-            bio: 'Test bio',
-            email: 'test@example.com',
-            skillSets: [{ id: 'skill1', name: 'Frontend', skills: ['React'] }]
-          }
-        ],
-        projects: [
-          {
-            id: 'proj1',
-            title: 'Test Project',
-            description: 'Test description',
-            status: 'Active',
-            highlights: ['Feature 1'],
-            tech: ['React'],
-            developerId: 'dev1'
-          }
-        ]
+      .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
+      .mockImplementation((...args: unknown[]) => {
+        const key = args[1] as string;
+        if (key.includes('developer.json')) {
+          return Promise.resolve([
+            {
+              id: 'dev1',
+              name: 'Test Developer',
+              title: 'Software Engineer',
+              bio: 'Test bio',
+              email: 'test@example.com',
+              skillSets: [{ id: 'skill1', name: 'Frontend', skills: ['React'] }]
+            }
+          ]);
+        } else if (key.includes('projects.json')) {
+          return Promise.resolve([
+            {
+              id: 'proj1',
+              title: 'Test Project',
+              description: 'Test description',
+              status: 'Active',
+              highlights: ['Feature 1'],
+              tech: ['React'],
+              developerId: 'dev1'
+            }
+          ]);
+        }
+        return Promise.resolve([]);
       });
 
     jest
-      .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'populateDynamoDB')
+      .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'batchWriteToDynamoDB')
       .mockResolvedValue(undefined);
 
     dynamoDBMock.on(PutItemCommand).resolves({});

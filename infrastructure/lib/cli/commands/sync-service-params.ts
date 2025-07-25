@@ -1,4 +1,5 @@
 import { AWSManager } from '../../core/aws-manager';
+import { BaseManager } from '../../core/base-manager';
 import {
   awsManagerConfig,
   STACK_TYPES,
@@ -7,11 +8,12 @@ import {
 } from '../../../configs/aws-config';
 import { SERVICE_CONFIGS } from '../../../configs/env-config';
 import { pascalToScreamingSnake } from '../../../utils/generic';
+import { buildSSMPath } from '../../../utils/ssm';
 
 interface ISyncServiceParametersOptions {
-  verbose?: boolean;
-  dryRun?: boolean;
-  cleanup?: boolean;
+  verbose: boolean;
+  dryRun: boolean;
+  cleanup: boolean;
 }
 
 interface ISyncServiceParametersResult {
@@ -27,7 +29,7 @@ export async function handleSyncServiceParameters(
   options: ISyncServiceParametersOptions
 ): Promise<ISyncServiceParametersResult> {
   try {
-    const { verbose = false, dryRun = false, cleanup = false } = options;
+    const { verbose, dryRun, cleanup } = options;
     const stage = awsManager.getStage();
     const regions = awsManager.getRegionsForStage();
 
@@ -46,7 +48,7 @@ export async function handleSyncServiceParameters(
     const allStackOutputs: Array<{ OutputKey: string; OutputValue: string; Region: string }> = [];
 
     for (const region of regions) {
-      awsManager.logVerbose(verbose, `Processing region: ${region}`);
+      BaseManager.logVerbose(verbose, `Processing region: ${region}`);
 
       // Only process stacks that belong to this region
       const stacksForRegion = Object.entries(stackRegionMapping)
@@ -54,14 +56,14 @@ export async function handleSyncServiceParameters(
         .map(([stackName]) => stackName);
 
       for (const stackName of stacksForRegion) {
-        awsManager.logVerbose(verbose, `Getting outputs from stack: ${stackName}`);
+        BaseManager.logVerbose(verbose, `Getting outputs from stack: ${stackName}`);
 
         const outputs = await awsManager.getStackOutputs(stackName, region);
         outputs.forEach((output) => {
           allStackOutputs.push({ ...output, Region: region });
         });
 
-        awsManager.logVerbose(verbose, `Found ${outputs.length} outputs from ${stackName}`);
+        BaseManager.logVerbose(verbose, `Found ${outputs.length} outputs from ${stackName}`);
       }
     }
 
@@ -108,11 +110,11 @@ export async function handleSyncServiceParameters(
       );
     }
 
-    awsManager.logVerbose(
+    BaseManager.logVerbose(
       verbose,
       `Found ${requiredOutputs.length} required service parameters out of ${allStackOutputs.length} total stack outputs`
     );
-    awsManager.logVerbose(
+    BaseManager.logVerbose(
       verbose,
       `Syncing only: ${requiredOutputs.map((o) => o.ServiceParam).join(', ')}`
     );
@@ -121,14 +123,14 @@ export async function handleSyncServiceParameters(
     if (cleanup) {
       for (const region of regions) {
         // Get all existing service parameters (exclude stack parameters)
-        const allParams = await awsManager.getParametersByPath(`/portfolio/${stage}`, region);
+        const allParams = await awsManager.getParametersByPath(buildSSMPath(stage), region);
         const serviceParams = allParams.filter(
           (param) => param.Name && !param.Name.includes('/stack/')
         );
 
         // Find parameters that exist in SSM but are not in required outputs
-        const requiredParamNames = requiredOutputs.map(
-          (output) => `/portfolio/${stage}/${output.ServiceParam}`
+        const requiredParamNames = requiredOutputs.map((output) =>
+          buildSSMPath(stage, output.ServiceParam)
         );
         const obsoleteParams = serviceParams.filter((param) => {
           return param.Name && !requiredParamNames.includes(param.Name);
@@ -138,13 +140,13 @@ export async function handleSyncServiceParameters(
         for (const param of obsoleteParams) {
           if (param.Name) {
             if (dryRun) {
-              awsManager.logVerbose(verbose, `[DRY-RUN] Would delete obsolete: ${param.Name}`);
+              BaseManager.logVerbose(verbose, `[DRY-RUN] Would delete obsolete: ${param.Name}`);
               totalDeleted++;
             } else {
               await awsManager.deleteParameter(param.Name, region);
               totalDeleted++;
 
-              awsManager.logVerbose(verbose, `Deleted obsolete: ${param.Name}`);
+              BaseManager.logVerbose(verbose, `Deleted obsolete: ${param.Name}`);
             }
           }
         }
@@ -153,10 +155,10 @@ export async function handleSyncServiceParameters(
 
     // Only sync the required parameters
     for (const output of requiredOutputs) {
-      const paramPath = `/portfolio/${stage}/${output.ServiceParam}`;
+      const paramPath = buildSSMPath(stage, output.ServiceParam);
 
       if (dryRun) {
-        awsManager.logVerbose(
+        BaseManager.logVerbose(
           verbose,
           `[DRY-RUN] Would sync: ${paramPath} = ${output.OutputValue}`
         );
@@ -165,7 +167,7 @@ export async function handleSyncServiceParameters(
         await awsManager.putParameter(paramPath, output.OutputValue, output.Region);
         totalSynced++;
 
-        awsManager.logVerbose(verbose, `Synced: ${paramPath} = ${output.OutputValue}`);
+        BaseManager.logVerbose(verbose, `Synced: ${paramPath} = ${output.OutputValue}`);
       }
     }
 
