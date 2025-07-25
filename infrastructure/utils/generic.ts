@@ -12,3 +12,11 @@ export function pascalToScreamingSnake(str: string): string {
     .toUpperCase()
     .replace(/^_/, '');
 }
+
+/**
+ * Convert SNAKE_CASE to camelCase
+ * Example: 'API_KEY' -> 'apiKey'
+ */
+export function toCamelCase(str: string): string {
+  return str.toLowerCase().replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
