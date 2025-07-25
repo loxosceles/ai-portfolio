@@ -204,8 +204,6 @@ export class AWSManager extends BaseManager {
           }
         })
       );
-      // eslint-disable-next-line no-console
-      console.log(`✅ Populated PortfolioDevelopers-${stage} with ${data.developers.length} items`);
     }
 
     if (data.projects && data.projects.length > 0) {
@@ -218,8 +216,6 @@ export class AWSManager extends BaseManager {
           }
         })
       );
-      // eslint-disable-next-line no-console
-      console.log(`✅ Populated PortfolioProjects-${stage} with ${data.projects.length} items`);
     }
   }
 
@@ -269,8 +265,6 @@ export class AWSManager extends BaseManager {
 
     try {
       await client.send(command);
-      // eslint-disable-next-line no-console
-      console.log(`✅ CloudFront invalidation created for distribution ${distributionId}`);
     } catch (error) {
       throw new Error(`Failed to invalidate distribution: ${error}`);
     }
@@ -278,9 +272,6 @@ export class AWSManager extends BaseManager {
 
   // S3 Directory Sync Operations
   async syncDirectoryToS3(localDir: string, bucketName: string, region: string): Promise<void> {
-    // eslint-disable-next-line no-console
-    console.log(`Syncing directory ${localDir} to s3://${bucketName}/`);
-
     // Check if directory exists
     try {
       await fs.access(localDir);
@@ -347,19 +338,11 @@ export class AWSManager extends BaseManager {
                 ContentType: contentType || 'application/octet-stream'
               })
             );
-
-            // eslint-disable-next-line no-console
-            console.log(
-              `Uploaded ${s3Key} with content type ${contentType || 'application/octet-stream'}`
-            );
           }
         }
       };
 
       await uploadFiles(localDir, localDir);
-
-      // eslint-disable-next-line no-console
-      console.log(`✅ Synced files to s3://${bucketName}/`);
     } catch (error) {
       throw new Error(
         `Failed to sync directory to S3: ${error instanceof Error ? error.message : String(error)}`
