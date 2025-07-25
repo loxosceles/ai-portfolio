@@ -39,10 +39,9 @@ export class ApiStack extends cdk.Stack {
       throw new Error('userPool is required');
     }
 
-    const { developerTableName, projectsTableName, dataBucketName, awsRegionDefault } =
-      this.stackEnv;
-    this.developerTableName = developerTableName;
-    this.projectsTableName = projectsTableName;
+    const { dataBucketName, awsRegionDefault } = this.stackEnv;
+    this.developerTableName = `PortfolioDevelopers-${this.stage}`;
+    this.projectsTableName = `PortfolioProjects-${this.stage}`;
     this.dataBucketName = dataBucketName;
     this.awsRegionDefault = awsRegionDefault;
 
@@ -101,6 +100,20 @@ export class ApiStack extends cdk.Stack {
         description: 'AWS default region for services',
         exportName: `aws-region-default-${this.stage}`,
         paramName: 'AWS_REGION_DEFAULT'
+      },
+      {
+        id: 'DeveloperTableName',
+        value: this.developerTable.tableName,
+        description: 'Developer DynamoDB table name',
+        exportName: `developer-table-name-${this.stage}`,
+        paramName: 'DEVELOPER_TABLE_NAME'
+      },
+      {
+        id: 'ProjectsTableName',
+        value: this.projectsTable.tableName,
+        description: 'Projects DynamoDB table name',
+        exportName: `projects-table-name-${this.stage}`,
+        paramName: 'PROJECTS_TABLE_NAME'
       }
     ]);
   }
@@ -136,7 +149,7 @@ export class ApiStack extends cdk.Stack {
 
   private createDynamoDBTables(isProd: boolean) {
     const developerTable = new dynamodb.Table(this, 'DeveloperTable', {
-      tableName: `${this.developerTableName}-${this.stage}`,
+      tableName: this.developerTableName,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
@@ -144,7 +157,7 @@ export class ApiStack extends cdk.Stack {
     });
 
     const projectsTable = new dynamodb.Table(this, 'ProjectsTable', {
-      tableName: `${this.projectsTableName}-${this.stage}`,
+      tableName: this.projectsTableName,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
@@ -183,8 +196,8 @@ export class ApiStack extends cdk.Stack {
       environment: {
         ENVIRONMENT: this.stage,
         DATA_BUCKET_NAME: this.dataBucketName,
-        DEVELOPER_TABLE_NAME: `${this.developerTableName}-${this.stage}`,
-        PROJECTS_TABLE_NAME: `${this.projectsTableName}-${this.stage}`,
+        DEVELOPER_TABLE_NAME: this.developerTableName,
+        PROJECTS_TABLE_NAME: this.projectsTableName,
         AWS_REGION_DEFAULT: this.awsRegionDefault
       }
     });

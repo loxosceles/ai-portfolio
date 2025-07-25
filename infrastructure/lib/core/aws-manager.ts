@@ -2,6 +2,7 @@ import {
   SSMClient,
   PutParameterCommand,
   GetParametersByPathCommand,
+  GetParameterCommand,
   DeleteParameterCommand
 } from '@aws-sdk/client-ssm';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
@@ -88,6 +89,26 @@ export class AWSManager extends BaseManager {
   }
 
   // SSM Operations
+  async getParameter(name: string, region: string): Promise<string> {
+    const client = new SSMClient({ region });
+    const command = new GetParameterCommand({
+      Name: name,
+      WithDecryption: true
+    });
+
+    try {
+      const response = await client.send(command);
+      if (!response.Parameter?.Value) {
+        throw new Error(`Parameter ${name} not found or has no value`);
+      }
+      return response.Parameter.Value;
+    } catch (error) {
+      throw new Error(
+        `Failed to get parameter ${name}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
   async putParameter(name: string, value: string, region: string): Promise<void> {
     const client = new SSMClient({ region });
     const command = new PutParameterCommand({

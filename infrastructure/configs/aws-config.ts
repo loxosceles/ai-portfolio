@@ -1,6 +1,6 @@
 import { Stage } from '../types/common';
 import { projectRoot, SUPPORTED_STAGES } from './base';
-import { IAWSManagerConfig } from '../types/config';
+import { IAWSManagerConfig } from '../types/config/aws-config';
 
 // Valid regions for AWS operations
 export const VALID_REGIONS = ['eu-central-1', 'us-east-1'];
@@ -17,12 +17,9 @@ export const PARAMETER_SCHEMA: Record<Stage, Record<string, string[]>> = {
       'GITHUB_OWNER',
       'GITHUB_REPO',
       'DATA_BUCKET_NAME',
-      'DEVELOPER_TABLE_NAME',
-      'PROJECTS_TABLE_NAME',
-      'RECRUITER_PROFILES_TABLE_NAME',
       'AWS_ADMIN_ARN'
     ],
-    'us-east-1': ['VISITOR_TABLE_NAME']
+    'us-east-1': []
   },
   prod: {
     'eu-central-1': [
@@ -34,12 +31,9 @@ export const PARAMETER_SCHEMA: Record<Stage, Record<string, string[]>> = {
       'GITHUB_OWNER',
       'GITHUB_REPO',
       'DATA_BUCKET_NAME',
-      'DEVELOPER_TABLE_NAME',
-      'PROJECTS_TABLE_NAME',
-      'RECRUITER_PROFILES_TABLE_NAME',
       'AWS_ADMIN_ARN'
     ],
-    'us-east-1': ['CERTIFICATE_ARN', 'PROD_DOMAIN_NAME', 'VISITOR_TABLE_NAME']
+    'us-east-1': ['CERTIFICATE_ARN', 'PROD_DOMAIN_NAME']
   },
   test: {
     'eu-central-1': [
@@ -49,12 +43,9 @@ export const PARAMETER_SCHEMA: Record<Stage, Record<string, string[]>> = {
       'GITHUB_OWNER',
       'GITHUB_REPO',
       'DATA_BUCKET_NAME',
-      'DEVELOPER_TABLE_NAME',
-      'PROJECTS_TABLE_NAME',
-      'RECRUITER_PROFILES_TABLE_NAME',
       'AWS_ADMIN_ARN'
     ],
-    'us-east-1': ['VISITOR_TABLE_NAME']
+    'us-east-1': []
   }
 };
 
