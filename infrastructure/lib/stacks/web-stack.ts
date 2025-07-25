@@ -270,14 +270,14 @@ export class WebStack extends cdk.Stack {
     // Add stack outputs with unique export names
     addStackOutputs(this, this.stage, [
       {
-        id: 'CloudFrontDomain',
+        id: 'CloudfrontDomain',
         value: this.distribution.distributionDomainName,
         description: 'CloudFront Distribution Domain Name',
         exportName: 'cloudfront-domain',
         paramName: 'CLOUDFRONT_DOMAIN'
       },
       {
-        id: 'CloudFrontDistributionId',
+        id: 'CloudfrontDistributionId',
         value: this.distribution.distributionId,
         description: 'CloudFront Distribution ID for web stack',
         exportName: 'web-cloudfront-distribution-id',
@@ -296,6 +296,13 @@ export class WebStack extends cdk.Stack {
         description: 'S3 bucket name for website hosting',
         exportName: 'web-bucket-name',
         paramName: 'WEB_BUCKET_NAME'
+      },
+      {
+        id: 'VisitorTableName',
+        value: `${visitorTableName}-${this.stage}`,
+        description: 'DynamoDB table name for visitor context',
+        exportName: 'visitor-table-name',
+        paramName: 'VISITOR_TABLE_NAME'
       }
     ]);
   }

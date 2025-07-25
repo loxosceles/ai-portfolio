@@ -5,6 +5,7 @@ import { handleSyncServiceParameters } from '../commands/sync-service-params';
 interface ISyncServiceParametersCommandOptions {
   verbose?: boolean;
   dryRun?: boolean;
+  cleanup?: boolean;
 }
 
 const program = new Command();
@@ -12,14 +13,14 @@ const program = new Command();
 program
   .description('Sync service parameters from CloudFormation stack outputs to SSM Parameter Store')
   .option('-v, --verbose', 'Enable verbose logging')
-
   .option('--dry-run', 'Show what would be done without making changes')
+  .option('--cleanup', 'Delete obsolete service parameters')
   .action(async (options: ISyncServiceParametersCommandOptions) => {
     try {
       const result = await handleSyncServiceParameters({
         verbose: options.verbose,
-
-        dryRun: options.dryRun
+        dryRun: options.dryRun,
+        cleanup: options.cleanup
       });
 
       if (!result.success) {
