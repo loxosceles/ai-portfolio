@@ -13,7 +13,6 @@ import { BaseManager } from './base-manager';
 import { IBaseManagerConfig } from '../../types/config';
 import { IDataItem, IDataCollection } from '../../types/data';
 import { Stage } from '../../types/common';
-import { PARAMETER_SCHEMA, DATA_CONFIG } from '../../configs/aws-config';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -69,37 +68,6 @@ export class AWSManager extends BaseManager {
     }
 
     return deleteCount;
-  }
-
-  simulateDeleteParametersByPath(path: string, region: string, verbose: boolean = false): number {
-    // This would need the actual parameters to simulate, but for dry-run we'll just log
-    if (verbose) {
-      // eslint-disable-next-line no-console
-      console.log(`[DRY-RUN] Would delete all parameters under path: ${path} in ${region}`);
-    }
-    return 0;
-  }
-
-  async cleanupParametersForTarget(
-    stage: Stage,
-    target: string,
-    region: string,
-    dryRun: boolean = false,
-    verbose: boolean = false
-  ): Promise<number> {
-    // Only clean stack parameters - service parameters are managed separately
-    const cleanupPath = `/portfolio/${stage}/stack`;
-
-    if (dryRun) {
-      return this.simulateDeleteParametersByPath(cleanupPath, region, verbose);
-    } else {
-      const deleteCount = await this.deleteParametersByPath(cleanupPath, region, verbose);
-      if (verbose && deleteCount > 0) {
-        // eslint-disable-next-line no-console
-        console.log(`✅ Cleaned up ${deleteCount} parameters from ${cleanupPath}`);
-      }
-      return deleteCount;
-    }
   }
 
   async getParametersByPath(
@@ -222,177 +190,8 @@ export class AWSManager extends BaseManager {
   }
 
   // SSM Parameter Management Operations
-  async uploadParameters(
-    stage: Stage,
-    params: Record<string, string>,
-    region: string,
-    verbose: boolean = false
-  ): Promise<number> {
-    const regionParams = PARAMETER_SCHEMA[stage][region];
-    if (!regionParams || regionParams.length === 0) {
-      this.logVerbose(verbose, `No parameters configured for ${stage} in ${region}`);
-      return 0;
-    }
-
-    // eslint-disable-next-line no-console
-    console.log(`Uploading stack parameters for ${stage} stage to ${region}...`);
-    let uploadCount = 0;
-    let errorCount = 0;
-
-    for (const paramName of regionParams) {
-      this.logVerbose(verbose, `Processing parameter: ${paramName}`);
-      if (!params[paramName]) {
-        console.warn(`Warning: Parameter ${paramName} not found in environment files`);
-        errorCount++;
-        continue;
-      }
-
-      const paramPath = `/portfolio/${stage}/stack/${paramName}`;
-      const paramValue = params[paramName];
-
-      try {
-        // eslint-disable-next-line no-console
-        console.log(`Uploading: ${paramPath} = ${paramValue} (to ${region})`);
-        await this.putParameter(paramPath, paramValue, region);
-        uploadCount++;
-      } catch (error) {
-        console.error(`Error: Failed to upload ${paramName} to ${region}: ${error}`);
-        errorCount++;
-      }
-    }
-
-    if (errorCount === 0) {
-      // eslint-disable-next-line no-console
-      console.log(`✅ Successfully uploaded ${uploadCount} parameters to ${region}`);
-    } else {
-      console.error(`⚠️ Uploaded ${uploadCount} parameters to ${region} with ${errorCount} errors`);
-    }
-    return errorCount;
-  }
-
-  simulateUploadParameters(
-    stage: Stage,
-    params: Record<string, string>,
-    region: string,
-    verbose: boolean = false
-  ): number {
-    const regionParams = PARAMETER_SCHEMA[stage][region];
-    if (!regionParams || regionParams.length === 0) {
-      this.logVerbose(verbose, `No parameters configured for ${stage} in ${region}`);
-      return 0;
-    }
-
-    // eslint-disable-next-line no-console
-    console.log(`[DRY-RUN] Would upload stack parameters for ${stage} stage to ${region}...`);
-    let errorCount = 0;
-
-    for (const paramName of regionParams) {
-      this.logVerbose(verbose, `Processing parameter: ${paramName}`);
-      if (!params[paramName]) {
-        console.warn(`Warning: Parameter ${paramName} not found in environment files`);
-        errorCount++;
-        continue;
-      }
-
-      const paramPath = `/portfolio/${stage}/stack/${paramName}`;
-      const paramValue = params[paramName];
-      // eslint-disable-next-line no-console
-      console.log(`[DRY-RUN] Would upload: ${paramPath} = ${paramValue} (to ${region})`);
-    }
-    return errorCount;
-  }
-
-  async getParameters(
-    stage: Stage,
-    region: string,
-    verbose: boolean = false
-  ): Promise<Record<string, string>> {
-    this.logVerbose(verbose, `Downloading parameters from region: ${region}`);
-    const path = `/portfolio/${stage}/stack`;
-    const params: Record<string, string> = {};
-
-    try {
-      const ssmParams = await this.getParametersByPath(path, region);
-      for (const param of ssmParams) {
-        if (param.Name && param.Value) {
-          const paramName = param.Name.split('/').pop() as string;
-          params[paramName] = param.Value;
-          this.logVerbose(verbose, `Downloaded: ${paramName} = ${param.Value}`);
-        }
-      }
-    } catch (error) {
-      console.error(`Error getting parameters from ${region}: ${error}`);
-    }
-    return params;
-  }
 
   // Data Management Operations
-  async loadLocalData(stage: string): Promise<IDataCollection<IDataItem>> {
-    const localPath = DATA_CONFIG.localPathTemplate.replace('{stage}', stage);
-    const dataDir = path.resolve(this.config.projectRoot, localPath);
-    const collections: IDataCollection<IDataItem> = {};
-
-    try {
-      for (const [key, fileName] of Object.entries(DATA_CONFIG.dataFiles)) {
-        const filePath = path.join(dataDir, fileName);
-        const content = await fs.readFile(filePath, 'utf-8');
-        collections[key] = JSON.parse(content) as IDataItem[];
-      }
-      return collections;
-    } catch (error) {
-      throw new Error(
-        `Failed to load data files: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  async uploadDataToS3(
-    stage: string,
-    bucketName: string,
-    data: IDataCollection<IDataItem>,
-    region: string
-  ): Promise<void> {
-    for (const [key, items] of Object.entries(data)) {
-      const fileName = DATA_CONFIG.dataFiles[key as keyof typeof DATA_CONFIG.dataFiles];
-      if (!fileName) {
-        throw new Error(`Unknown data collection: ${key}`);
-      }
-      const s3Key = DATA_CONFIG.s3PathTemplate
-        .replace('{stage}', stage)
-        .replace('{fileName}', fileName);
-      await this.uploadJsonToS3(bucketName, s3Key, items, region);
-    }
-    // eslint-disable-next-line no-console
-    console.log(`✅ Uploaded data to s3://${bucketName}/${stage}/`);
-  }
-
-  async downloadDataFromS3(
-    stage: string,
-    bucketName: string,
-    region: string
-  ): Promise<IDataCollection<IDataItem>> {
-    const collections: IDataCollection<IDataItem> = {};
-    for (const [key, fileName] of Object.entries(DATA_CONFIG.dataFiles)) {
-      const s3Key = DATA_CONFIG.s3PathTemplate
-        .replace('{stage}', stage)
-        .replace('{fileName}', fileName);
-      collections[key] = await this.downloadJsonFromS3<IDataItem[]>(bucketName, s3Key, region);
-    }
-    return collections;
-  }
-
-  async saveLocalData(data: IDataCollection<IDataItem>, outputDir: string): Promise<void> {
-    await fs.mkdir(outputDir, { recursive: true });
-    for (const [key, items] of Object.entries(data)) {
-      const fileName = DATA_CONFIG.dataFiles[key as keyof typeof DATA_CONFIG.dataFiles];
-      if (!fileName) {
-        throw new Error(`Unknown data collection: ${key}`);
-      }
-      await fs.writeFile(path.join(outputDir, fileName), JSON.stringify(items, null, 2));
-    }
-    // eslint-disable-next-line no-console
-    console.log(`✅ Data saved to ${outputDir}`);
-  }
 
   // CloudFormation Operations
   async getStackOutput(stackName: string, outputKey: string, region: string): Promise<string> {
