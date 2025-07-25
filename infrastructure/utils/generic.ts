@@ -4,7 +4,7 @@
 
 /**
  * Convert PascalCase to SCREAMING_SNAKE_CASE
- * Example: 'AppSyncApiKey' -> 'APPSYNC_API_KEY'
+ * Example: 'AppsyncApiKey' -> 'APPSYNC_API_KEY'
  */
 export function pascalToScreamingSnake(str: string): string {
   return str
