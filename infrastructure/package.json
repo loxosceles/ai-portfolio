@@ -27,6 +27,8 @@
     "download-static-data:prod": "ENVIRONMENT=prod ts-node lib/cli/bin/data-management.ts download",
     "populate-static-data:dev": "ENVIRONMENT=dev ts-node lib/cli/bin/data-management.ts populate_ddb_with_static_data --verbose",
     "populate-static-data:prod": "ENVIRONMENT=prod ts-node lib/cli/bin/data-management.ts populate_ddb_with_static_data --verbose",
+    "sync-data:dev": "ENVIRONMENT=dev ts-node lib/cli/bin/data-management.ts populate_ddb_with_static_data --verbose",
+    "sync-data:prod": "ENVIRONMENT=prod ts-node lib/cli/bin/data-management.ts populate_ddb_with_static_data --verbose",
     "publish:web-app": "ENVIRONMENT=dev ts-node lib/cli/bin/web-app-publish.ts",
     "invalidate:cloudfront": "ENVIRONMENT=dev ts-node lib/cli/bin/invalidate-cloudfront-distribution.ts",
     "stack-outputs:web": "ENVIRONMENT=dev ts-node lib/cli/bin/stack-outputs.ts web",
