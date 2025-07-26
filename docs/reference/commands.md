@@ -19,6 +19,8 @@ These scripts are defined in the root `package.json` file and provide a high-lev
 
 | Script                      | Description                                           |
 | --------------------------- | ----------------------------------------------------- |
+| `sync-static-data:dev`      | Upload and populate static data (development)         |
+| `sync-static-data:prod`     | Upload and populate static data (production)          |
 | `upload-static-data:dev`    | Upload static data to the development environment     |
 | `upload-static-data:prod`   | Upload static data to the production environment      |
 | `download-static-data:dev`  | Download static data from the development environment |
@@ -103,14 +105,14 @@ These scripts are defined in the `infrastructure/package.json` file and provide 
 
 #### Data Management Scripts
 
-| Script                      | Description                                                       |
-| --------------------------- | ----------------------------------------------------------------- |
-| `upload-static-data:dev`    | Upload static data to S3 in the development environment           |
-| `upload-static-data:prod`   | Upload static data to S3 in the production environment            |
-| `download-static-data:dev`  | Download static data from S3 in the development environment       |
-| `download-static-data:prod` | Download static data from S3 in the production environment        |
-| `populate-static-data:dev`  | Populate DynamoDB with static data in the development environment |
-| `populate-static-data:prod` | Populate DynamoDB with static data in the production environment  |
+| Script                          | Description                                                       |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `upload-static-data:dev`        | Upload static data to S3 in the development environment           |
+| `upload-static-data:prod`       | Upload static data to S3 in the production environment            |
+| `download-static-data:dev`      | Download static data from S3 in the development environment       |
+| `download-static-data:prod`     | Download static data from S3 in the production environment        |
+| `populate-static-data-ddb:dev`  | Populate DynamoDB with static data in the development environment |
+| `populate-static-data-ddb:prod` | Populate DynamoDB with static data in the production environment  |
 
 #### Web App Scripts
 

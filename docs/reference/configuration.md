@@ -260,7 +260,7 @@ phases:
   build:
     commands:
       # Setup data buckets
-      - cd infrastructure && pnpm run populate-static-data:$ENVIRONMENT && cd ..
+      - cd infrastructure && pnpm run populate-static-data-ddb:$ENVIRONMENT && cd ..
       # Update environment files with post-deployment parameters
       - cd infrastructure && ts-node lib/cli/bin/ssm-params.ts export --target=frontend --output && cd ..
       - cd infrastructure && ts-node lib/cli/bin/ssm-params.ts export --target=link-generator --output && cd ..
