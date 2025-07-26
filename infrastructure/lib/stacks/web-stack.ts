@@ -38,14 +38,7 @@ export class WebStack extends cdk.Stack {
     const isProd = this.stage === 'prod';
 
     // Create DynamoDB table for visitor context
-    new dynamodb.Table(this, 'VisitorLinkTable', {
-      tableName: visitorTableName,
-      partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
-      timeToLiveAttribute: 'ttl', // Add TTL for link expiration
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
-      deletionProtection: isProd
-    });
+    const visitorTable = this.createVisitorTable(isProd, visitorTableName);
 
     // // Create S3 bucket for hosting
     this.websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {
@@ -290,5 +283,22 @@ export class WebStack extends cdk.Stack {
         paramName: 'VISITOR_TABLE_NAME'
       }
     ]);
+  }
+
+  private createVisitorTable(isProd: boolean, visitorTableName: string): dynamodb.ITable {
+    if (isProd) {
+      // Reference existing production table
+      return dynamodb.Table.fromTableName(this, 'VisitorLinkTable', visitorTableName);
+    } else {
+      // Create new table for dev
+      return new dynamodb.Table(this, 'VisitorLinkTable', {
+        tableName: visitorTableName,
+        partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
+        timeToLiveAttribute: 'ttl',
+        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        encryption: dynamodb.TableEncryption.AWS_MANAGED
+      });
+    }
   }
 }
