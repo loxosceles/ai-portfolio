@@ -87,13 +87,6 @@ export class ApiStack extends cdk.Stack {
     // Add API outputs
     addStackOutputs(this, this.stage, [
       {
-        id: 'AppsyncApiId',
-        value: this.api.apiId,
-        description: 'The ID of the GraphQL API',
-        exportName: `appsync-api-id-${this.stage}`,
-        paramName: 'APPSYNC_API_ID'
-      },
-      {
         id: 'AppsyncUrl',
         value: this.api.graphqlUrl,
         description: 'The URL of the GraphQL API',
