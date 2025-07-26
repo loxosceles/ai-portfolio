@@ -8,16 +8,24 @@ import { INFRASTRUCTURE_ENV_PATHS } from './env-config';
 // Define required variables for each stack
 export const STACK_CONFIGS = {
   api: {
-    requiredVars: ['DATA_BUCKET_NAME', 'AWS_REGION_DEFAULT']
+    base: ['DATA_BUCKET_NAME', 'AWS_REGION_DEFAULT'],
+    prod: [],
+    optional: []
   },
   web: {
-    requiredVars: []
+    base: [],
+    prod: ['PROD_DOMAIN_NAME', 'CERTIFICATE_ARN'],
+    optional: ['PROD_DOMAIN_NAME', 'CERTIFICATE_ARN']
   },
   aiAdvocate: {
-    requiredVars: ['BEDROCK_MODEL_ID', 'AWS_REGION_DEFAULT']
+    base: ['BEDROCK_MODEL_ID', 'AWS_REGION_DEFAULT'],
+    prod: [],
+    optional: []
   },
   shared: {
-    requiredVars: ['AWS_ADMIN_ARN']
+    base: ['AWS_ADMIN_ARN'],
+    prod: [],
+    optional: []
   }
 };
 

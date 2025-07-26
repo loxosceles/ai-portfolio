@@ -34,38 +34,43 @@ export class EnvironmentManager extends BaseManager {
     const stage = this.getStage();
     const env = this.loadEnv(stage);
 
-    // Get stack service config
-    const stackService = this.envConfig.serviceConfigs?.stack;
-    if (!stackService || stackService.type !== 'stack') {
-      throw new Error('Stack service configuration not found');
+    // Get all variables for this stack and stage
+    const { allVars, optionalVars } = this.getStackVars(stackName, stage);
+
+    // Check each variable and categorize missing ones
+    const missingRequired: string[] = [];
+    const missingOptional: string[] = [];
+
+    for (const varName of allVars) {
+      if (!env[varName]) {
+        if (optionalVars.includes(varName)) {
+          missingOptional.push(varName);
+        } else {
+          missingRequired.push(varName);
+        }
+      }
     }
 
-    const requiredVars = stackService.stackConfigs[stackName]?.requiredVars;
-    if (!requiredVars) {
-      throw new Error(`Unknown stack: ${stackName}`);
-    }
-
-    // Validate required variables
-    const missingVars = this.validateEnv(env, requiredVars);
-    if (missingVars.length > 0) {
+    // Error for missing required, warn for missing optional
+    if (missingRequired.length > 0) {
       throw new Error(
-        `Missing required environment variables for ${stackName} stack: ${missingVars.join(', ')}`
+        `Missing required environment variables for ${stackName} stack: ${missingRequired.join(', ')}`
+      );
+    }
+    if (missingOptional.length > 0) {
+      console.warn(
+        `Warning: Optional variables not found for ${stackName} stack: ${missingOptional.join(', ')}`
       );
     }
 
-    // Build result object with stage and camelCase environment variables
+    // Build result with available variables
     const result: Record<string, string> = { stage };
-
-    // Convert SNAKE_CASE env vars to camelCase properties
-    for (const varName of requiredVars) {
-      const camelCaseKey = toCamelCase(varName);
-      result[camelCaseKey] = env[varName];
+    for (const varName of allVars) {
+      if (env[varName]) {
+        result[toCamelCase(varName)] = env[varName];
+      }
     }
 
-    // Runtime validation + double assertion: ensures object structure is correct before type casting
-    if (!this.isValidStackEnv(result, stackName)) {
-      throw new Error(`Result object does not match the expected type for stack: ${stackName}`);
-    }
     return result as unknown as StackEnvMap[T];
   }
 
@@ -105,35 +110,33 @@ export class EnvironmentManager extends BaseManager {
   }
 
   /**
-   * Validate required environment variables
+   * Get all variables (base + stage-specific) and optional variables for a stack
    */
-  validateEnv(env: Record<string, string>, required: string[]): string[] {
-    const missing = required.filter((key) => !env[key]);
-    return missing;
+  private getStackVars(stackName: string, stage: string) {
+    // Maintain the same validation level as before
+    const stackService = this.envConfig.serviceConfigs?.stack;
+    if (!stackService || stackService.type !== 'stack') {
+      throw new Error('Stack service configuration not found');
+    }
+
+    const stackConfig = stackService.stackConfigs[stackName];
+    if (!stackConfig) {
+      throw new Error(`Unknown stack: ${stackName}`);
+    }
+
+    const baseVars = stackConfig.base || [];
+    const prodVars = stage === 'prod' ? stackConfig.prod || [] : [];
+    const allVars = [...baseVars, ...prodVars];
+    const optionalVars = stackConfig.optional || [];
+
+    return { allVars, optionalVars };
   }
 
   /**
-   * Validate that result object has all required properties for the stack type
+   * Validate required environment variables
    */
-  private isValidStackEnv<T extends keyof StackEnvMap>(
-    result: Record<string, string>,
-    stackName: T
-  ): boolean {
-    // All stack environments must have stage
-    if (!result.stage) return false;
-
-    // Get stack service config to validate required properties
-    const stackService = this.envConfig.serviceConfigs.stack;
-    if (!stackService || stackService.type !== 'stack') return false;
-
-    const requiredVars = stackService.stackConfigs[stackName]?.requiredVars;
-    if (!requiredVars) return false;
-
-    // Check that all required variables have been converted to camelCase properties
-    return requiredVars.every((varName) => {
-      const camelCaseKey = toCamelCase(varName);
-      return result[camelCaseKey] !== undefined;
-    });
+  validateEnv(env: Record<string, string>, required: string[]): string[] {
+    return required.filter((key) => !env[key]);
   }
 
   /**
