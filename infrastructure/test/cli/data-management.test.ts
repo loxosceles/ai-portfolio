@@ -43,7 +43,7 @@ describe('Data Management CLI Tests', () => {
     });
 
     test('should handle region option', async () => {
-      await simulateDataCLI('upload', { region: 'us-east-1' });
+      await simulateDataCLI('upload', { region: 'us-east-1', verbose: false });
 
       expect(dataCommandHandlers.upload).toHaveBeenCalledWith(
         expect.objectContaining({ region: 'us-east-1' })
@@ -61,7 +61,7 @@ describe('Data Management CLI Tests', () => {
     });
 
     test('should handle output option', async () => {
-      await simulateDataCLI('download', { output: './data' });
+      await simulateDataCLI('download', { output: './data', verbose: false });
 
       expect(dataCommandHandlers.download).toHaveBeenCalledWith(
         expect.objectContaining({ output: './data' })
@@ -69,7 +69,7 @@ describe('Data Management CLI Tests', () => {
     });
 
     test('should handle region option', async () => {
-      await simulateDataCLI('download', { region: 'us-east-1' });
+      await simulateDataCLI('download', { region: 'us-east-1', verbose: false });
 
       expect(dataCommandHandlers.download).toHaveBeenCalledWith(
         expect.objectContaining({ region: 'us-east-1' })
