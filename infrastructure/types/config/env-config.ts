@@ -24,7 +24,7 @@ export interface ILinkGeneratorServiceConfig {
 
 export interface IStackServiceConfig {
   type: 'stack';
-  stackConfigs: Record<string, { requiredVars: string[] }>;
+  stackConfigs: Record<string, { base: string[]; prod: string[]; optional?: string[] }>;
 }
 
 /**
