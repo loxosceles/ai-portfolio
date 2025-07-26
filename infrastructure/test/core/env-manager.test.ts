@@ -1,5 +1,6 @@
 import { EnvironmentManager } from '../../lib/core/env-manager';
 import { IEnvironmentManagerConfig } from '../../types/config';
+import { StackEnvMap } from '../../types';
 import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
 import * as path from 'path';
@@ -227,6 +228,219 @@ describe('EnvironmentManager', () => {
       expect(() => envManager.generateServiceEnvContent('unknown', params)).toThrow(
         "Service 'unknown' not configured. Available services: frontend, link-generator"
       );
+    });
+  });
+
+  describe('Stack Variables (Base/Prod/Optional)', () => {
+    let stackEnvManager: EnvironmentManager;
+    let stackConfig: IEnvironmentManagerConfig;
+    let consoleSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+      stackConfig = {
+        projectRoot: '/test',
+        supportedStages: ['dev', 'prod'],
+        infrastructureEnvPaths: {
+          base: 'infrastructure/.env',
+          stage: (stage: string) => `infrastructure/.env.${stage}`,
+          runtime: 'infrastructure/.env'
+        },
+        serviceConfigs: {
+          stack: {
+            type: 'stack',
+            stackConfigs: {
+              web: {
+                base: [],
+                prod: ['PROD_DOMAIN_NAME', 'CERTIFICATE_ARN'],
+                optional: ['PROD_DOMAIN_NAME', 'CERTIFICATE_ARN']
+              },
+              api: {
+                base: ['DATA_BUCKET_NAME', 'AWS_REGION_DEFAULT'],
+                prod: [],
+                optional: []
+              }
+            }
+          }
+        }
+      };
+
+      process.env.ENVIRONMENT = 'dev';
+      stackEnvManager = new EnvironmentManager(stackConfig);
+    });
+
+    afterEach(() => {
+      consoleSpy.mockRestore();
+      delete process.env.ENVIRONMENT;
+      jest.clearAllMocks();
+    });
+
+    describe('getStackEnv - Web Stack (Production Variables)', () => {
+      it('should handle dev stage with no production variables required', () => {
+        (dotenv.config as jest.Mock).mockReturnValue({ parsed: {} });
+        (fsSync.readFileSync as jest.Mock).mockImplementation(
+          (filePath: fsSync.PathOrFileDescriptor) => {
+            if (filePath.toString().includes('.env.dev')) {
+              return 'SOME_VAR=value';
+            }
+            return 'BASE_VAR=base_value';
+          }
+        );
+        (dotenv.parse as jest.Mock).mockReturnValue({ SOME_VAR: 'value' });
+
+        const result = stackEnvManager.getStackEnv('web');
+
+        expect(result).toEqual({
+          stage: 'dev'
+        });
+        expect(consoleSpy).not.toHaveBeenCalled();
+      });
+
+      it('should handle prod stage with all production variables present', () => {
+        process.env.ENVIRONMENT = 'prod';
+        stackEnvManager = new EnvironmentManager(stackConfig);
+
+        (dotenv.config as jest.Mock).mockReturnValue({ parsed: {} });
+        (fsSync.readFileSync as jest.Mock).mockImplementation(
+          (filePath: fsSync.PathOrFileDescriptor) => {
+            if (filePath.toString().includes('.env.prod')) {
+              return 'PROD_DOMAIN_NAME=example.com\nCERTIFICATE_ARN=arn:aws:acm:cert';
+            }
+            return 'BASE_VAR=base_value';
+          }
+        );
+        (dotenv.parse as jest.Mock).mockReturnValue({
+          PROD_DOMAIN_NAME: 'example.com',
+          CERTIFICATE_ARN: 'arn:aws:acm:cert'
+        });
+
+        const result = stackEnvManager.getStackEnv('web');
+
+        expect(result).toEqual({
+          stage: 'prod',
+          prodDomainName: 'example.com',
+          certificateArn: 'arn:aws:acm:cert'
+        });
+        expect(consoleSpy).not.toHaveBeenCalled();
+      });
+
+      it('should warn about missing optional production variables', () => {
+        process.env.ENVIRONMENT = 'prod';
+        stackEnvManager = new EnvironmentManager(stackConfig);
+
+        (dotenv.config as jest.Mock).mockReturnValue({ parsed: {} });
+        (fsSync.readFileSync as jest.Mock).mockImplementation(
+          (filePath: fsSync.PathOrFileDescriptor) => {
+            if (filePath.toString().includes('.env.prod')) {
+              return 'PROD_DOMAIN_NAME=example.com';
+            }
+            return 'BASE_VAR=base_value';
+          }
+        );
+        (dotenv.parse as jest.Mock).mockReturnValue({ PROD_DOMAIN_NAME: 'example.com' });
+
+        const result = stackEnvManager.getStackEnv('web');
+
+        expect(result).toEqual({
+          stage: 'prod',
+          prodDomainName: 'example.com'
+        });
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Warning: Optional variables not found for web stack: CERTIFICATE_ARN'
+        );
+      });
+    });
+
+    describe('getStackEnv - API Stack (Required Variables)', () => {
+      it('should succeed when all required base variables are present', () => {
+        (dotenv.config as jest.Mock).mockReturnValue({ parsed: {} });
+        (fsSync.readFileSync as jest.Mock).mockImplementation(
+          (filePath: fsSync.PathOrFileDescriptor) => {
+            if (filePath.toString().includes('.env.dev')) {
+              return 'DATA_BUCKET_NAME=test-bucket\nAWS_REGION_DEFAULT=us-east-1';
+            }
+            return 'BASE_VAR=base_value';
+          }
+        );
+        (dotenv.parse as jest.Mock).mockReturnValue({
+          DATA_BUCKET_NAME: 'test-bucket',
+          AWS_REGION_DEFAULT: 'us-east-1'
+        });
+
+        const result = stackEnvManager.getStackEnv('api');
+
+        expect(result).toEqual({
+          stage: 'dev',
+          dataBucketName: 'test-bucket',
+          awsRegionDefault: 'us-east-1'
+        });
+        expect(consoleSpy).not.toHaveBeenCalled();
+      });
+
+      it('should throw error when required base variables are missing', () => {
+        (dotenv.config as jest.Mock).mockReturnValue({ parsed: {} });
+        (fsSync.readFileSync as jest.Mock).mockImplementation(
+          (filePath: fsSync.PathOrFileDescriptor) => {
+            if (filePath.toString().includes('.env.dev')) {
+              return 'DATA_BUCKET_NAME=test-bucket';
+            }
+            return 'BASE_VAR=base_value';
+          }
+        );
+        (dotenv.parse as jest.Mock).mockReturnValue({ DATA_BUCKET_NAME: 'test-bucket' });
+
+        expect(() => stackEnvManager.getStackEnv('api')).toThrow(
+          'Missing required environment variables for api stack: AWS_REGION_DEFAULT'
+        );
+      });
+    });
+
+    describe('Error Handling', () => {
+      it('should throw error for unknown stack', () => {
+        (fsSync.readFileSync as jest.Mock).mockImplementation(() => 'VAR=value');
+
+        expect(() => stackEnvManager.getStackEnv('unknownStack' as keyof StackEnvMap)).toThrow(
+          'Unknown stack: unknownStack'
+        );
+      });
+
+      it('should throw error when stack service config is missing', () => {
+        const badConfig = {
+          ...stackConfig,
+          serviceConfigs: {}
+        };
+        const badEnvManager = new EnvironmentManager(badConfig);
+
+        expect(() => badEnvManager.getStackEnv('web')).toThrow(
+          'Stack service configuration not found'
+        );
+      });
+    });
+
+    describe('CamelCase Conversion', () => {
+      it('should convert SNAKE_CASE variables to camelCase properties', () => {
+        (dotenv.config as jest.Mock).mockReturnValue({ parsed: {} });
+        (fsSync.readFileSync as jest.Mock).mockImplementation(
+          (filePath: fsSync.PathOrFileDescriptor) => {
+            if (filePath.toString().includes('.env.dev')) {
+              return 'DATA_BUCKET_NAME=test-bucket\nAWS_REGION_DEFAULT=us-east-1';
+            }
+            return 'BASE_VAR=base_value';
+          }
+        );
+        (dotenv.parse as jest.Mock).mockReturnValue({
+          DATA_BUCKET_NAME: 'test-bucket',
+          AWS_REGION_DEFAULT: 'us-east-1'
+        });
+
+        const result = stackEnvManager.getStackEnv('api');
+
+        expect(result).toHaveProperty('dataBucketName', 'test-bucket');
+        expect(result).toHaveProperty('awsRegionDefault', 'us-east-1');
+        expect(result).not.toHaveProperty('DATA_BUCKET_NAME');
+        expect(result).not.toHaveProperty('AWS_REGION_DEFAULT');
+      });
     });
   });
 });

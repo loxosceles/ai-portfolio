@@ -31,9 +31,9 @@ export class WebStack extends cdk.Stack {
 
     const visitorTableName = `PortfolioVisitorLinks-${this.stage}`;
 
-    // Get production-specific environment variables if needed
-    const prodDomainName = process.env.PROD_DOMAIN_NAME;
-    const prodCertificateArn = process.env.PROD_CERTIFICATE_ARN;
+    // Get production-specific environment variables from stackEnv
+    const prodDomainName = this.stackEnv.prodDomainName;
+    const prodCertificateArn = this.stackEnv.certificateArn;
 
     const isProd = this.stage === 'prod';
 
@@ -178,14 +178,6 @@ export class WebStack extends cdk.Stack {
     let domainName: string | undefined;
     if (isProd) {
       domainName = prodDomainName;
-
-      if (domainName) {
-        // eslint-disable-next-line no-console
-        console.log(`Using custom domain: ${domainName}`);
-      } else {
-        // eslint-disable-next-line no-console
-        console.log('No domain name provided. Using CloudFront domain only.');
-      }
     }
 
     // Use existing certificate for production
@@ -204,11 +196,6 @@ export class WebStack extends cdk.Stack {
           certificateArn
         );
         domainNames = [domainName];
-        // eslint-disable-next-line no-console
-        console.log(`Using existing certificate: ${certificateArn}`);
-      } else {
-        // eslint-disable-next-line no-console
-        console.log('No certificate ARN provided. Cannot set up custom domain.');
       }
     }
 
