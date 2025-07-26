@@ -9,7 +9,7 @@ interface ISharedStackProps extends cdk.StackProps {
 }
 
 export class SharedStack extends cdk.Stack {
-  public readonly userPool: cognito.UserPool;
+  public readonly userPool: cognito.IUserPool;
   public readonly userPoolClient: cognito.UserPoolClient;
   private readonly userPoolDomain: cognito.UserPoolDomain;
   private readonly stackEnv: ISharedStackEnv;
@@ -66,30 +66,42 @@ export class SharedStack extends cdk.Stack {
     ]);
   }
 
-  private createUserPool(): cognito.UserPool {
-    return new cognito.UserPool(this, 'SharedUserPool', {
-      userPoolName: `shared-user-pool-${this.stage}`,
-      selfSignUpEnabled: false,
-      signInAliases: {
-        email: true,
-        username: false
-      },
-      standardAttributes: {
-        email: {
-          required: true,
-          mutable: true
-        }
-      },
-      passwordPolicy: {
-        minLength: 12,
-        requireLowercase: true,
-        requireUppercase: true,
-        requireDigits: true,
-        requireSymbols: false
-      },
-      accountRecovery: cognito.AccountRecovery.NONE,
-      removalPolicy: cdk.RemovalPolicy.RETAIN
-    });
+  private createUserPool(): cognito.IUserPool {
+    const isProd = this.stage === 'prod';
+
+    if (isProd && this.stackEnv.cognitoUserPoolId) {
+      // Reference existing production user pool using actual ID from SSM
+      return cognito.UserPool.fromUserPoolId(
+        this,
+        'SharedUserPool',
+        this.stackEnv.cognitoUserPoolId
+      );
+    } else {
+      // Create new user pool for dev or when ID not available
+      return new cognito.UserPool(this, 'SharedUserPool', {
+        userPoolName: `shared-user-pool-${this.stage}`,
+        selfSignUpEnabled: false,
+        signInAliases: {
+          email: true,
+          username: false
+        },
+        standardAttributes: {
+          email: {
+            required: true,
+            mutable: true
+          }
+        },
+        passwordPolicy: {
+          minLength: 12,
+          requireLowercase: true,
+          requireUppercase: true,
+          requireDigits: true,
+          requireSymbols: false
+        },
+        accountRecovery: cognito.AccountRecovery.NONE,
+        removalPolicy: cdk.RemovalPolicy.DESTROY
+      });
+    }
   }
 
   private createUserPoolClient(): cognito.UserPoolClient {

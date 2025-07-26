@@ -23,6 +23,7 @@ export interface IAIAdvocateStackEnv extends IStackEnv {
 
 export interface ISharedStackEnv extends IStackEnv {
   awsAdminArn: string;
+  cognitoUserPoolId?: string;
 }
 
 export interface IPipelineStackEnv extends IStackEnv {

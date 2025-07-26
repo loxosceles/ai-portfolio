@@ -13,7 +13,7 @@ import { addStackOutputs } from './stack-helpers';
 import { IApiStackEnv } from '../../types';
 
 interface IApiStackProps extends cdk.StackProps {
-  userPool: cognito.UserPool;
+  userPool: cognito.IUserPool;
   stackEnv: IApiStackEnv;
 }
 
@@ -26,8 +26,8 @@ export class ApiStack extends cdk.Stack {
   private readonly dataBucketName: string;
   private readonly awsRegionDefault: string;
 
-  public readonly developerTable: dynamodb.Table;
-  public readonly projectsTable: dynamodb.Table;
+  public readonly developerTable: dynamodb.ITable;
+  public readonly projectsTable: dynamodb.ITable;
 
   constructor(scope: Construct, id: string, props: IApiStackProps) {
     super(scope, id, props);
@@ -118,7 +118,7 @@ export class ApiStack extends cdk.Stack {
     ]);
   }
 
-  private createAppSyncApi(userPool: cognito.UserPool): appsync.GraphqlApi {
+  private createAppSyncApi(userPool: cognito.IUserPool): appsync.GraphqlApi {
     // Create the AppSync API using the L2 construct
     const api = new appsync.GraphqlApi(this, 'PortfolioApi', {
       name: `portfolio-api-${this.stage}`,
@@ -148,31 +148,50 @@ export class ApiStack extends cdk.Stack {
   }
 
   private createDynamoDBTables(isProd: boolean) {
-    const developerTable = new dynamodb.Table(this, 'DeveloperTable', {
-      tableName: this.developerTableName,
-      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
-      deletionProtection: isProd
-    });
+    if (isProd) {
+      // Reference existing production tables
+      const developerTable = dynamodb.Table.fromTableName(
+        this,
+        'DeveloperTable',
+        this.developerTableName
+      );
 
-    const projectsTable = new dynamodb.Table(this, 'ProjectsTable', {
-      tableName: this.projectsTableName,
-      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
-      deletionProtection: isProd
-    });
+      const projectsTable = dynamodb.Table.fromTableName(
+        this,
+        'ProjectsTable',
+        this.projectsTableName
+      );
 
-    projectsTable.addGlobalSecondaryIndex({
-      indexName: 'byDeveloperId',
-      partitionKey: { name: 'developerId', type: dynamodb.AttributeType.STRING }
-    });
+      return { developerTable, projectsTable };
+    } else {
+      // Create new tables for dev with full configuration
+      const developerTable = new dynamodb.Table(this, 'DeveloperTable', {
+        tableName: this.developerTableName,
+        partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        encryption: dynamodb.TableEncryption.AWS_MANAGED
+      });
 
-    return { developerTable, projectsTable };
+      const projectsTable = new dynamodb.Table(this, 'ProjectsTable', {
+        tableName: this.projectsTableName,
+        partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        encryption: dynamodb.TableEncryption.AWS_MANAGED
+      });
+
+      // Add GSI that matches the original
+      projectsTable.addGlobalSecondaryIndex({
+        indexName: 'byDeveloperId',
+        partitionKey: { name: 'developerId', type: dynamodb.AttributeType.STRING }
+      });
+
+      return { developerTable, projectsTable };
+    }
   }
 
-  private createDataSources(developerTable: dynamodb.Table, projectsTable: dynamodb.Table) {
+  private createDataSources(developerTable: dynamodb.ITable, projectsTable: dynamodb.ITable) {
     const developerDS = this.api.addDynamoDbDataSource('DeveloperDataSource', developerTable);
     const projectsDS = this.api.addDynamoDbDataSource('ProjectsDataSource', projectsTable);
 
@@ -183,7 +202,7 @@ export class ApiStack extends cdk.Stack {
    * Creates a Lambda function that loads data from S3 to DynamoDB tables.
    * This is triggered during CloudFormation deployment via a custom resource.
    */
-  private createDataLoader(developerTable: dynamodb.Table, projectsTable: dynamodb.Table) {
+  private createDataLoader(developerTable: dynamodb.ITable, projectsTable: dynamodb.ITable) {
     // Reference the existing S3 bucket
     const dataBucket = s3.Bucket.fromBucketName(this, 'DataBucket', this.dataBucketName);
 
