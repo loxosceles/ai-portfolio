@@ -38,7 +38,7 @@ describe('CloudFront Invalidation Command Tests', () => {
           StackId: 'test-stack-id',
           CreationTime: new Date(),
           StackStatus: 'CREATE_COMPLETE',
-          Outputs: [{ OutputKey: 'CloudFrontDistributionId', OutputValue: 'test-distribution-id' }]
+          Outputs: [{ OutputKey: 'CloudfrontDistributionId', OutputValue: 'test-distribution-id' }]
         }
       ]
     });

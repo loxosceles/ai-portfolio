@@ -14,6 +14,7 @@ export const INFRASTRUCTURE_ENV_PATHS = {
 // Service configurations
 export const SERVICE_CONFIGS = {
   frontend: {
+    type: 'frontend' as const,
     envPath: 'frontend/.env.local',
     requiredParams: [
       'APPSYNC_API_KEY',
@@ -22,13 +23,13 @@ export const SERVICE_CONFIGS = {
       'COGNITO_CLIENT_ID',
       'COGNITO_DOMAIN_NAME',
       'COGNITO_AUTHORITY',
-      'REDIRECT_URI',
       'COGNITO_USER_POOL_ID'
     ],
     prefix: 'NEXT_PUBLIC_',
     additionalParams: {}
   },
   'link-generator': {
+    type: 'link-generator' as const,
     envPath: 'link-generator/.env',
     requiredParams: [
       'VISITOR_TABLE_NAME',

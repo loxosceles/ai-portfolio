@@ -48,16 +48,15 @@ These files are automatically generated after stack deployment and contain dynam
 
 ### Frontend
 
-| Variable                           | Description                     | Source        | Generated |
-| ---------------------------------- | ------------------------------- | ------------- | --------- |
-| `NEXT_PUBLIC_APPSYNC_API_KEY`      | AppSync API key                 | Stack Output  | Yes       |
-| `NEXT_PUBLIC_APPSYNC_URL`          | AppSync GraphQL endpoint URL    | Stack Output  | Yes       |
-| `NEXT_PUBLIC_AWS_REGION_DEFAULT`   | Default AWS region              | Static Config | Yes       |
-| `NEXT_PUBLIC_COGNITO_CLIENT_ID`    | Cognito client ID               | Stack Output  | Yes       |
-| `NEXT_PUBLIC_COGNITO_DOMAIN_NAME`  | Cognito domain name             | Stack Output  | Yes       |
-| `NEXT_PUBLIC_COGNITO_AUTHORITY`    | Cognito authority URL           | Stack Output  | Yes       |
-| `NEXT_PUBLIC_REDIRECT_URI`         | Redirect URI for authentication | Stack Output  | Yes       |
-| `NEXT_PUBLIC_COGNITO_USER_POOL_ID` | Cognito user pool ID            | Stack Output  | Yes       |
+| Variable                           | Description                  | Source        | Generated |
+| ---------------------------------- | ---------------------------- | ------------- | --------- |
+| `NEXT_PUBLIC_APPSYNC_API_KEY`      | AppSync API key              | Stack Output  | Yes       |
+| `NEXT_PUBLIC_APPSYNC_URL`          | AppSync GraphQL endpoint URL | Stack Output  | Yes       |
+| `NEXT_PUBLIC_AWS_REGION_DEFAULT`   | Default AWS region           | Static Config | Yes       |
+| `NEXT_PUBLIC_COGNITO_CLIENT_ID`    | Cognito client ID            | Stack Output  | Yes       |
+| `NEXT_PUBLIC_COGNITO_DOMAIN_NAME`  | Cognito domain name          | Stack Output  | Yes       |
+| `NEXT_PUBLIC_COGNITO_AUTHORITY`    | Cognito authority URL        | Stack Output  | Yes       |
+| `NEXT_PUBLIC_COGNITO_USER_POOL_ID` | Cognito user pool ID         | Stack Output  | Yes       |
 
 ### Link Generator
 

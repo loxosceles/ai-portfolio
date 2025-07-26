@@ -1,11 +1,15 @@
 import { IDataManagementOptions, IDataManagementResult } from '../../../types/cli/data-management';
 import { EnvironmentManager } from '../../core/env-manager';
 import { AWSManager } from '../../core/aws-manager';
-import { awsManagerConfig } from '../../../configs/aws-config';
+import { BaseManager } from '../../core/base-manager';
+import { awsManagerConfig, DATA_CONFIG } from '../../../configs/aws-config';
 import { envManagerConfig } from '../../../configs/env-config';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import { IDataItem, IDataCollection } from '../../../types/data';
 import { IProject } from '../../../types/data/project';
 import { IDeveloper } from '../../../types/data';
+import { buildSSMPath } from '../../../utils/ssm';
 
 // Create manager instances
 const envManager = new EnvironmentManager(envManagerConfig);
@@ -150,12 +154,26 @@ export async function handleUploadData(
       };
     }
 
-    if (verbose) {
-      // eslint-disable-next-line no-console
-      console.log(`Loading local data for ${stage} stage...`);
-    }
+    BaseManager.logVerbose(verbose, `Loading local data for ${stage} stage...`);
 
-    const data = await awsManager.loadLocalData(stage);
+    // Load local data
+    const localPath = DATA_CONFIG.localPathTemplate.replace('{stage}', stage);
+    const dataDir = path.resolve(awsManagerConfig.projectRoot, localPath);
+    const data: IDataCollection<IDataItem> = {};
+
+    try {
+      for (const [key, fileName] of Object.entries(DATA_CONFIG.dataFiles)) {
+        const filePath = path.join(dataDir, fileName);
+        const content = await fs.readFile(filePath, 'utf-8');
+        data[key] = JSON.parse(content) as IDataItem[];
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to load data files: ${error instanceof Error ? error.message : String(error)}`,
+        error: error instanceof Error ? error : new Error(String(error))
+      };
+    }
 
     // Perform advanced validation before upload
     try {
@@ -168,14 +186,27 @@ export async function handleUploadData(
       };
     }
 
-    if (verbose) {
-      // eslint-disable-next-line no-console
-      console.log(`Uploading data to S3 bucket ${bucketName}...`);
-    }
+    BaseManager.logVerbose(verbose, `Uploading data to S3 bucket ${bucketName}...`);
 
     const targetRegion = region || awsManager.getRegionForService('data');
     const validatedRegion = awsManager.validateRegion(targetRegion);
-    await awsManager.uploadDataToS3(stage, bucketName, data, validatedRegion);
+
+    // Upload data to S3
+    for (const [key, items] of Object.entries(data)) {
+      const fileName = DATA_CONFIG.dataFiles[key as keyof typeof DATA_CONFIG.dataFiles];
+      if (!fileName) {
+        return {
+          success: false,
+          message: `Unknown data collection: ${key}`,
+          error: new Error(`Unknown data collection: ${key}`)
+        };
+      }
+      const s3Key = DATA_CONFIG.s3PathTemplate
+        .replace('{stage}', stage)
+        .replace('{fileName}', fileName);
+      await awsManager.uploadJsonToS3(bucketName, s3Key, items, validatedRegion);
+    }
+    BaseManager.logVerbose(verbose, `✅ Uploaded data to s3://${bucketName}/${stage}/`);
 
     return {
       success: true,
@@ -212,14 +243,23 @@ export async function handleDownloadData(
       };
     }
 
-    if (verbose) {
-      // eslint-disable-next-line no-console
-      console.log(`Downloading data from S3 bucket ${bucketName}...`);
-    }
+    BaseManager.logVerbose(verbose, `Downloading data from S3 bucket ${bucketName}...`);
 
     const targetRegion = region || awsManager.getRegionForService('data');
     const validatedRegion = awsManager.validateRegion(targetRegion);
-    const data = await awsManager.downloadDataFromS3(stage, bucketName, validatedRegion);
+
+    // Download data from S3
+    const data: IDataCollection<IDataItem> = {};
+    for (const [key, fileName] of Object.entries(DATA_CONFIG.dataFiles)) {
+      const s3Key = DATA_CONFIG.s3PathTemplate
+        .replace('{stage}', stage)
+        .replace('{fileName}', fileName);
+      data[key] = await awsManager.downloadJsonFromS3<IDataItem[]>(
+        bucketName,
+        s3Key,
+        validatedRegion
+      );
+    }
 
     // Perform advanced validation after download
     try {
@@ -234,7 +274,23 @@ export async function handleDownloadData(
 
     // Save to local files if output directory is specified
     if (output) {
-      await awsManager.saveLocalData(data, output);
+      await fs.mkdir(output, { recursive: true });
+      for (const [key, items] of Object.entries(data)) {
+        const fileName = DATA_CONFIG.dataFiles[key as keyof typeof DATA_CONFIG.dataFiles];
+        if (!fileName) {
+          return {
+            success: false,
+            message: `Unknown data collection: ${key}`,
+            error: new Error(`Unknown data collection: ${key}`)
+          };
+        }
+        await fs.writeFile(path.join(output, fileName), JSON.stringify(items, null, 2));
+      }
+      BaseManager.logVerbose(verbose, `✅ Data saved to ${output}`);
+    } else {
+      // Output data to console if no output directory specified (for file redirection)
+      process.stdout.write(`Developers: ${JSON.stringify(data.developers, null, 2)}\n`);
+      process.stdout.write(`Projects: ${JSON.stringify(data.projects, null, 2)}\n`);
     }
 
     return {
@@ -273,16 +329,23 @@ export async function handlePopulateDynamoDB(
       };
     }
 
-    if (verbose) {
-      // eslint-disable-next-line no-console
-      console.log(`Downloading data from S3 bucket ${bucketName}...`);
-    }
+    BaseManager.logVerbose(verbose, `Downloading data from S3 bucket ${bucketName}...`);
 
     const targetRegion = region || awsManager.getRegionForService('data');
     const validatedRegion = awsManager.validateRegion(targetRegion);
 
     // Download data from S3
-    const data = await awsManager.downloadDataFromS3(stage, bucketName, validatedRegion);
+    const data: IDataCollection<IDataItem> = {};
+    for (const [key, fileName] of Object.entries(DATA_CONFIG.dataFiles)) {
+      const s3Key = DATA_CONFIG.s3PathTemplate
+        .replace('{stage}', stage)
+        .replace('{fileName}', fileName);
+      data[key] = await awsManager.downloadJsonFromS3<IDataItem[]>(
+        bucketName,
+        s3Key,
+        validatedRegion
+      );
+    }
 
     // Validate data
     try {
@@ -295,13 +358,38 @@ export async function handlePopulateDynamoDB(
       };
     }
 
-    if (verbose) {
-      // eslint-disable-next-line no-console
-      console.log(`Populating DynamoDB tables for ${stage} stage...`);
+    // Get table names from SSM parameters instead of environment
+    const developerTableName = await awsManager.getParameter(
+      buildSSMPath(stage, 'DEVELOPER_TABLE_NAME'),
+      validatedRegion
+    );
+    const projectsTableName = await awsManager.getParameter(
+      buildSSMPath(stage, 'PROJECTS_TABLE_NAME'),
+      validatedRegion
+    );
+
+    if (!developerTableName || !projectsTableName) {
+      return {
+        success: false,
+        message: 'Table name parameters not found in SSM',
+        error: new Error('DEVELOPER_TABLE_NAME or PROJECTS_TABLE_NAME not found in SSM')
+      };
     }
 
-    // Populate DynamoDB tables
-    await awsManager.populateDynamoDB(stage, data, validatedRegion);
+    BaseManager.logVerbose(verbose, `Populating DynamoDB tables for ${stage} stage...`);
+
+    // Populate tables separately
+    await awsManager.batchWriteToDynamoDB(developerTableName, data.developers, validatedRegion);
+    await awsManager.batchWriteToDynamoDB(projectsTableName, data.projects, validatedRegion);
+
+    BaseManager.logVerbose(
+      verbose,
+      `✅ Populated ${developerTableName} with ${data.developers.length} items`
+    );
+    BaseManager.logVerbose(
+      verbose,
+      `✅ Populated ${projectsTableName} with ${data.projects.length} items`
+    );
 
     return {
       success: true,
