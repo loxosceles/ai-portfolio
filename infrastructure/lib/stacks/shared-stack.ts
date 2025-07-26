@@ -69,15 +69,15 @@ export class SharedStack extends cdk.Stack {
   private createUserPool(): cognito.IUserPool {
     const isProd = this.stage === 'prod';
 
-    if (isProd) {
-      // Reference existing production user pool
+    if (isProd && this.stackEnv.cognitoUserPoolId) {
+      // Reference existing production user pool using actual ID from SSM
       return cognito.UserPool.fromUserPoolId(
         this,
         'SharedUserPool',
-        `shared-user-pool-${this.stage}`
+        this.stackEnv.cognitoUserPoolId
       );
     } else {
-      // Create new user pool for dev
+      // Create new user pool for dev or when ID not available
       return new cognito.UserPool(this, 'SharedUserPool', {
         userPoolName: `shared-user-pool-${this.stage}`,
         selfSignUpEnabled: false,

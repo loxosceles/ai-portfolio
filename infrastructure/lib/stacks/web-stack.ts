@@ -38,7 +38,7 @@ export class WebStack extends cdk.Stack {
     const isProd = this.stage === 'prod';
 
     // Create DynamoDB table for visitor context
-    const visitorTable = this.createVisitorTable(isProd, visitorTableName);
+    this.createVisitorTable(isProd, visitorTableName);
 
     // // Create S3 bucket for hosting
     this.websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {

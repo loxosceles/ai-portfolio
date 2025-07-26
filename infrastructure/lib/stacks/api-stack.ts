@@ -13,7 +13,7 @@ import { addStackOutputs } from './stack-helpers';
 import { IApiStackEnv } from '../../types';
 
 interface IApiStackProps extends cdk.StackProps {
-  userPool: cognito.UserPool;
+  userPool: cognito.IUserPool;
   stackEnv: IApiStackEnv;
 }
 
@@ -118,7 +118,7 @@ export class ApiStack extends cdk.Stack {
     ]);
   }
 
-  private createAppSyncApi(userPool: cognito.UserPool): appsync.GraphqlApi {
+  private createAppSyncApi(userPool: cognito.IUserPool): appsync.GraphqlApi {
     // Create the AppSync API using the L2 construct
     const api = new appsync.GraphqlApi(this, 'PortfolioApi', {
       name: `portfolio-api-${this.stage}`,
