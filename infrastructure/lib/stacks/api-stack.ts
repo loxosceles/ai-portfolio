@@ -67,15 +67,25 @@ export class ApiStack extends cdk.Stack {
     // Create data loader to populate DynamoDB tables from S3
     this.createDataLoader(this.developerTable, this.projectsTable);
 
+    // CloudFormation exports for cross-stack dependencies
+    // NOTE: These exports are required for AIAdvocateStack to reference the GraphQL API
+    // during deployment. SSM parameters cannot be used here because they are not
+    // available during the same deployment cycle. Direct stack parameters would
+    // create circular dependencies due to resolver registration.
+    new cdk.CfnOutput(this, 'GraphQLApiId', {
+      value: this.api.apiId,
+      exportName: `GraphQLApiId-${this.stage}`,
+      description: 'GraphQL API ID for cross-stack reference (used by AIAdvocateStack)'
+    });
+
+    new cdk.CfnOutput(this, 'GraphQLApiUrl', {
+      value: this.api.graphqlUrl,
+      exportName: `GraphQLApiUrl-${this.stage}`,
+      description: 'GraphQL API URL for cross-stack reference'
+    });
+
     // Add API outputs
     addStackOutputs(this, this.stage, [
-      {
-        id: 'AppsyncApiId',
-        value: this.api.apiId,
-        description: 'The ID of the GraphQL API',
-        exportName: `appsync-api-id-${this.stage}`,
-        paramName: 'APPSYNC_API_ID'
-      },
       {
         id: 'AppsyncUrl',
         value: this.api.graphqlUrl,

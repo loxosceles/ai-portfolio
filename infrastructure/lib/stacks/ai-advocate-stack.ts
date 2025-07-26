@@ -29,7 +29,12 @@ export class AIAdvocateStack extends cdk.Stack {
     this.stackEnv = stackEnv;
     this.stage = this.stackEnv.stage;
 
-    const apiId = this.stackEnv.appsyncApiId;
+    // Import GraphQL API using CloudFormation exports
+    // NOTE: CloudFormation exports are used here instead of SSM parameters because
+    // this dependency must be resolved during deployment time, not post-deployment.
+    // SSM parameters are populated after stack deployment and cannot be used for
+    // cross-stack dependencies within the same deployment cycle.
+    const apiId = cdk.Fn.importValue(`GraphQLApiId-${this.stage}`);
     const api = appsync.GraphqlApi.fromGraphqlApiAttributes(this, 'ImportedApi', {
       graphqlApiId: apiId,
       graphqlApiArn: `arn:aws:appsync:${this.region}:${this.account}:apis/${apiId}`
