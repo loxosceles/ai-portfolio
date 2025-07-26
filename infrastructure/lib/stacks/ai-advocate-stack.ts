@@ -29,17 +29,11 @@ export class AIAdvocateStack extends cdk.Stack {
     this.stackEnv = stackEnv;
     this.stage = this.stackEnv.stage;
 
-    // Import the GraphQL API using CloudFormation exports
-    const apiId = cdk.Fn.importValue(`GraphQLApiId-${this.stage}`);
+    const apiId = this.stackEnv.appsyncApiId;
     const api = appsync.GraphqlApi.fromGraphqlApiAttributes(this, 'ImportedApi', {
       graphqlApiId: apiId,
       graphqlApiArn: `arn:aws:appsync:${this.region}:${this.account}:apis/${apiId}`
     });
-
-    // Validate required props
-    if (!api) {
-      throw new Error('api is required');
-    }
     if (!developerTable) {
       throw new Error('developerTable is required');
     }
