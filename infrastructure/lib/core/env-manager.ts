@@ -140,13 +140,6 @@ export class EnvironmentManager extends BaseManager {
   }
 
   /**
-   * Find missing variables from environment (alias for validateEnv)
-   */
-  private findMissingVars(env: Record<string, string>, vars: string[]): string[] {
-    return this.validateEnv(env, vars);
-  }
-
-  /**
    * Write environment file
    */
   async writeEnvFile(filePath: string, content: string): Promise<void> {
