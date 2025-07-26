@@ -137,7 +137,7 @@ The package scripts provide a higher-level interface to CLI commands:
 - `export-ssm-params:dev/prod` → `ssm-params.ts export --target=infrastructure --verbose`
 - `upload-static-data:dev/prod` → `data-management.ts upload`
 - `download-static-data:dev/prod` → `data-management.ts download`
-- `populate-static-data:dev/prod` → `data-management.ts populate_ddb_with_static_data --verbose`
+- `populate-static-data-ddb:dev/prod` → `data-management.ts populate_ddb_with_static_data --verbose`
 - `publish:web-app` → `web-app-publish.ts`
 - `invalidate:cloudfront` → `invalidate-cloudfront-distribution.ts`
 
@@ -145,6 +145,7 @@ The package scripts provide a higher-level interface to CLI commands:
 
 **Infrastructure Operations** (Delegate to infrastructure package)
 
+- `sync-static-data:dev/prod` → Combined upload and populate operations
 - `upload-static-data:dev/prod` → `infrastructure:upload-static-data:dev/prod`
 - `download-static-data:dev/prod` → `infrastructure:download-static-data:dev/prod`
 - `upload-ssm-params:dev/prod` → `infrastructure:upload-ssm-params:dev/prod`
@@ -162,7 +163,7 @@ The CLI commands are integrated into the CI/CD pipeline:
 
 **Build Phase**:
 
-1. Populate data: `pnpm run populate-static-data:$ENVIRONMENT`
+1. Populate data: `pnpm run populate-static-data-ddb:$ENVIRONMENT`
 2. Generate service environments: `ssm-params export --target=frontend --output --verbose`
 3. Generate service environments: `ssm-params export --target=link-generator --output --verbose`
 4. Build and publish frontend: `pnpm run publish:web-app`
