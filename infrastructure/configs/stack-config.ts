@@ -24,8 +24,8 @@ export const STACK_CONFIGS = {
   },
   shared: {
     base: ['AWS_ADMIN_ARN'],
-    prod: [],
-    optional: []
+    prod: ['COGNITO_USER_POOL_ID'],
+    optional: ['COGNITO_USER_POOL_ID']
   }
 };
 

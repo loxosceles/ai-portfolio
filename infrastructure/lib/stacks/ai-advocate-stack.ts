@@ -21,7 +21,7 @@ export class AIAdvocateStack extends cdk.Stack {
   private readonly stage: string;
   private readonly stackEnv: IAIAdvocateStackEnv;
 
-  public readonly recruiterProfilesTable: dynamodb.Table;
+  public readonly recruiterProfilesTable: dynamodb.ITable;
 
   constructor(scope: Construct, id: string, props: IAIAdvocateStackProps) {
     super(scope, id, props);
@@ -136,14 +136,22 @@ export class AIAdvocateStack extends cdk.Stack {
    * @param isProd Whether this is a production deployment
    * @returns The created DynamoDB table
    */
-  private createRecruiterProfilesTable(isProd: boolean): dynamodb.Table {
-    return new dynamodb.Table(this, 'RecruiterProfilesTable', {
-      tableName: `RecruiterProfiles-${this.stage}`,
-      partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
-      deletionProtection: isProd,
-      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: isProd }
-    });
+  private createRecruiterProfilesTable(isProd: boolean): dynamodb.ITable {
+    const tableName = `RecruiterProfiles-${this.stage}`;
+
+    if (isProd) {
+      // Reference existing production table
+      return dynamodb.Table.fromTableName(this, 'RecruiterProfilesTable', tableName);
+    } else {
+      // Create new table for dev
+      return new dynamodb.Table(this, 'RecruiterProfilesTable', {
+        tableName,
+        partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
+        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        encryption: dynamodb.TableEncryption.AWS_MANAGED,
+        pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: false }
+      });
+    }
   }
 }
