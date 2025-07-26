@@ -39,11 +39,6 @@ export class AIAdvocateStack extends cdk.Stack {
       graphqlApiId: apiId,
       graphqlApiArn: `arn:aws:appsync:${this.region}:${this.account}:apis/${apiId}`
     });
-
-    // Validate required props
-    if (!api) {
-      throw new Error('api is required');
-    }
     if (!developerTable) {
       throw new Error('developerTable is required');
     }
