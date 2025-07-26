@@ -26,12 +26,18 @@ These scripts are defined in the root `package.json` file and provide a high-lev
 
 #### Parameter Management Scripts
 
-| Script                     | Description                                              |
-| -------------------------- | -------------------------------------------------------- |
-| `export-stack-params:dev`  | Export stack parameters from the development environment |
-| `export-stack-params:prod` | Export stack parameters from the production environment  |
-| `upload-stack-params:dev`  | Upload stack parameters to the development environment   |
-| `upload-stack-params:prod` | Upload stack parameters to the production environment    |
+| Script                             | Description                                                    |
+| ---------------------------------- | -------------------------------------------------------------- |
+| `export-ssm-params:dev`            | Export SSM parameters from the development environment         |
+| `export-ssm-params:prod`           | Export SSM parameters from the production environment          |
+| `upload-ssm-params:dev`            | Upload SSM parameters to the development environment           |
+| `upload-ssm-params:prod`           | Upload SSM parameters to the production environment            |
+| `sync-service-params-dry-run:dev`  | Preview service parameter sync with cleanup (development)      |
+| `sync-service-params-dry-run:prod` | Preview service parameter sync with cleanup (production)       |
+| `sync-service-params:dev`          | Sync required service parameters only (development)            |
+| `sync-service-params:prod`         | Sync required service parameters only (production)             |
+| `sync-service-params-cleanup:dev`  | Sync service parameters and delete obsolete ones (development) |
+| `sync-service-params-cleanup:prod` | Sync service parameters and delete obsolete ones (production)  |
 
 #### Development Scripts
 
@@ -82,14 +88,18 @@ These scripts are defined in the `infrastructure/package.json` file and provide 
 
 #### Parameter Management Scripts
 
-| Script                       | Description                                                 |
-| ---------------------------- | ----------------------------------------------------------- |
-| `upload-stack-params:dev`    | Upload parameters to SSM in the development environment     |
-| `upload-stack-params:prod`   | Upload parameters to SSM in the production environment      |
-| `export-stack-params:dev`    | Export parameters from SSM in the development environment   |
-| `export-stack-params:prod`   | Export parameters from SSM in the production environment    |
-| `download-stack-params:dev`  | Download parameters from SSM in the development environment |
-| `download-stack-params:prod` | Download parameters from SSM in the production environment  |
+| Script                             | Description                                                    |
+| ---------------------------------- | -------------------------------------------------------------- |
+| `upload-ssm-params:dev`            | Upload parameters to SSM in the development environment        |
+| `upload-ssm-params:prod`           | Upload parameters to SSM in the production environment         |
+| `export-ssm-params:dev`            | Export parameters from SSM in the development environment      |
+| `export-ssm-params:prod`           | Export parameters from SSM in the production environment       |
+| `sync-service-params-dry-run:dev`  | Preview service parameter sync with cleanup (development)      |
+| `sync-service-params-dry-run:prod` | Preview service parameter sync with cleanup (production)       |
+| `sync-service-params:dev`          | Sync required service parameters only (development)            |
+| `sync-service-params:prod`         | Sync required service parameters only (production)             |
+| `sync-service-params-cleanup:dev`  | Sync service parameters and delete obsolete ones (development) |
+| `sync-service-params-cleanup:prod` | Sync service parameters and delete obsolete ones (production)  |
 
 #### Data Management Scripts
 
@@ -124,21 +134,36 @@ These commands are implemented in the `infrastructure/lib/cli/bin/` directory an
 
 ```bash
 # Upload parameters to SSM
-ts-node lib/cli/bin/ssm-params.ts upload --verbose
+ts-node lib/cli/bin/ssm-params.ts upload --target=infrastructure --verbose
+
+# Upload parameters without cleanup
+ts-node lib/cli/bin/ssm-params.ts upload --target=infrastructure --skip-cleanup --verbose
+
+# Dry run (show what would be uploaded)
+ts-node lib/cli/bin/ssm-params.ts upload --target=infrastructure --dry-run --verbose
 
 # Export parameters from SSM
 ts-node lib/cli/bin/ssm-params.ts export --target=frontend --output
 ```
 
-**Options**:
+**Upload Options**:
 
-- `--target <target>` - Filter for specific target (infrastructure|frontend|link-generator)
-- `--scope <scope>` - Parameter scope (stack for infrastructure)
-- `--format <format>` - Output format (env|json)
-- `--output` - Write to file
+- `--target <target>` - Target for parameters (infrastructure|frontend|link-generator) [required]
+- `--region <region>` - Upload to specific region only (eu-central-1|us-east-1)
+- `--dry-run` - Show what would be uploaded without actually uploading
+- `--verbose` - Enable verbose logging
+
+> **Note**: The upload command now shows you exactly which parameters will be deleted before asking for confirmation. This interactive prompt ensures you can make an informed decision about the cleanup process.
+
+**Export Options**:
+
+- `--target <target>` - Target for parameters (infrastructure|frontend|link-generator) [required]
+- `--regions <regions>` - Comma-separated list of regions to download from
+- `--scope <scope>` - Parameter scope (e.g., stack)
+- `--format <format>` - Output format (env|json), defaults to env
+- `--output` - Write to file instead of console output
 - `--output-path <path>` - Custom output file path
-- `--regions <regions>` - Comma-separated regions
-- `--verbose` - Verbose logging
+- `--verbose` - Enable verbose logging
 
 ### Data Management (`data-management.ts`)
 
@@ -192,3 +217,26 @@ ts-node lib/cli/bin/invalidate-cloudfront-distribution.ts --verbose
 **Options**:
 
 - `--verbose` - Verbose logging
+
+### Service Parameter Sync (`sync-service-params.ts`)
+
+**Usage**:
+
+```bash
+# Preview what would be synced and cleaned up (dry-run)
+ts-node lib/cli/bin/sync-service-params.ts --dry-run --cleanup --verbose
+
+# Sync only required service parameters (no deletion)
+ts-node lib/cli/bin/sync-service-params.ts --verbose
+
+# Sync service parameters and delete obsolete ones
+ts-node lib/cli/bin/sync-service-params.ts --cleanup --verbose
+```
+
+**Options**:
+
+- `--dry-run` - Show what would be synced without making changes
+- `--cleanup` - Delete obsolete service parameters
+- `--verbose` - Enable verbose logging
+
+> **Purpose**: This command reads stack outputs from deployed CloudFormation stacks and syncs only the required service parameters to SSM Parameter Store. It filters out unnecessary parameters and can optionally clean up obsolete ones. The command uses service configuration to determine which parameters are actually needed by each service.

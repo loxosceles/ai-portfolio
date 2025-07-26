@@ -7,14 +7,13 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
-import { addStackOutputs, getRequiredEnvVars } from './stack-helpers';
+import { addStackOutputs } from './stack-helpers';
 import * as path from 'path';
+import { IWebStackEnv } from '../../types';
 
 interface IWebStackProps extends cdk.StackProps {
-  stage: 'dev' | 'prod';
-  domainName?: string;
+  stackEnv: IWebStackEnv;
 }
-
 /**
  * Combined stack for website hosting, content delivery, and visitor context
  * This eliminates cross-region references and circular dependencies
@@ -23,37 +22,24 @@ export class WebStack extends cdk.Stack {
   public readonly websiteBucket: s3.Bucket;
   public readonly distribution: cloudfront.Distribution;
   private readonly stage: string;
+  private readonly stackEnv: IWebStackEnv;
 
   constructor(scope: Construct, id: string, props: IWebStackProps) {
-    super(scope, id, {
-      ...props,
-      env: {
-        account: props.env?.account,
-        region: 'us-east-1' // Everything must be in us-east-1 for Lambda@Edge
-      }
-    });
-    this.stage = props.stage;
+    super(scope, id, props);
+    this.stackEnv = props.stackEnv;
+    this.stage = this.stackEnv.stage;
 
-    if (!['dev', 'prod'].includes(this.stage)) {
-      throw new Error('Stage must be either "dev" or "prod"');
-    }
+    const visitorTableName = `PortfolioVisitorLinks-${this.stage}`;
 
-    // Get required environment variables
-    const envVars =
-      this.stage === 'prod'
-        ? getRequiredEnvVars(
-            ['VISITOR_TABLE_NAME', 'PROD_DOMAIN_NAME', 'PROD_CERTIFICATE_ARN'],
-            this.stage
-          )
-        : getRequiredEnvVars(['VISITOR_TABLE_NAME'], this.stage);
-
-    const { visitorTableName, prodDomainName, prodCertificateArn } = envVars;
+    // Get production-specific environment variables if needed
+    const prodDomainName = process.env.PROD_DOMAIN_NAME;
+    const prodCertificateArn = process.env.PROD_CERTIFICATE_ARN;
 
     const isProd = this.stage === 'prod';
 
     // Create DynamoDB table for visitor context
     new dynamodb.Table(this, 'VisitorLinkTable', {
-      tableName: `${visitorTableName}-${this.stage}`,
+      tableName: visitorTableName,
       partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
       timeToLiveAttribute: 'ttl', // Add TTL for link expiration
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -107,7 +93,7 @@ export class WebStack extends cdk.Stack {
         effect: iam.Effect.ALLOW,
         actions: ['secretsmanager:GetSecretValue'],
         resources: [
-          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:/portfolio/${props.stage}/cognito/service-account-*`
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:/portfolio/${this.stage}/cognito/service-account-*`
         ]
       })
     );
@@ -128,9 +114,7 @@ export class WebStack extends cdk.Stack {
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['dynamodb:GetItem'],
-        resources: [
-          `arn:aws:dynamodb:${this.region}:${this.account}:table/${visitorTableName}-${this.stage}`
-        ]
+        resources: [`arn:aws:dynamodb:${this.region}:${this.account}:table/${visitorTableName}`]
       })
     );
 
@@ -284,14 +268,14 @@ export class WebStack extends cdk.Stack {
     // Add stack outputs with unique export names
     addStackOutputs(this, this.stage, [
       {
-        id: 'CloudFrontDomain',
+        id: 'CloudfrontDomain',
         value: this.distribution.distributionDomainName,
         description: 'CloudFront Distribution Domain Name',
         exportName: 'cloudfront-domain',
         paramName: 'CLOUDFRONT_DOMAIN'
       },
       {
-        id: 'CloudFrontDistributionId',
+        id: 'CloudfrontDistributionId',
         value: this.distribution.distributionId,
         description: 'CloudFront Distribution ID for web stack',
         exportName: 'web-cloudfront-distribution-id',
@@ -310,6 +294,13 @@ export class WebStack extends cdk.Stack {
         description: 'S3 bucket name for website hosting',
         exportName: 'web-bucket-name',
         paramName: 'WEB_BUCKET_NAME'
+      },
+      {
+        id: 'VisitorTableName',
+        value: visitorTableName,
+        description: 'DynamoDB table name for visitor context',
+        exportName: 'visitor-table-name',
+        paramName: 'VISITOR_TABLE_NAME'
       }
     ]);
   }

@@ -53,15 +53,23 @@ The CLI architecture follows a three-tier approach that provides modularity, tes
 - `upload` - Upload parameters from infrastructure env files to SSM
 - `export` - Export parameters from SSM (replaces download)
 
+**Upload Options**:
+
+- `--target <target>` - Target for parameters (infrastructure|frontend|link-generator) [required]
+- `--region <region>` - Upload to specific region only (eu-central-1|us-east-1)
+- `--dry-run` - Show what would be uploaded without actually uploading
+- `--skip-cleanup` - Skip cleanup of existing parameters before upload
+- `--verbose` - Enable verbose logging
+
 **Export Options**:
 
-- `--target <target>` - Filter for specific target (infrastructure|frontend|link-generator)
-- `--scope <scope>` - Parameter scope (stack for infrastructure)
-- `--format <format>` - Output format (env|json)
-- `--output` - Write to file (requires --output-path for infrastructure locally)
+- `--target <target>` - Target for parameters (infrastructure|frontend|link-generator) [required]
+- `--regions <regions>` - Comma-separated list of regions to download from
+- `--scope <scope>` - Parameter scope (e.g., stack)
+- `--format <format>` - Output format (env|json), defaults to env
+- `--output` - Write to file instead of console output
 - `--output-path <path>` - Custom output file path
-- `--regions <regions>` - Comma-separated regions
-- `--verbose` - Verbose logging
+- `--verbose` - Enable verbose logging
 
 ### Data Management (`data-management.ts`)
 
@@ -124,10 +132,12 @@ The package scripts provide a higher-level interface to CLI commands:
 
 **CLI-Based Operations**
 
-- `upload-stack-params:dev/prod` → `ssm-params.ts upload`
+- `upload-ssm-params:dev/prod` → `ssm-params.ts upload --target=infrastructure --verbose`
+- `upload-ssm-params-no-cleanup:dev/prod` → `ssm-params.ts upload --target=infrastructure --skip-cleanup --verbose`
+- `export-ssm-params:dev/prod` → `ssm-params.ts export --target=infrastructure --verbose`
 - `upload-static-data:dev/prod` → `data-management.ts upload`
 - `download-static-data:dev/prod` → `data-management.ts download`
-- `populate-static-data:dev/prod` → `data-management.ts populate_ddb_with_static_data`
+- `populate-static-data:dev/prod` → `data-management.ts populate_ddb_with_static_data --verbose`
 - `publish:web-app` → `web-app-publish.ts`
 - `invalidate:cloudfront` → `invalidate-cloudfront-distribution.ts`
 
@@ -137,7 +147,9 @@ The package scripts provide a higher-level interface to CLI commands:
 
 - `upload-static-data:dev/prod` → `infrastructure:upload-static-data:dev/prod`
 - `download-static-data:dev/prod` → `infrastructure:download-static-data:dev/prod`
-- `upload-stack-params:dev/prod` → `infrastructure:upload-stack-params:dev/prod`
+- `upload-ssm-params:dev/prod` → `infrastructure:upload-ssm-params:dev/prod`
+- `upload-ssm-params-no-cleanup:dev/prod` → `infrastructure:upload-ssm-params-no-cleanup:dev/prod`
+- `export-ssm-params:dev/prod` → `infrastructure:export-ssm-params:dev/prod`
 
 ## CI/CD Integration
 
@@ -151,8 +163,8 @@ The CLI commands are integrated into the CI/CD pipeline:
 **Build Phase**:
 
 1. Populate data: `pnpm run populate-static-data:$ENVIRONMENT`
-2. Generate service environments: `ssm-params export --target=frontend --output`
-3. Generate service environments: `ssm-params export --target=link-generator --output`
+2. Generate service environments: `ssm-params export --target=frontend --output --verbose`
+3. Generate service environments: `ssm-params export --target=link-generator --output --verbose`
 4. Build and publish frontend: `pnpm run publish:web-app`
 
 **Post-Build Phase**:

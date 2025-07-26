@@ -1,6 +1,6 @@
 import { Stage } from '../types/common';
 import { projectRoot, SUPPORTED_STAGES } from './base';
-import { IBaseManagerConfig } from '../types/config';
+import { IAWSManagerConfig } from '../types/config/aws-config';
 
 // Valid regions for AWS operations
 export const VALID_REGIONS = ['eu-central-1', 'us-east-1'];
@@ -17,12 +17,9 @@ export const PARAMETER_SCHEMA: Record<Stage, Record<string, string[]>> = {
       'GITHUB_OWNER',
       'GITHUB_REPO',
       'DATA_BUCKET_NAME',
-      'DEVELOPER_TABLE_NAME',
-      'PROJECTS_TABLE_NAME',
-      'MATCHING_TABLE_NAME',
-      'RECRUITER_PROFILES_TABLE_NAME'
+      'AWS_ADMIN_ARN'
     ],
-    'us-east-1': ['VISITOR_TABLE_NAME']
+    'us-east-1': []
   },
   prod: {
     'eu-central-1': [
@@ -34,12 +31,9 @@ export const PARAMETER_SCHEMA: Record<Stage, Record<string, string[]>> = {
       'GITHUB_OWNER',
       'GITHUB_REPO',
       'DATA_BUCKET_NAME',
-      'DEVELOPER_TABLE_NAME',
-      'PROJECTS_TABLE_NAME',
-      'MATCHING_TABLE_NAME',
-      'RECRUITER_PROFILES_TABLE_NAME'
+      'AWS_ADMIN_ARN'
     ],
-    'us-east-1': ['CERTIFICATE_ARN', 'PROD_DOMAIN_NAME', 'VISITOR_TABLE_NAME']
+    'us-east-1': ['CERTIFICATE_ARN', 'PROD_DOMAIN_NAME']
   },
   test: {
     'eu-central-1': [
@@ -49,12 +43,9 @@ export const PARAMETER_SCHEMA: Record<Stage, Record<string, string[]>> = {
       'GITHUB_OWNER',
       'GITHUB_REPO',
       'DATA_BUCKET_NAME',
-      'DEVELOPER_TABLE_NAME',
-      'PROJECTS_TABLE_NAME',
-      'MATCHING_TABLE_NAME',
-      'RECRUITER_PROFILES_TABLE_NAME'
+      'AWS_ADMIN_ARN'
     ],
-    'us-east-1': ['VISITOR_TABLE_NAME']
+    'us-east-1': []
   }
 };
 
@@ -76,15 +67,27 @@ export const SERVICE_REGIONS = {
   data: 'eu-central-1'
 } as const;
 
-// Stack name patterns
-export const STACK_NAME_PATTERNS = {
-  web: (stage: string) => `PortfolioWebStack-${stage}`,
-  api: (stage: string) => `PortfolioApiStack-${stage}`,
-  shared: (stage: string) => `PortfolioSharedStack-${stage}`
+// Stack configuration constants
+export const STACK_TYPES = ['web', 'api', 'shared'] as const;
+
+export const STACK_PREFIXES = {
+  web: 'PortfolioWebStack',
+  api: 'PortfolioApiStack',
+  shared: 'PortfolioSharedStack'
+} as const;
+
+export const STACK_REGIONS = {
+  web: 'us-east-1',
+  api: 'eu-central-1',
+  shared: 'eu-central-1'
 } as const;
 
 // AWS Manager Configuration
-export const awsManagerConfig: IBaseManagerConfig = {
+export const awsManagerConfig: IAWSManagerConfig = {
   projectRoot,
-  supportedStages: [...SUPPORTED_STAGES]
+  supportedStages: [...SUPPORTED_STAGES],
+  validRegions: VALID_REGIONS,
+  serviceRegions: SERVICE_REGIONS,
+  stackPrefixes: STACK_PREFIXES,
+  parameterSchema: PARAMETER_SCHEMA
 };

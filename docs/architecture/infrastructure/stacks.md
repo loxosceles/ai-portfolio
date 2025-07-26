@@ -24,8 +24,8 @@ The Web Stack (`portfolio-web-{stage}`) contains resources for hosting the front
 ### Outputs
 
 - **WebBucketName**: Name of the S3 bucket hosting the frontend
-- **CloudFrontDomainName**: Domain name of the CloudFront distribution
-- **CloudFrontDistributionId**: ID of the CloudFront distribution
+- **CloudfrontDomainName**: Domain name of the CloudFront distribution
+- **CloudfrontDistributionId**: ID of the CloudFront distribution
 
 ## API Stack
 
@@ -42,7 +42,7 @@ The API Stack (`portfolio-api-{stage}`) contains resources for the backend servi
 
 ### Outputs
 
-- **AppSyncApiKey**: API key for the AppSync API
+- **AppsyncApiKey**: API key for the AppSync API
 - **AppSyncUrl**: URL of the AppSync API
 - **DeveloperTableName**: Name of the DynamoDB table for developer profiles
 - **ProjectsTableName**: Name of the DynamoDB table for projects

@@ -4,6 +4,8 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { BaseManager } from './base-manager';
 import { IEnvironmentManagerConfig } from '../../types/config';
+import { StackEnvMap } from '../../types';
+import { toCamelCase } from '../../utils/generic';
 
 export class EnvironmentManager extends BaseManager {
   private envConfig: IEnvironmentManagerConfig;
@@ -11,6 +13,60 @@ export class EnvironmentManager extends BaseManager {
   constructor(config: IEnvironmentManagerConfig) {
     super(config);
     this.envConfig = config;
+
+    // Validate configuration
+    if (!config.infrastructureEnvPaths) {
+      throw new Error('infrastructureEnvPaths must be provided');
+    }
+    if (!config.serviceConfigs) {
+      throw new Error('serviceConfigs must be provided');
+    }
+  }
+
+  /**
+   * Get validated environment variables for a specific stack
+   *
+   * @param stackName - Name of the stack (api, web, aiAdvocate, shared)
+   * @returns Object with required environment variables for the stack
+   * @throws Error if any required variables are missing
+   */
+  getStackEnv<T extends keyof StackEnvMap>(stackName: T): StackEnvMap[T] {
+    const stage = this.getStage();
+    const env = this.loadEnv(stage);
+
+    // Get stack service config
+    const stackService = this.envConfig.serviceConfigs?.stack;
+    if (!stackService || stackService.type !== 'stack') {
+      throw new Error('Stack service configuration not found');
+    }
+
+    const requiredVars = stackService.stackConfigs[stackName]?.requiredVars;
+    if (!requiredVars) {
+      throw new Error(`Unknown stack: ${stackName}`);
+    }
+
+    // Validate required variables
+    const missingVars = this.validateEnv(env, requiredVars);
+    if (missingVars.length > 0) {
+      throw new Error(
+        `Missing required environment variables for ${stackName} stack: ${missingVars.join(', ')}`
+      );
+    }
+
+    // Build result object with stage and camelCase environment variables
+    const result: Record<string, string> = { stage };
+
+    // Convert SNAKE_CASE env vars to camelCase properties
+    for (const varName of requiredVars) {
+      const camelCaseKey = toCamelCase(varName);
+      result[camelCaseKey] = env[varName];
+    }
+
+    // Runtime validation + double assertion: ensures object structure is correct before type casting
+    if (!this.isValidStackEnv(result, stackName)) {
+      throw new Error(`Result object does not match the expected type for stack: ${stackName}`);
+    }
+    return result as unknown as StackEnvMap[T];
   }
 
   /**
@@ -57,6 +113,30 @@ export class EnvironmentManager extends BaseManager {
   }
 
   /**
+   * Validate that result object has all required properties for the stack type
+   */
+  private isValidStackEnv<T extends keyof StackEnvMap>(
+    result: Record<string, string>,
+    stackName: T
+  ): boolean {
+    // All stack environments must have stage
+    if (!result.stage) return false;
+
+    // Get stack service config to validate required properties
+    const stackService = this.envConfig.serviceConfigs.stack;
+    if (!stackService || stackService.type !== 'stack') return false;
+
+    const requiredVars = stackService.stackConfigs[stackName]?.requiredVars;
+    if (!requiredVars) return false;
+
+    // Check that all required variables have been converted to camelCase properties
+    return requiredVars.every((varName) => {
+      const camelCaseKey = toCamelCase(varName);
+      return result[camelCaseKey] !== undefined;
+    });
+  }
+
+  /**
    * Write environment file
    */
   async writeEnvFile(filePath: string, content: string): Promise<void> {
@@ -69,9 +149,16 @@ export class EnvironmentManager extends BaseManager {
    * Generate environment file content for a service
    */
   generateServiceEnvContent(service: string, params: Record<string, string>): string {
-    const serviceConfig = this.envConfig.serviceConfigs[service];
+    const serviceConfig = this.envConfig.serviceConfigs?.[service];
     if (!serviceConfig) {
-      throw new Error(`Unknown service: ${service}`);
+      throw new Error(
+        `Service '${service}' not configured. Available services: ${Object.keys(this.envConfig.serviceConfigs || {}).join(', ')}`
+      );
+    }
+
+    // Only handle frontend and link-generator services (not stack service)
+    if (serviceConfig.type === 'stack') {
+      throw new Error(`Cannot generate env content for stack service: ${service}`);
     }
 
     // Generate environment file content
