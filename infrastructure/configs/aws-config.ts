@@ -56,7 +56,7 @@ export const DATA_CONFIG = {
     projects: 'projects.json'
   },
   s3PathTemplate: '{stage}/{fileName}',
-  localPathTemplate: 'data/{stage}'
+  localPathTemplate: 'infrastructure/data/{stage}'
 };
 
 // Service region mapping
