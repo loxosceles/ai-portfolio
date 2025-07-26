@@ -8,6 +8,8 @@
     "publish-frontend:dev": "scripts/publish-frontend.sh",
     "upload-static-data:dev": "pnpm --filter=infrastructure run upload-static-data:dev",
     "upload-static-data:prod": "pnpm --filter=infrastructure run upload-static-data:prod",
+    "sync-static-data:dev": "pnpm --filter=infrastructure run upload-static-data:dev && pnpm --filter=infrastructure run populate-static-data-ddb:dev",
+    "sync-static-data:prod": "pnpm --filter=infrastructure run upload-static-data:prod && pnpm --filter=infrastructure run populate-static-data-ddb:prod",
     "download-static-data:dev": "pnpm --filter=infrastructure run download-static-data:dev",
     "download-static-data:prod": "pnpm --filter=infrastructure run download-static-data:prod",
     "upload-ssm-params:dev": "pnpm --filter=infrastructure run upload-ssm-params:dev",
