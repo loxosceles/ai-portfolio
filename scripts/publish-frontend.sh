@@ -30,15 +30,15 @@ echo "🏗️ Building Next.js application..."
 
 # Step 3: Publish web app
 echo "🌐 Publishing web application..."
-(cd "$INFRASTRUCTURE_DIR" && pnpm run publish:web-app)
+(cd "$INFRASTRUCTURE_DIR" && pnpm run publish:web-app:dev)
 
 # Step 4: Invalidate CloudFront
 echo "🔄 Invalidating CloudFront cache..."
-(cd "$INFRASTRUCTURE_DIR" && pnpm run invalidate:cloudfront)
+(cd "$INFRASTRUCTURE_DIR" && pnpm run invalidate:cloudfront:dev)
 
 # Get CloudFront domain from stack outputs
 echo "📡 Retrieving deployment URL..."
-CLOUDFRONT_DOMAIN=$(cd "$INFRASTRUCTURE_DIR" && pnpm run --silent stack-outputs:web CloudfrontDomain)
+CLOUDFRONT_DOMAIN=$(cd "$INFRASTRUCTURE_DIR" && pnpm run --silent stack-outputs:web:dev CloudfrontDomain)
 
 echo "✅ Frontend publishing completed successfully!"
 echo "Website is now live at: https://${CLOUDFRONT_DOMAIN}"
