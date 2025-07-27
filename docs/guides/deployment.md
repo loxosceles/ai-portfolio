@@ -104,17 +104,11 @@ cd ..
 # For development environment
 cd infrastructure
 pnpm run export-ssm-params:dev
-# Or using CLI directly:
-# ssm-params export --target=frontend --output --verbose
-# ssm-params export --target=link-generator --output --verbose
 cd ..
 
 # For production environment
 cd infrastructure
 pnpm run export-ssm-params:prod
-# Or using CLI directly:
-# ssm-params export --target=frontend --output --verbose
-# ssm-params export --target=link-generator --output --verbose
 cd ..
 ```
 
@@ -127,7 +121,6 @@ NEXT_PUBLIC_ENVIRONMENT=dev pnpm build
 cd ..
 cd infrastructure
 pnpm run publish-web-app:dev
-# Or using CLI directly: web-app-publish
 cd ..
 
 # For production environment
@@ -136,7 +129,6 @@ NEXT_PUBLIC_ENVIRONMENT=prod pnpm build
 cd ..
 cd infrastructure
 pnpm run publish-web-app:prod
-# Or using CLI directly: web-app-publish
 cd ..
 ```
 
@@ -145,7 +137,6 @@ cd ..
 ```bash
 cd infrastructure
 pnpm run invalidate-cloudfront:dev  # or :prod
-# Or using CLI directly: invalidate-cloudfront-distribution
 cd ..
 ```
 
@@ -237,7 +228,6 @@ pnpm publish-frontend:dev
 # Get CloudFront domain
 cd infrastructure
 pnpm run stack-outputs:web:dev CloudfrontDomain
-# Or using CLI directly: stack-outputs web CloudfrontDomain
 cd ..
 ```
 

@@ -2,6 +2,8 @@
 
 The CLI architecture follows a three-tier approach that provides modularity, testability, and maintainability for infrastructure management operations.
 
+> **Note**: For CLI usage examples and development setup, see the [Development Workflow](../../contributing/development-workflow.md#cli-development) documentation.
+
 ## Three-Tier Architecture
 
 ### Tier 1: CLI Binaries (`cli/bin/`)
@@ -207,7 +209,7 @@ The package scripts provide a higher-level interface to CLI commands:
 
 ## CI/CD Integration
 
-The CLI commands are integrated into the CI/CD pipeline via buildspec.yml:
+The CLI commands are integrated into the CI/CD pipeline via buildspec.yml. The buildspec uses direct `ts-node` calls to the CLI tools:
 
 **Pre-Build Phase**:
 
@@ -226,3 +228,5 @@ The CLI commands are integrated into the CI/CD pipeline via buildspec.yml:
 
 1. Invalidate CloudFront: `invalidate-cloudfront-distribution`
 2. Get deployment URL: `stack-outputs web CloudfrontDomain`
+
+> **Implementation Note**: The buildspec.yml configures PATH to include the CLI bin directory, allowing direct command usage. For local development setup, see the [Development Workflow](../../contributing/development-workflow.md#cli-development) documentation.

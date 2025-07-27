@@ -133,6 +133,56 @@ pnpm run lint:infra
 pnpm run format
 ```
 
+## CLI Development
+
+For developers working with the CLI system directly, this section provides setup and usage information.
+
+> **Note**: For CLI architecture details, see the [CLI Architecture](../architecture/infrastructure/cli-architecture.md) documentation.
+
+### CLI Setup for Development
+
+The CLI tools are TypeScript files that require `ts-node` to execute. For development work:
+
+**Option 1: Use full ts-node paths (recommended)**
+
+```bash
+# From infrastructure directory
+ts-node lib/cli/bin/ssm-params.ts export --target=frontend --output
+ts-node lib/cli/bin/data-management.ts upload --verbose
+ts-node lib/cli/bin/web-app-publish.ts
+```
+
+**Option 2: Add to PATH (for frequent CLI development)**
+
+```bash
+# From project root
+export PATH="$PWD/infrastructure/lib/cli/bin:$PATH"
+
+# Now you can use direct commands
+ssm-params export --target=frontend --output
+data-management upload --verbose
+web-app-publish
+```
+
+### Available CLI Commands
+
+| Command                              | Purpose                    | Example Usage                                                                    |
+| ------------------------------------ | -------------------------- | -------------------------------------------------------------------------------- |
+| `ssm-params`                         | SSM parameter management   | `ts-node lib/cli/bin/ssm-params.ts upload --target=infrastructure --verbose`     |
+| `data-management`                    | S3 and DynamoDB operations | `ts-node lib/cli/bin/data-management.ts populate_ddb_with_static_data --verbose` |
+| `web-app-publish`                    | Frontend publishing        | `ts-node lib/cli/bin/web-app-publish.ts --verbose`                               |
+| `invalidate-cloudfront-distribution` | Cache invalidation         | `ts-node lib/cli/bin/invalidate-cloudfront-distribution.ts`                      |
+| `stack-outputs`                      | CloudFormation outputs     | `ts-node lib/cli/bin/stack-outputs.ts web CloudfrontDomain`                      |
+| `sync-service-params`                | Service parameter sync     | `ts-node lib/cli/bin/sync-service-params.ts --dry-run --verbose`                 |
+
+### CLI Development Guidelines
+
+- **Use pnpm scripts for normal operations**: The package scripts provide the primary interface
+- **Use direct CLI for development/debugging**: When working on CLI features or troubleshooting
+- **Follow the three-tier architecture**: Keep binaries, commands, and managers separate
+- **Add proper error handling**: All CLI commands should handle errors gracefully
+- **Include verbose options**: For debugging and development visibility
+
 ## Pre-Commit Hooks
 
 We use Husky and lint-staged for pre-commit hooks:
