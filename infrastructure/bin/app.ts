@@ -45,7 +45,7 @@ const apiStack = new ApiStack(app, `PortfolioApiStack-${envManager.getStage()}`,
 });
 
 // Create AI Advocate stack
-new AIAdvocateStack(app, `AIAdvocateStack-${envManager.getStage()}`, {
+const aiAdvocateStack = new AIAdvocateStack(app, `AIAdvocateStack-${envManager.getStage()}`, {
   env,
   developerTable: apiStack.developerTable,
   projectsTable: apiStack.projectsTable,
@@ -83,5 +83,6 @@ if (!skipPipeline) {
 
 // Add dependencies
 apiStack.addDependency(sharedStack);
+aiAdvocateStack.addDependency(apiStack);
 
 app.synth();
