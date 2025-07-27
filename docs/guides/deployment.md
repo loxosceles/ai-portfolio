@@ -2,6 +2,8 @@
 
 This guide provides step-by-step instructions for deploying the AI Portfolio application.
 
+> **Note**: This guide uses pnpm scripts with double dash parameter passing. For example, `pnpm export-ssm-params:dev -- --target=frontend` passes the `--target=frontend` parameter to the underlying CLI tool. See the [Commands Reference](../reference/commands.md#double-dash-parameter-passing) for details.
+
 ## Quick Start
 
 **For most deployments, use the main deploy command:**
@@ -227,7 +229,7 @@ pnpm publish-frontend:dev
 ```bash
 # Get CloudFront domain
 cd infrastructure
-pnpm run stack-outputs:web:dev CloudfrontDomain
+pnpm run stack-outputs-web:dev CloudfrontDomain
 cd ..
 ```
 

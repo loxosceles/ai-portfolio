@@ -7,9 +7,9 @@ This document describes the development workflow for the AI Portfolio applicatio
 We use a simplified Git flow branching strategy:
 
 - `main`: Production-ready code
-- `develop`: Development code
-- Feature branches: Created from `develop` for new features
-- Bugfix branches: Created from `develop` for bug fixes
+- `dev`: Development code
+- Feature branches: Created from `dev` for new features
+- Bugfix branches: Created from `dev` for bug fixes
 - Hotfix branches: Created from `main` for urgent fixes
 
 ## Branch Naming
@@ -20,10 +20,10 @@ We use a simplified Git flow branching strategy:
 
 ## Development Process
 
-1. **Create a Branch**: Create a new branch from `develop` for your feature or bug fix.
+1. **Create a Branch**: Create a new branch from `dev` for your feature or bug fix.
 
 ```bash
-git checkout develop
+git checkout dev
 git pull
 git checkout -b feature/your-feature-name
 ```
@@ -56,23 +56,23 @@ git commit -m "Add your feature or fix"
 git push -u origin feature/your-feature-name
 ```
 
-7. **Create a Pull Request**: Create a pull request from your branch to `develop`.
+7. **Create a Pull Request**: Create a pull request from your branch to `dev`.
 
 8. **Code Review**: Wait for code review and address any feedback.
 
-9. **Merge**: Once approved, merge your pull request into `develop`.
+9. **Merge**: Once approved, merge your pull request into `dev`.
 
 ## Deployment Process
 
 ### Development Deployment
 
-1. **Merge to Develop**: Merge your feature branch into `develop`.
+1. **Merge to Dev**: Merge your feature branch into `dev`.
 
 2. **CI/CD Pipeline**: The CI/CD pipeline will automatically deploy to the development environment.
 
 ### Production Deployment
 
-1. **Merge to Main**: Merge `develop` into `main`.
+1. **Merge to Main**: Merge `dev` into `main`.
 
 2. **CI/CD Pipeline**: The CI/CD pipeline will automatically deploy to the production environment.
 
@@ -143,8 +143,6 @@ For developers working with the CLI system directly, this section provides setup
 
 The CLI tools are TypeScript files that require `ts-node` to execute. For development work:
 
-**Option 1: Use full ts-node paths (recommended)**
-
 ```bash
 # From infrastructure directory
 ts-node lib/cli/bin/ssm-params.ts export --target=frontend --output
@@ -152,19 +150,9 @@ ts-node lib/cli/bin/data-management.ts upload --verbose
 ts-node lib/cli/bin/web-app-publish.ts
 ```
 
-**Option 2: Add to PATH (for frequent CLI development)**
-
-```bash
-# From project root
-export PATH="$PWD/infrastructure/lib/cli/bin:$PATH"
-
-# Now you can use direct commands
-ssm-params export --target=frontend --output
-data-management upload --verbose
-web-app-publish
-```
-
 ### Available CLI Commands
+
+In this table we list the available CLI commands without the `ts-node` prefix, as they are typically run through `pnpm` scripts in the infrastructure package.
 
 | Command                              | Purpose                    | Example Usage                                                                    |
 | ------------------------------------ | -------------------------- | -------------------------------------------------------------------------------- |
@@ -177,8 +165,11 @@ web-app-publish
 
 ### CLI Development Guidelines
 
+> **Note**: Many pnpm scripts use double dash parameter passing. See the [Commands Reference](../reference/commands.md#double-dash-parameter-passing) for details.
+
 - **Use pnpm scripts for normal operations**: The package scripts provide the primary interface
 - **Use direct CLI for development/debugging**: When working on CLI features or troubleshooting
+- **Leverage double dash parameters**: Pass additional options to generic scripts
 - **Follow the three-tier architecture**: Keep binaries, commands, and managers separate
 - **Add proper error handling**: All CLI commands should handle errors gracefully
 - **Include verbose options**: For debugging and development visibility
@@ -205,36 +196,4 @@ We use GitHub Actions for continuous integration:
 
 ## Release Process
 
-1. **Create a Release Branch**: Create a release branch from `develop`.
-
-```bash
-git checkout develop
-git pull
-git checkout -b release/v1.0.0
-```
-
-2. **Update Version**: Update the version number in `package.json`.
-
-3. **Create a Pull Request**: Create a pull request from the release branch to `main`.
-
-4. **Code Review**: Wait for code review and address any feedback.
-
-5. **Merge**: Once approved, merge the pull request into `main`.
-
-6. **Tag Release**: Create a tag for the release.
-
-```bash
-git checkout main
-git pull
-git tag v1.0.0
-git push --tags
-```
-
-7. **Update Develop**: Merge `main` back into `develop`.
-
-```bash
-git checkout develop
-git pull
-git merge main
-git push
-```
+Release process details will be documented when the release workflow is established.

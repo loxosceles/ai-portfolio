@@ -48,7 +48,7 @@ echo "🔄 Invalidating CloudFront cache..."
 
 # Get CloudFront domain from stack outputs
 echo "📡 Retrieving deployment URL..."
-CLOUDFRONT_DOMAIN=$(cd "$INFRASTRUCTURE_DIR" && pnpm run --silent stack-outputs:web:"$ENVIRONMENT" CloudfrontDomain)
+CLOUDFRONT_DOMAIN=$(cd "$INFRASTRUCTURE_DIR" && pnpm run --silent stack-outputs-web:"$ENVIRONMENT" CloudfrontDomain)
 
 echo "✅ Deployment completed successfully!"
 echo "Website is now live at: https://${CLOUDFRONT_DOMAIN}"
