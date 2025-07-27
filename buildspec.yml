@@ -22,7 +22,7 @@ phases:
   pre_build:
     commands:
       - echo "Setting up infrastructure environment for $ENVIRONMENT environment"
-      - cd infrastructure && pnpm export-ssm-params:$ENVIRONMENT -- --target=infrastructure --output && cd ..
+      - cd infrastructure && pnpm export-ssm-params:$ENVIRONMENT --target=infrastructure --output && cd ..
       - echo "Loading environment variables"
       - cat infrastructure/.env
 
@@ -33,8 +33,8 @@ phases:
       - echo "Setting up data for $ENVIRONMENT environment"
       - cd infrastructure && pnpm populate-static-data-ddb:$ENVIRONMENT && cd ..
       - echo "Generating service environment files"
-      - cd infrastructure && pnpm export-ssm-params:$ENVIRONMENT -- --target=frontend --output && cd ..
-      - cd infrastructure && pnpm export-ssm-params:$ENVIRONMENT -- --target=link-generator --output && cd ..
+      - cd infrastructure && pnpm export-ssm-params:$ENVIRONMENT --target=frontend --output && cd ..
+      - cd infrastructure && pnpm export-ssm-params:$ENVIRONMENT --target=link-generator --output && cd ..
       - echo "Building frontend for $ENVIRONMENT environment"
       - cd frontend && NEXT_PUBLIC_ENVIRONMENT=$ENVIRONMENT pnpm build && cd ..
       - echo "Publishing frontend for $ENVIRONMENT environment"

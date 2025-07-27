@@ -31,7 +31,7 @@ SERVICES=("frontend" "link-generator")
 
 for service in "${SERVICES[@]}"; do
   echo "🔄 Generating $service environment variables..."
-  (cd "$INFRASTRUCTURE_DIR" && pnpm run export-ssm-params:"$ENVIRONMENT" -- --target="$service")
+  (cd "$INFRASTRUCTURE_DIR" && pnpm run export-ssm-params:"$ENVIRONMENT" --target="$service")
 done
 
 # Step 2: Build Next.js app
