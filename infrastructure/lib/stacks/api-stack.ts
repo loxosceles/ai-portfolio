@@ -162,11 +162,10 @@ export class ApiStack extends cdk.Stack {
         this.developerTableName
       );
 
-      const projectsTable = dynamodb.Table.fromTableName(
-        this,
-        'ProjectsTable',
-        this.projectsTableName
-      );
+      const projectsTable = dynamodb.Table.fromTableAttributes(this, 'ProjectsTable', {
+        tableName: this.projectsTableName,
+        globalIndexes: ['byDeveloperId']
+      });
 
       return { developerTable, projectsTable };
     } else {
