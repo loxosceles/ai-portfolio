@@ -163,7 +163,7 @@ export class ApiStack extends cdk.Stack {
       );
 
       const projectsTable = dynamodb.Table.fromTableAttributes(this, 'ProjectsTable', {
-        tableName: this.projectsTableName,
+        tableArn: `arn:aws:dynamodb:${this.region}:${this.account}:table/${this.projectsTableName}`,
         globalIndexes: ['byDeveloperId']
       });
 
