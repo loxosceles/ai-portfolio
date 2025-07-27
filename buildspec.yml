@@ -45,7 +45,7 @@ phases:
       - echo "Invalidating CloudFront cache"
       - cd infrastructure && pnpm invalidate-cloudfront:$ENVIRONMENT && cd ..
       - echo "Retrieving deployment URL..."
-      - CLOUDFRONT_DOMAIN=$(cd infrastructure && pnpm --silent stack-outputs:web:$ENVIRONMENT CloudfrontDomain)
+      - CLOUDFRONT_DOMAIN=$(cd infrastructure && pnpm --silent stack-outputs-web:$ENVIRONMENT CloudfrontDomain)
       - echo "Deployment complete"
       - echo "Website is now live at https://${CLOUDFRONT_DOMAIN}"
 

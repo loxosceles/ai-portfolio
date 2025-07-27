@@ -169,6 +169,8 @@ The CLI commands integrate with the core managers to perform their operations:
 
 ## Package Script Interface
 
+> **Note**: Many scripts use double dash parameter passing (e.g., `pnpm export-ssm-params:dev -- --target=frontend`). See the [Commands Reference](../../reference/commands.md#double-dash-parameter-passing) for details.
+
 The package scripts provide a higher-level interface to CLI commands:
 
 ### Infrastructure Package Scripts (`infrastructure/package.json`)
@@ -180,14 +182,14 @@ The package scripts provide a higher-level interface to CLI commands:
 
 **CLI-Based Operations**
 
-- `upload-ssm-params:dev/prod` → `ssm-params upload --target=infrastructure --verbose`
-- `export-ssm-params:dev/prod` → `ssm-params export --target=infrastructure --verbose`
+- `upload-ssm-params:dev/prod` → `ssm-params upload --verbose` (accepts `-- --target=<target>`)
+- `export-ssm-params:dev/prod` → `ssm-params export --verbose` (accepts `-- --target=<target>`)
 - `upload-static-data:dev/prod` → `data-management upload`
 - `download-static-data:dev/prod` → `data-management download`
 - `populate-static-data-ddb:dev/prod` → `data-management populate_ddb_with_static_data --verbose`
 - `publish-web-app:dev/prod` → `web-app-publish`
 - `invalidate-cloudfront:dev/prod` → `invalidate-cloudfront-distribution`
-- `stack-outputs:web:dev/prod` → `stack-outputs web <outputKey>`
+- `stack-outputs-web:dev/prod` → `stack-outputs web <outputKey>`
 - `sync-service-params:dev/prod` → `sync-service-params --verbose`
 - `sync-service-params-dry-run:dev/prod` → `sync-service-params --dry-run --cleanup --verbose`
 - `sync-service-params-cleanup:dev/prod` → `sync-service-params --cleanup --verbose`
