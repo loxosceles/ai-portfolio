@@ -18,7 +18,7 @@ export const STACK_CONFIGS = {
     optional: ['PROD_DOMAIN_NAME', 'CERTIFICATE_ARN']
   },
   aiAdvocate: {
-    base: ['BEDROCK_MODEL_ID', 'AWS_REGION_DEFAULT', 'APPSYNC_API_ID'],
+    base: ['BEDROCK_MODEL_ID', 'AWS_REGION_DEFAULT'],
     prod: [],
     optional: []
   },
