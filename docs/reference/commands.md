@@ -116,10 +116,14 @@ These scripts are defined in the `infrastructure/package.json` file and provide 
 
 #### Web App Scripts
 
-| Script                  | Description                         |
-| ----------------------- | ----------------------------------- |
-| `publish:web-app`       | Build and publish the web app to S3 |
-| `invalidate:cloudfront` | Invalidate CloudFront cache         |
+| Script                       | Description                                       |
+| ---------------------------- | ------------------------------------------------- |
+| `publish-web-app:dev`        | Build and publish the web app to S3 (development) |
+| `publish-web-app:prod`       | Build and publish the web app to S3 (production)  |
+| `invalidate-cloudfront:dev`  | Invalidate CloudFront cache (development)         |
+| `invalidate-cloudfront:prod` | Invalidate CloudFront cache (production)          |
+| `stack-outputs:web:dev`      | Get web stack outputs (development)               |
+| `stack-outputs:web:prod`     | Get web stack outputs (production)                |
 
 ## CLI Commands
 
@@ -214,11 +218,35 @@ ts-node lib/cli/bin/web-app-publish.ts --verbose
 ```bash
 # Invalidate CloudFront cache
 ts-node lib/cli/bin/invalidate-cloudfront-distribution.ts --verbose
+
+# Or using CLI directly (with PATH configured)
+invalidate-cloudfront-distribution --verbose
 ```
 
 **Options**:
 
 - `--verbose` - Verbose logging
+
+### Stack Outputs (`stack-outputs.ts`)
+
+**Usage**:
+
+```bash
+# Get CloudFront domain from web stack
+ts-node lib/cli/bin/stack-outputs.ts web CloudfrontDomain
+
+# Get API endpoint from API stack
+ts-node lib/cli/bin/stack-outputs.ts api ApiEndpoint
+
+# Or using CLI directly (with PATH configured)
+stack-outputs web CloudfrontDomain
+stack-outputs api ApiEndpoint
+```
+
+**Arguments**:
+
+- `<stackType>` - Stack type (web, api, shared) [required]
+- `<outputKey>` - Output key to retrieve [required]
 
 ### Service Parameter Sync (`sync-service-params.ts`)
 
@@ -242,3 +270,27 @@ ts-node lib/cli/bin/sync-service-params.ts --cleanup --verbose
 - `--verbose` - Enable verbose logging
 
 > **Purpose**: This command reads stack outputs from deployed CloudFormation stacks and syncs only the required service parameters to SSM Parameter Store. It filters out unnecessary parameters and can optionally clean up obsolete ones. The command uses service configuration to determine which parameters are actually needed by each service.
+
+**Usage**:
+
+```bash
+# Preview what would be synced and cleaned up (dry-run)
+ts-node lib/cli/bin/sync-service-params.ts --dry-run --cleanup --verbose
+
+# Sync only required service parameters (no deletion)
+ts-node lib/cli/bin/sync-service-params.ts --verbose
+
+# Sync service parameters and delete obsolete ones
+ts-node lib/cli/bin/sync-service-params.ts --cleanup --verbose
+
+# Or using CLI directly (with PATH configured)
+sync-service-params --dry-run --cleanup --verbose
+sync-service-params --verbose
+sync-service-params --cleanup --verbose
+```
+
+**Options**:
+
+- `--dry-run` - Show what would be synced without making changes
+- `--cleanup` - Delete obsolete service parameters
+- `--verbose` - Enable verbose logging
