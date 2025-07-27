@@ -21,32 +21,31 @@ phases:
 
   pre_build:
     commands:
-      - echo "Deploying infrastructure for $ENVIRONMENT environment"
       - echo "Setting up infrastructure environment for $ENVIRONMENT environment"
-      - cd infrastructure && ts-node ./lib/cli/bin/ssm-params.ts export --target=infrastructure --output && cd ..
+      - cd infrastructure && pnpm export-ssm-params:$ENVIRONMENT --target=infrastructure --output && cd ..
       - echo "Loading environment variables"
       - cat infrastructure/.env
-      - echo 'Provisioning infrastructure for $ENVIRONMENT environment'
-      - cd infrastructure && pnpm run provision:$ENVIRONMENT && cd ..
 
   build:
     commands:
+      - echo "Provisioning infrastructure for $ENVIRONMENT environment"
+      - cd infrastructure && pnpm provision:$ENVIRONMENT && cd ..
       - echo "Setting up data for $ENVIRONMENT environment"
-      - cd infrastructure && pnpm run populate-static-data-ddb:$ENVIRONMENT && cd ..
+      - cd infrastructure && pnpm populate-static-data-ddb:$ENVIRONMENT && cd ..
       - echo "Generating service environment files"
-      - cd infrastructure && ts-node ./lib/cli/bin/ssm-params.ts export --target=frontend --output && cd ..
-      - cd infrastructure && ts-node ./lib/cli/bin/ssm-params.ts export --target=link-generator --output && cd ..
+      - cd infrastructure && pnpm export-ssm-params:$ENVIRONMENT --target=frontend --output && cd ..
+      - cd infrastructure && pnpm export-ssm-params:$ENVIRONMENT --target=link-generator --output && cd ..
       - echo "Building frontend for $ENVIRONMENT environment"
       - cd frontend && NEXT_PUBLIC_ENVIRONMENT=$ENVIRONMENT pnpm build && cd ..
       - echo "Publishing frontend for $ENVIRONMENT environment"
-      - cd infrastructure && pnpm run publish:web-app && cd ..
+      - cd infrastructure && pnpm publish-web-app:$ENVIRONMENT && cd ..
 
   post_build:
     commands:
       - echo "Invalidating CloudFront cache"
-      - cd infrastructure && pnpm run invalidate:cloudfront && cd ..
+      - cd infrastructure && pnpm invalidate-cloudfront:$ENVIRONMENT && cd ..
       - echo "Retrieving deployment URL..."
-      - CLOUDFRONT_DOMAIN=$(cd infrastructure && pnpm run --silent stack-outputs:web CloudfrontDomain)
+      - CLOUDFRONT_DOMAIN=$(cd infrastructure && pnpm --silent stack-outputs-web:$ENVIRONMENT CloudfrontDomain)
       - echo "Deployment complete"
       - echo "Website is now live at https://${CLOUDFRONT_DOMAIN}"
 

@@ -2,6 +2,8 @@
 
 This guide provides step-by-step instructions for deploying the AI Portfolio application.
 
+> **Note**: This guide uses pnpm scripts with double dash parameter passing. For example, `pnpm export-ssm-params:dev -- --target=frontend` passes the `--target=frontend` parameter to the underlying CLI tool. See the [Commands Reference](../reference/commands.md#double-dash-parameter-passing) for details.
+
 ## Quick Start
 
 **For most deployments, use the main deploy command:**
@@ -104,15 +106,11 @@ cd ..
 # For development environment
 cd infrastructure
 pnpm run export-ssm-params:dev
-ts-node lib/cli/bin/ssm-params.ts export --target=frontend --output --verbose
-ts-node lib/cli/bin/ssm-params.ts export --target=link-generator --output --verbose
 cd ..
 
 # For production environment
 cd infrastructure
 pnpm run export-ssm-params:prod
-ts-node lib/cli/bin/ssm-params.ts export --target=frontend --output --verbose
-ts-node lib/cli/bin/ssm-params.ts export --target=link-generator --output --verbose
 cd ..
 ```
 
@@ -121,18 +119,18 @@ cd ..
 ```bash
 # For development environment
 cd frontend
-pnpm run build
+NEXT_PUBLIC_ENVIRONMENT=dev pnpm build
 cd ..
 cd infrastructure
-pnpm run publish:web-app
+pnpm run publish-web-app:dev
 cd ..
 
 # For production environment
 cd frontend
-pnpm run build
+NEXT_PUBLIC_ENVIRONMENT=prod pnpm build
 cd ..
 cd infrastructure
-pnpm run publish:web-app
+pnpm run publish-web-app:prod
 cd ..
 ```
 
@@ -140,7 +138,7 @@ cd ..
 
 ```bash
 cd infrastructure
-pnpm run invalidate:cloudfront
+pnpm run invalidate-cloudfront:dev  # or :prod
 cd ..
 ```
 
@@ -225,6 +223,28 @@ pnpm publish-frontend:dev
 > - Builds the Next.js application
 > - Uploads built files to S3
 > - Invalidates CloudFront cache
+
+### Stack Outputs
+
+```bash
+# Get CloudFront domain
+cd infrastructure
+pnpm run stack-outputs-web:dev CloudfrontDomain
+cd ..
+```
+
+### Service Parameter Sync
+
+```bash
+# Preview service parameter sync
+pnpm sync-service-params-dry-run:dev
+
+# Sync service parameters
+pnpm sync-service-params:dev
+
+# Sync and cleanup obsolete parameters
+pnpm sync-service-params-cleanup:dev
+```
 
 ## Troubleshooting
 

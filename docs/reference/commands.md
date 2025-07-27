@@ -1,6 +1,31 @@
 # Commands Reference
 
-This document provides a reference for all CLI commands and package scripts used in the AI Portfolio application.
+This document provides a reference for all package scripts used in the AI Portfolio application. These scripts provide the primary interface for managing the application.
+
+> **Note**: For direct CLI development and lower-level command usage, see the [Development Workflow](../contributing/development-workflow.md#cli-development) documentation.
+
+## Double Dash Parameter Passing
+
+Many pnpm scripts accept additional parameters via the double dash (`--`) syntax:
+
+```bash
+# Pass target parameter to export script
+pnpm export-ssm-params:dev -- --target=frontend --output
+
+# Pass target parameter to upload script
+pnpm upload-ssm-params:dev -- --target=infrastructure
+```
+
+**Key Scripts Supporting Double Dash:**
+
+- `export-ssm-params:dev/prod` - Accepts `--target=<service>` and other export options
+- `upload-ssm-params:dev/prod` - Accepts `--target=<service>` and other upload options
+
+**Supported Targets:**
+
+- `infrastructure` - Infrastructure configuration parameters
+- `frontend` - Frontend application parameters
+- `link-generator` - Link generator tool parameters
 
 ## Package Scripts
 
@@ -30,10 +55,10 @@ These scripts are defined in the root `package.json` file and provide a high-lev
 
 | Script                             | Description                                                    |
 | ---------------------------------- | -------------------------------------------------------------- |
-| `export-ssm-params:dev`            | Export SSM parameters from the development environment         |
-| `export-ssm-params:prod`           | Export SSM parameters from the production environment          |
-| `upload-ssm-params:dev`            | Upload SSM parameters to the development environment           |
-| `upload-ssm-params:prod`           | Upload SSM parameters to the production environment            |
+| `export-ssm-params:dev`            | Export SSM parameters (accepts `-- --target=<service>`)        |
+| `export-ssm-params:prod`           | Export SSM parameters (accepts `-- --target=<service>`)        |
+| `upload-ssm-params:dev`            | Upload SSM parameters (accepts `-- --target=<service>`)        |
+| `upload-ssm-params:prod`           | Upload SSM parameters (accepts `-- --target=<service>`)        |
 | `sync-service-params-dry-run:dev`  | Preview service parameter sync with cleanup (development)      |
 | `sync-service-params-dry-run:prod` | Preview service parameter sync with cleanup (production)       |
 | `sync-service-params:dev`          | Sync required service parameters only (development)            |
@@ -116,129 +141,11 @@ These scripts are defined in the `infrastructure/package.json` file and provide 
 
 #### Web App Scripts
 
-| Script                  | Description                         |
-| ----------------------- | ----------------------------------- |
-| `publish:web-app`       | Build and publish the web app to S3 |
-| `invalidate:cloudfront` | Invalidate CloudFront cache         |
-
-## CLI Commands
-
-These commands are implemented in the `infrastructure/lib/cli/bin/` directory and provide direct access to infrastructure operations.
-
-### SSM Parameters (`ssm-params.ts`)
-
-**Commands**:
-
-- `upload` - Upload parameters from infrastructure env files to SSM
-- `export` - Export parameters from SSM
-
-**Usage**:
-
-```bash
-# Upload parameters to SSM
-ts-node lib/cli/bin/ssm-params.ts upload --target=infrastructure --verbose
-
-# Upload parameters without cleanup
-ts-node lib/cli/bin/ssm-params.ts upload --target=infrastructure --skip-cleanup --verbose
-
-# Dry run (show what would be uploaded)
-ts-node lib/cli/bin/ssm-params.ts upload --target=infrastructure --dry-run --verbose
-
-# Export parameters from SSM
-ts-node lib/cli/bin/ssm-params.ts export --target=frontend --output
-```
-
-**Upload Options**:
-
-- `--target <target>` - Target for parameters (infrastructure|frontend|link-generator) [required]
-- `--region <region>` - Upload to specific region only (eu-central-1|us-east-1)
-- `--dry-run` - Show what would be uploaded without actually uploading
-- `--verbose` - Enable verbose logging
-
-> **Note**: The upload command now shows you exactly which parameters will be deleted before asking for confirmation. This interactive prompt ensures you can make an informed decision about the cleanup process.
-
-**Export Options**:
-
-- `--target <target>` - Target for parameters (infrastructure|frontend|link-generator) [required]
-- `--regions <regions>` - Comma-separated list of regions to download from
-- `--scope <scope>` - Parameter scope (e.g., stack)
-- `--format <format>` - Output format (env|json), defaults to env
-- `--output` - Write to file instead of console output
-- `--output-path <path>` - Custom output file path
-- `--verbose` - Enable verbose logging
-
-### Data Management (`data-management.ts`)
-
-**Commands**:
-
-- `upload` - Upload local JSON data to S3
-- `download` - Download data from S3 to local files
-- `populate_ddb_with_static_data` - Download from S3 and populate DynamoDB tables
-
-**Usage**:
-
-```bash
-# Upload data to S3
-ts-node lib/cli/bin/data-management.ts upload --verbose
-
-# Download data from S3
-ts-node lib/cli/bin/data-management.ts download --output ./data
-
-# Populate DynamoDB with data from S3
-ts-node lib/cli/bin/data-management.ts populate_ddb_with_static_data --verbose
-```
-
-**Options**:
-
-- `--verbose` - Verbose logging
-- `--region <region>` - Target region
-- `--output <path>` - Output directory for download
-
-### Web App Publishing (`web-app-publish.ts`)
-
-**Usage**:
-
-```bash
-# Publish web app to S3
-ts-node lib/cli/bin/web-app-publish.ts --verbose
-```
-
-**Options**:
-
-- `--verbose` - Verbose logging
-
-### CloudFront Invalidation (`invalidate-cloudfront-distribution.ts`)
-
-**Usage**:
-
-```bash
-# Invalidate CloudFront cache
-ts-node lib/cli/bin/invalidate-cloudfront-distribution.ts --verbose
-```
-
-**Options**:
-
-- `--verbose` - Verbose logging
-
-### Service Parameter Sync (`sync-service-params.ts`)
-
-**Usage**:
-
-```bash
-# Preview what would be synced and cleaned up (dry-run)
-ts-node lib/cli/bin/sync-service-params.ts --dry-run --cleanup --verbose
-
-# Sync only required service parameters (no deletion)
-ts-node lib/cli/bin/sync-service-params.ts --verbose
-
-# Sync service parameters and delete obsolete ones
-ts-node lib/cli/bin/sync-service-params.ts --cleanup --verbose
-```
-
-**Options**:
-
-- `--dry-run` - Show what would be synced without making changes
-- `--cleanup` - Delete obsolete service parameters
-- `--verbose` - Enable verbose logging
-
-> **Purpose**: This command reads stack outputs from deployed CloudFormation stacks and syncs only the required service parameters to SSM Parameter Store. It filters out unnecessary parameters and can optionally clean up obsolete ones. The command uses service configuration to determine which parameters are actually needed by each service.
+| Script                       | Description                                       |
+| ---------------------------- | ------------------------------------------------- |
+| `publish-web-app:dev`        | Build and publish the web app to S3 (development) |
+| `publish-web-app:prod`       | Build and publish the web app to S3 (production)  |
+| `invalidate-cloudfront:dev`  | Invalidate CloudFront cache (development)         |
+| `invalidate-cloudfront:prod` | Invalidate CloudFront cache (production)          |
+| `stack-outputs-web:dev`      | Get web stack outputs (development)               |
+| `stack-outputs-web:prod`     | Get web stack outputs (production)                |
