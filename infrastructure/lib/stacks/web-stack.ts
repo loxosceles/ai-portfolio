@@ -44,8 +44,8 @@ export class WebStack extends cdk.Stack {
     this.websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {
       bucketName: `portfolio-web-${this.stage}-${this.account}-${this.region}`,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
-      autoDeleteObjects: !isProd
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true
     });
 
     new cloudfront.CfnOriginAccessControl(this, 'BucketOAC', {
