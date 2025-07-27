@@ -51,4 +51,4 @@ phases:
 
 cache:
   paths:
-    - '.pnpm-store/**/*'
+    - ".pnpm-store/**/*"
