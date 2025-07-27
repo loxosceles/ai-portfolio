@@ -31,7 +31,7 @@ SERVICES=("frontend" "link-generator")
 
 for service in "${SERVICES[@]}"; do
   echo "🔄 Generating $service environment variables..."
-  (cd "$INFRASTRUCTURE_DIR" && ts-node ./lib/cli/bin/ssm-params.ts export --target="$service" --output)
+  (cd "$INFRASTRUCTURE_DIR" && pnpm run export-ssm-params:"$ENVIRONMENT" -- --target="$service")
 done
 
 # Step 2: Build Next.js app
@@ -40,11 +40,11 @@ echo "🏗️ Building Next.js application..."
 
 # Step 3: Publish web app
 echo "🌐 Publishing web application..."
-(cd "$INFRASTRUCTURE_DIR" && pnpm run publish:web-app:"$ENVIRONMENT")
+(cd "$INFRASTRUCTURE_DIR" && pnpm run publish-web-app:"$ENVIRONMENT")
 
 # Step 4: Invalidate CloudFront
 echo "🔄 Invalidating CloudFront cache..."
-(cd "$INFRASTRUCTURE_DIR" && pnpm run invalidate:cloudfront:"$ENVIRONMENT")
+(cd "$INFRASTRUCTURE_DIR" && pnpm run invalidate-cloudfront:"$ENVIRONMENT")
 
 # Get CloudFront domain from stack outputs
 echo "📡 Retrieving deployment URL..."
