@@ -266,12 +266,12 @@ phases:
       - cd infrastructure && ts-node lib/cli/bin/ssm-params.ts export --target=link-generator --output && cd ..
       # Build and deploy frontend
       - cd frontend && pnpm run build && cd ..
-      - cd infrastructure && pnpm run publish-web-app && cd ..
+      - cd infrastructure && pnpm run publish-web-app:$ENVIRONMENT && cd ..
 
   post_build:
     commands:
       # Invalidate CloudFront cache
-      - cd infrastructure && pnpm run invalidate-cloudfront && cd ..
+      - cd infrastructure && pnpm run invalidate-cloudfront:$ENVIRONMENT && cd ..
 
 artifacts:
   files:
