@@ -2,6 +2,8 @@
 
 The CLI architecture follows a three-tier approach that provides modularity, testability, and maintainability for infrastructure management operations.
 
+> **Note**: For CLI usage examples and development setup, see the [Development Workflow](../../contributing/development-workflow.md#cli-development) documentation.
+
 ## Three-Tier Architecture
 
 ### Tier 1: CLI Binaries (`cli/bin/`)
@@ -16,6 +18,8 @@ The CLI architecture follows a three-tier approach that provides modularity, tes
   - `ssm-params.ts` - SSM parameter operations (upload, export)
   - `web-app-publish.ts` - Frontend build and publish
   - `invalidate-cloudfront-distribution.ts` - CloudFront cache invalidation
+  - `stack-outputs.ts` - CloudFormation stack output retrieval
+  - `sync-service-params.ts` - Service parameter synchronization from stack outputs
 
 ### Tier 2: Command Logic (`cli/commands/`)
 
@@ -30,6 +34,8 @@ The CLI architecture follows a three-tier approach that provides modularity, tes
   - `ssm-params.ts` - Orchestrates SSM parameter operations
   - `web-app-publish.ts` - Orchestrates frontend publishing
   - `invalidate-cloudfront-distribution.ts` - Orchestrates CloudFront invalidation
+  - `stack-outputs.ts` - Orchestrates stack output retrieval
+  - `sync-service-params.ts` - Orchestrates service parameter synchronization
 
 ### Tier 3: Domain Managers (`core/`)
 
@@ -103,6 +109,48 @@ The CLI architecture follows a three-tier approach that provides modularity, tes
 
 - `--verbose` - Verbose logging
 
+### Stack Outputs (`stack-outputs.ts`)
+
+**Purpose**: Retrieve CloudFormation stack output values
+
+**Usage**:
+
+```bash
+# Get CloudFront domain from web stack
+stack-outputs web CloudfrontDomain
+
+# Get API endpoint from API stack
+stack-outputs api ApiEndpoint
+```
+
+**Arguments**:
+
+- `<stackType>` - Stack type (web, api, shared) [required]
+- `<outputKey>` - Output key to retrieve [required]
+
+### Service Parameter Sync (`sync-service-params.ts`)
+
+**Purpose**: Sync service parameters from CloudFormation stack outputs to SSM Parameter Store
+
+**Usage**:
+
+```bash
+# Preview what would be synced and cleaned up (dry-run)
+sync-service-params --dry-run --cleanup --verbose
+
+# Sync only required service parameters (no deletion)
+sync-service-params --verbose
+
+# Sync service parameters and delete obsolete ones
+sync-service-params --cleanup --verbose
+```
+
+**Options**:
+
+- `--dry-run` - Show what would be synced without making changes
+- `--cleanup` - Delete obsolete service parameters
+- `--verbose` - Enable verbose logging
+
 ## Integration with Core Managers
 
 The CLI commands integrate with the core managers to perform their operations:
@@ -132,42 +180,53 @@ The package scripts provide a higher-level interface to CLI commands:
 
 **CLI-Based Operations**
 
-- `upload-ssm-params:dev/prod` → `ssm-params.ts upload --target=infrastructure --verbose`
-- `upload-ssm-params-no-cleanup:dev/prod` → `ssm-params.ts upload --target=infrastructure --skip-cleanup --verbose`
-- `export-ssm-params:dev/prod` → `ssm-params.ts export --target=infrastructure --verbose`
-- `upload-static-data:dev/prod` → `data-management.ts upload`
-- `download-static-data:dev/prod` → `data-management.ts download`
-- `populate-static-data-ddb:dev/prod` → `data-management.ts populate_ddb_with_static_data --verbose`
-- `publish:web-app` → `web-app-publish.ts`
-- `invalidate:cloudfront` → `invalidate-cloudfront-distribution.ts`
+- `upload-ssm-params:dev/prod` → `ssm-params upload --target=infrastructure --verbose`
+- `export-ssm-params:dev/prod` → `ssm-params export --target=infrastructure --verbose`
+- `upload-static-data:dev/prod` → `data-management upload`
+- `download-static-data:dev/prod` → `data-management download`
+- `populate-static-data-ddb:dev/prod` → `data-management populate_ddb_with_static_data --verbose`
+- `publish-web-app:dev/prod` → `web-app-publish`
+- `invalidate-cloudfront:dev/prod` → `invalidate-cloudfront-distribution`
+- `stack-outputs:web:dev/prod` → `stack-outputs web <outputKey>`
+- `sync-service-params:dev/prod` → `sync-service-params --verbose`
+- `sync-service-params-dry-run:dev/prod` → `sync-service-params --dry-run --cleanup --verbose`
+- `sync-service-params-cleanup:dev/prod` → `sync-service-params --cleanup --verbose`
 
 ### Root Package Scripts (`package.json`)
 
 **Infrastructure Operations** (Delegate to infrastructure package)
 
+- `deploy:dev/prod` → `scripts/deploy.sh` (Full deployment pipeline)
+- `publish-frontend:dev` → `scripts/publish-frontend.sh` (Frontend-only deployment)
 - `sync-static-data:dev/prod` → Combined upload and populate operations
 - `upload-static-data:dev/prod` → `infrastructure:upload-static-data:dev/prod`
 - `download-static-data:dev/prod` → `infrastructure:download-static-data:dev/prod`
 - `upload-ssm-params:dev/prod` → `infrastructure:upload-ssm-params:dev/prod`
-- `upload-ssm-params-no-cleanup:dev/prod` → `infrastructure:upload-ssm-params-no-cleanup:dev/prod`
 - `export-ssm-params:dev/prod` → `infrastructure:export-ssm-params:dev/prod`
+- `sync-service-params:dev/prod` → `infrastructure:sync-service-params:dev/prod`
+- `sync-service-params-dry-run:dev/prod` → `infrastructure:sync-service-params-dry-run:dev/prod`
+- `sync-service-params-cleanup:dev/prod` → `infrastructure:sync-service-params-cleanup:dev/prod`
 
 ## CI/CD Integration
 
-The CLI commands are integrated into the CI/CD pipeline:
+The CLI commands are integrated into the CI/CD pipeline via buildspec.yml. The buildspec uses direct `ts-node` calls to the CLI tools:
 
 **Pre-Build Phase**:
 
 1. Setup infrastructure environment: `ssm-params export --target=infrastructure --output`
-2. Provision infrastructure: `pnpm run provision:$ENVIRONMENT`
 
 **Build Phase**:
 
-1. Populate data: `pnpm run populate-static-data-ddb:$ENVIRONMENT`
-2. Generate service environments: `ssm-params export --target=frontend --output --verbose`
-3. Generate service environments: `ssm-params export --target=link-generator --output --verbose`
-4. Build and publish frontend: `pnpm run publish:web-app`
+1. Provision infrastructure: `npx cdk deploy --all --require-approval never`
+2. Populate data: `data-management populate_ddb_with_static_data --verbose`
+3. Generate service environments: `ssm-params export --target=frontend --output`
+4. Generate service environments: `ssm-params export --target=link-generator --output`
+5. Build frontend: `NEXT_PUBLIC_ENVIRONMENT=$ENVIRONMENT pnpm build`
+6. Publish frontend: `web-app-publish`
 
 **Post-Build Phase**:
 
-1. Invalidate CloudFront: `pnpm run invalidate:cloudfront`
+1. Invalidate CloudFront: `invalidate-cloudfront-distribution`
+2. Get deployment URL: `stack-outputs web CloudfrontDomain`
+
+> **Implementation Note**: The buildspec.yml configures PATH to include the CLI bin directory, allowing direct command usage. For local development setup, see the [Development Workflow](../../contributing/development-workflow.md#cli-development) documentation.
