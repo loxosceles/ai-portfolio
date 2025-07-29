@@ -22,10 +22,16 @@ function HeroSection({ developer }: { developer: DeveloperType }) {
           between data and user experience
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 mb-12">
-          <Link href="#" className="flex items-center space-x-2 btn-primary px-6 py-3 rounded-lg">
+          <button
+            onClick={() => {
+              const firstProject = document.querySelector('.project-section');
+              firstProject?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="flex items-center space-x-2 btn-primary px-6 py-3 rounded-lg"
+          >
             <IconWrapper icon="github" className="h-5 w-5" />
             <span>View Work</span>
-          </Link>
+          </button>
           <button
             onClick={() => setShowAIQuestion(!showAIQuestion)}
             className="flex items-center space-x-2 btn-outline px-6 py-3 rounded-lg"

@@ -14,6 +14,10 @@ import { useQuery } from '@apollo/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cookieAuth } from '@/lib/auth/cookie-auth';
 import { isLocalEnvironment, getEnvironment } from '@/lib/auth/auth-utils';
+import ProjectDetailSection from '@/components/project-detail-section';
+import { getProjectDetail } from '@/lib/projects/project-details';
+import FloatingNavigation from '@/components/floating-navigation';
+import AutoHideHeader from '@/components/auto-hide-header';
 
 const Portfolio = () => {
   const [isChecking, setIsChecking] = useState(true);
@@ -59,32 +63,75 @@ const Portfolio = () => {
   const developer = data?.getDeveloper || {};
 
   return (
-    <div className="min-h-screen gradient-bg">
-      {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />}
-      {/* Header */}
-      <header className="fixed top-0 w-full bg-surface-medium bg-opacity-80 backdrop-blur-sm border-b border-subtle z-50">
-        <Header developer={developer} />
-      </header>
+    <div className="min-h-screen gradient-bg scroll-container">
+      {/* {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />} */}
+      <FloatingNavigation projects={developer.projects || []} />
+      <AutoHideHeader developer={developer} projects={developer.projects || []} />
 
       {/* Hero Section */}
-      <section className="pt-24 pb-16 px-6">
+      <section id="hero" className="pt-24 pb-16 px-6">
         <HeroSection developer={developer} />
       </section>
 
       {/* Projects Section */}
-      <section className="py-16 px-6 bg-glass-light">
+      <section id="featured" className="py-16 px-6 bg-glass-light">
         <div className="container mx-auto">
           <FeaturedProjects developer={developer} />
         </div>
       </section>
 
       {/* Skills Section */}
-      <section className="py-16 px-6">
+      <section id="skills" className="py-32 px-6">
         <SkillsSection developer={developer} />
       </section>
 
+      {/* Project Detail Sections */}
+      {developer.projects?.map((project, index) => {
+        const projectSlug = project.title
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '');
+        const projectDetail = getProjectDetail(projectSlug);
+
+        if (isLocalEnvironment()) {
+          console.log(
+            'Project:',
+            project.title,
+            'Slug:',
+            projectSlug,
+            'Detail found:',
+            !!projectDetail
+          );
+        }
+
+        return projectDetail ? (
+          <ProjectDetailSection
+            key={project.id}
+            project={project}
+            content={projectDetail.content}
+            id={projectSlug}
+          />
+        ) : (
+          <ProjectDetailSection
+            key={project.id}
+            project={project}
+            content={`# ${project.title}\n\n## Project Overview\n\n${project.description}\n\n## Key Highlights\n\n${project.highlights?.map((h) => `- ${h}`).join('\n') || 'No highlights available'}`}
+            id={projectSlug}
+          />
+        );
+      })}
+
+      {!developer.projects?.length && (
+        <section className="min-h-screen project-section bg-glass-light py-16 px-6">
+          <div className="container mx-auto max-w-4xl text-center">
+            <h2 className="text-4xl font-bold text-primary mb-4">No Projects Found</h2>
+            <p className="text-secondary">Projects are loading...</p>
+          </div>
+        </section>
+      )}
+
       {/* Contact Section */}
-      <section className="py-16 px-6 bg-glass-light">
+      <section id="contact" className="py-16 px-6 bg-glass-light">
         <MainContent developer={developer} />
       </section>
 
