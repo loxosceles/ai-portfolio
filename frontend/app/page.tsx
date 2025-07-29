@@ -63,13 +63,13 @@ const Portfolio = () => {
   const developer = data?.getDeveloper || {};
 
   return (
-    <div className="min-h-screen gradient-bg scroll-container">
+    <div className="min-h-screen gradient-bg">
       {/* {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />} */}
       <FloatingNavigation projects={developer.projects || []} />
       <AutoHideHeader developer={developer} projects={developer.projects || []} />
 
       {/* Hero Section */}
-      <section id="hero" className="pt-24 pb-16 px-6">
+      <section id="hero" className="pt-16 pb-16 px-6">
         <HeroSection developer={developer} />
       </section>
 
@@ -81,7 +81,7 @@ const Portfolio = () => {
       </section>
 
       {/* Skills Section */}
-      <section id="skills" className="py-32 px-6">
+      <section id="skills" className="py-16 px-6">
         <SkillsSection developer={developer} />
       </section>
 
@@ -122,7 +122,7 @@ const Portfolio = () => {
       })}
 
       {!developer.projects?.length && (
-        <section className="min-h-screen project-section bg-glass-light py-16 px-6">
+        <section className="min-h-screen bg-glass-light py-16 px-6">
           <div className="container mx-auto max-w-4xl text-center">
             <h2 className="text-4xl font-bold text-primary mb-4">No Projects Found</h2>
             <p className="text-secondary">Projects are loading...</p>

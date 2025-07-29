@@ -60,7 +60,11 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
 
   const scrollToSection = (selector: string) => {
     const element = document.querySelector(selector);
-    element?.scrollIntoView({ behavior: 'smooth' });
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      const scrollTop = window.pageYOffset + rect.top;
+      window.scrollTo({ top: scrollTop, behavior: 'auto' });
+    }
   };
 
   const handleMouseEnter = () => {
