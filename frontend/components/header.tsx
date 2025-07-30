@@ -5,27 +5,23 @@ import { DeveloperType, ProjectType } from '@/shared/types';
 interface HeaderProps {
   developer: DeveloperType;
   projects?: ProjectType[];
+  onActiveSectionChange?: (sectionId: string) => void;
 }
 
-function Header({ developer, projects = [] }: HeaderProps) {
+function Header({ developer, projects = [], onActiveSectionChange }: HeaderProps) {
   const { email } = developer;
   const [showProjectsDropdown, setShowProjectsDropdown] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const handleSectionClick = (section: string) => {
-    if (section === 'about') {
-      document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      document.getElementById(section)?.scrollIntoView({ behavior: 'smooth' });
-    }
+    const sectionId = section === 'about' ? 'hero' : section === 'projects' ? 'featured' : section;
+    onActiveSectionChange?.(sectionId);
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleProjectClick = (projectTitle: string) => {
-    const slug = projectTitle
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
-    document.getElementById(slug)?.scrollIntoView({ behavior: 'smooth' });
+  const handleProjectClick = (project: ProjectType) => {
+    onActiveSectionChange?.(project.slug);
+    document.getElementById(project.slug)?.scrollIntoView({ behavior: 'smooth' });
     setShowProjectsDropdown(false);
   };
 
@@ -59,7 +55,7 @@ function Header({ developer, projects = [] }: HeaderProps) {
           <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
             <button
               onClick={() => handleSectionClick('projects')}
-              className="capitalize transition-colors duration-200 pb-1 px-2 py-2 text-secondary hover:text-brand-accent flex items-center space-x-1"
+              className="capitalize transition-colors duration-200 pb-1 text-secondary hover:text-brand-accent flex items-center space-x-1"
             >
               <span>Projects</span>
               <ChevronDown className="h-3 w-3" />
@@ -70,7 +66,7 @@ function Header({ developer, projects = [] }: HeaderProps) {
                 {projects.map((project) => (
                   <button
                     key={project.id}
-                    onClick={() => handleProjectClick(project.title)}
+                    onClick={() => handleProjectClick(project)}
                     className="block w-full text-left px-4 py-3 text-secondary hover:text-brand-accent hover:bg-surface-light transition-colors"
                   >
                     {project.title}

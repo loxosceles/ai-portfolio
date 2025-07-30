@@ -3,8 +3,7 @@ import { isLocalEnvironment } from '@/lib/auth/auth-utils';
 
 function FeaturedProjects({ developer }: { developer: DeveloperType }) {
   if (isLocalEnvironment()) {
-    // eslint-disable-next-line no-console
-    console.log("Developer's project:", developer.projects);
+    // console.log("Developer's project:", developer.projects);
   }
   const { projects } = developer || {};
 

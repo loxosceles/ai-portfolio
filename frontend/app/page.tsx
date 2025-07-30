@@ -5,10 +5,10 @@ import HeroSection from '@/components/hero-section';
 import FeaturedProjects from '@/components/featured-projects';
 import SkillsSection from '@/components/skills-section';
 import Footer from '@/components/footer';
-import Header from '@/components/header';
+
 import { setDevelopmentCookies } from '@/utils/dev-cookies';
 import MainContent from '@/components/main-content';
-import AuthDebug from '@/components/auth-debug';
+
 import { GET_DEVELOPER_WITH_PROJECTS } from '@/queries/developers';
 import { useQuery } from '@apollo/client';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -18,20 +18,17 @@ import ProjectDetailSection from '@/components/project-detail-section';
 import { getProjectDetail } from '@/lib/projects/project-details';
 import FloatingNavigation from '@/components/floating-navigation';
 import AutoHideHeader from '@/components/auto-hide-header';
-import { createProjectSlug } from '@/utils/helpers';
+import TransitionManager from '@/components/transition-manager';
+import { ProjectType } from '@/shared/types';
 
 const Portfolio = () => {
   const [isChecking, setIsChecking] = useState(true);
+  const [activeSection, setActiveSection] = useState('hero');
   const { getQueryContext } = useAuth();
 
   const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
     context: getQueryContext('public'),
-    onCompleted: (data: { getDeveloper: { name: string } }) => {
-      if (isLocalEnvironment()) {
-        // eslint-disable-next-line no-console
-        console.log('Developer data:', data);
-      }
-    },
+    onCompleted: (data: { getDeveloper: { name: string } }) => {},
     onError: (error: Error) => {
       console.error('Query error:', error);
     }
@@ -64,58 +61,85 @@ const Portfolio = () => {
   const developer = data?.getDeveloper || {};
 
   return (
-    <div className="min-h-screen gradient-bg">
+    <div className="min-h-screen gradient-bg pt-20">
       {/* {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />} */}
-      <FloatingNavigation projects={developer.projects || []} />
-      <AutoHideHeader developer={developer} projects={developer.projects || []} />
+      <FloatingNavigation
+        projects={developer.projects || []}
+        activeSection={activeSection}
+        onActiveSectionChange={setActiveSection}
+      />
+      <AutoHideHeader
+        developer={developer}
+        projects={developer.projects || []}
+        onActiveSectionChange={setActiveSection}
+      />
 
       {/* Hero Section */}
-      <section id="hero" className="pt-16 pb-16 px-6">
-        <HeroSection developer={developer} />
-      </section>
+      <TransitionManager
+        sectionId="hero"
+        isActive={activeSection === 'hero'}
+        transitionType="reset"
+      >
+        <section id="hero" className="pt-16 pb-16 px-6">
+          <HeroSection developer={developer} />
+        </section>
+      </TransitionManager>
 
       {/* Projects Section */}
-      <section id="featured" className="py-16 px-6 bg-glass-light">
-        <div className="container mx-auto">
-          <FeaturedProjects developer={developer} />
-        </div>
-      </section>
+      <TransitionManager
+        sectionId="featured"
+        isActive={activeSection === 'featured'}
+        transitionType="slideDown"
+      >
+        <section id="featured" className="py-16 px-6 bg-glass-light">
+          <div className="container mx-auto">
+            <FeaturedProjects developer={developer} />
+          </div>
+        </section>
+      </TransitionManager>
 
       {/* Skills Section */}
-      <section id="skills" className="py-16 px-6">
-        <SkillsSection developer={developer} />
-      </section>
+      <TransitionManager
+        sectionId="skills"
+        isActive={activeSection === 'skills'}
+        transitionType="slideDown"
+      >
+        <section id="skills" className="py-16 px-6">
+          <SkillsSection developer={developer} />
+        </section>
+      </TransitionManager>
 
       {/* Project Detail Sections */}
-      {developer.projects?.map((project, index) => {
-        const projectSlug = createProjectSlug(project.title);
+      {developer.projects?.map((project: ProjectType) => {
+        const projectSlug = project.slug;
         const projectDetail = getProjectDetail(projectSlug);
 
-        if (isLocalEnvironment()) {
-          console.log(
-            'Project:',
-            project.title,
-            'Slug:',
-            projectSlug,
-            'Detail found:',
-            !!projectDetail
-          );
-        }
-
         return projectDetail ? (
-          <ProjectDetailSection
+          <TransitionManager
             key={project.id}
-            project={project}
-            content={projectDetail.content}
-            id={projectSlug}
-          />
+            sectionId={projectSlug}
+            isActive={activeSection === projectSlug}
+            transitionType="slideDown"
+          >
+            <ProjectDetailSection
+              project={project}
+              content={projectDetail.content}
+              id={projectSlug}
+            />
+          </TransitionManager>
         ) : (
-          <ProjectDetailSection
+          <TransitionManager
             key={project.id}
-            project={project}
-            content={`# ${project.title}\n\n## Project Overview\n\n${project.description}\n\n## Key Highlights\n\n${project.highlights?.map((h) => `- ${h}`).join('\n') || 'No highlights available'}`}
-            id={projectSlug}
-          />
+            sectionId={projectSlug}
+            isActive={activeSection === projectSlug}
+            transitionType="slideDown"
+          >
+            <ProjectDetailSection
+              project={project}
+              content={`# ${project.title}\n\n## Project Overview\n\n${project.description}\n\n## Key Highlights\n\n${project.highlights?.map((h) => `- ${h}`).join('\n') || 'No highlights available'}`}
+              id={projectSlug}
+            />
+          </TransitionManager>
         );
       })}
 
@@ -129,9 +153,15 @@ const Portfolio = () => {
       )}
 
       {/* Contact Section */}
-      <section id="contact" className="py-16 px-6 bg-glass-light">
-        <MainContent developer={developer} />
-      </section>
+      <TransitionManager
+        sectionId="contact"
+        isActive={activeSection === 'contact'}
+        transitionType="slideUp"
+      >
+        <section id="contact" className="py-16 px-6 bg-glass-light">
+          <MainContent developer={developer} />
+        </section>
+      </TransitionManager>
 
       {/* Footer */}
       <footer className="py-8 px-6 border-t border-subtle">

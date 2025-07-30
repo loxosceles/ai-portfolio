@@ -23,6 +23,7 @@ type SkillSetType = {
 export type ProjectType = {
   id: string;
   title: string;
+  slug: string;
   description: string;
   status: string;
   highlights?: string[];
@@ -69,6 +70,7 @@ export type UpdateDeveloperInputType = {
 
 export type CreateProjectInputType = {
   title: string;
+  slug: string;
   description: string;
   status: string;
   highlights?: string[];
@@ -86,6 +88,7 @@ export type CreateProjectInputType = {
 export type UpdateProjectInputType = {
   id: string;
   title?: string;
+  slug?: string;
   description?: string;
   status?: string;
   highlights?: string[];

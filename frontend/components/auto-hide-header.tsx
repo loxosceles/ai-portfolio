@@ -7,9 +7,14 @@ import { DeveloperType, ProjectType } from '@/shared/types';
 interface AutoHideHeaderProps {
   developer: DeveloperType;
   projects: ProjectType[];
+  onActiveSectionChange?: (sectionId: string) => void;
 }
 
-export default function AutoHideHeader({ developer, projects }: AutoHideHeaderProps) {
+export default function AutoHideHeader({
+  developer,
+  projects,
+  onActiveSectionChange
+}: AutoHideHeaderProps) {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
@@ -33,7 +38,11 @@ export default function AutoHideHeader({ developer, projects }: AutoHideHeaderPr
         isVisible ? 'transform translate-y-0' : 'transform -translate-y-full'
       }`}
     >
-      <Header developer={developer} projects={projects} />
+      <Header
+        developer={developer}
+        projects={projects}
+        onActiveSectionChange={onActiveSectionChange}
+      />
     </header>
   );
 }

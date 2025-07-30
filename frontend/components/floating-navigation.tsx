@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Code, MessageCircle, Briefcase } from 'lucide-react';
 import { ProjectType } from '@/shared/types';
-import { createProjectSlug } from '@/utils/helpers';
 
 interface NavigationItem {
   id: string;
@@ -20,22 +19,39 @@ interface ProjectNavItem {
 
 interface FloatingNavigationProps {
   projects: ProjectType[];
+  activeSection: string;
+  onActiveSectionChange?: (sectionId: string) => void;
 }
 
-export default function FloatingNavigation({ projects }: FloatingNavigationProps) {
-  const [activeSection, setActiveSection] = useState('hero');
+export default function FloatingNavigation({
+  projects,
+  activeSection,
+  onActiveSectionChange
+}: FloatingNavigationProps) {
   const [showProjectSubmenu, setShowProjectSubmenu] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsHeaderVisible(window.scrollY < 100);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navigationItems: NavigationItem[] = [
     { id: 'hero', label: 'About', icon: <User className="h-4 w-4" />, selector: '#hero' },
-    { id: 'skills', label: 'Skills', icon: <Code className="h-4 w-4" />, selector: '#skills' },
     {
-      id: 'projects',
+      id: 'featured',
       label: 'Projects',
       icon: <Briefcase className="h-4 w-4" />,
-      selector: `#${projects[0] ? createProjectSlug(projects[0].title) : ''}`
+      selector: '#featured'
     },
+    { id: 'skills', label: 'Skills', icon: <Code className="h-4 w-4" />, selector: '#skills' },
     {
       id: 'contact',
       label: 'Contact',
@@ -44,25 +60,18 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
     }
   ];
 
-  const projectItems: ProjectNavItem[] = useMemo(
-    () =>
-      projects.map((project) => {
-        const slug = createProjectSlug(project.title);
-        return {
-          id: slug,
-          label: project.title,
-          selector: `#${slug}`
-        };
-      }),
-    [projects]
-  );
+  const projectItems: ProjectNavItem[] = projects.map((project) => ({
+    id: project.slug,
+    label: project.title,
+    selector: `#${project.slug}`
+  }));
 
-  const scrollToSection = (selector: string) => {
-    const element = document.querySelector(selector);
+  const scrollToSection = (sectionId: string) => {
+    onActiveSectionChange?.(sectionId); // Set state FIRST
+
+    const element = document.querySelector(`#${sectionId}`);
     if (element) {
-      const rect = element.getBoundingClientRect();
-      const scrollTop = window.pageYOffset + rect.top;
-      window.scrollTo({ top: scrollTop, behavior: 'auto' });
+      element.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -78,42 +87,13 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
     setHoverTimeout(timeout);
   };
 
-  const sections = useMemo(
-    () => [
-      { id: 'hero', element: () => document.querySelector('#hero') },
-      { id: 'skills', element: () => document.querySelector('#skills') },
-      ...projects.map((project) => ({
-        id: 'projects',
-        element: () => document.querySelector(`#${createProjectSlug(project.title)}`)
-      })),
-      { id: 'contact', element: () => document.querySelector('#contact') }
-    ],
-    [projects]
-  );
+  const isProjectSection = (sectionId: string) => {
+    return projects.some((project) => project.slug === sectionId);
+  };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY + window.innerHeight / 3;
-
-      for (const section of [...sections].reverse()) {
-        const element = section.element();
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          const elementTop = rect.top + window.scrollY;
-
-          if (scrollPosition >= elementTop) {
-            setActiveSection(section.id);
-            break;
-          }
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    handleScroll();
-
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [sections]);
+  if (activeSection === 'hero' || isHeaderVisible) {
+    return null;
+  }
 
   return (
     <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-40">
@@ -121,11 +101,15 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
         {navigationItems.map((item) => (
           <div key={item.id} className="relative">
             <button
-              onClick={() => scrollToSection(item.selector)}
-              onMouseEnter={() => item.id === 'projects' && handleMouseEnter()}
-              onMouseLeave={() => item.id === 'projects' && handleMouseLeave()}
+              onClick={() => scrollToSection(item.id)}
+              onMouseEnter={() => item.id === 'featured' && handleMouseEnter()}
+              onMouseLeave={() => item.id === 'featured' && handleMouseLeave()}
               className={`group relative p-3 rounded-full transition-all duration-300 ${
-                activeSection === item.id
+                (
+                  item.id === 'featured'
+                    ? activeSection === 'featured' || isProjectSection(activeSection)
+                    : activeSection === item.id
+                )
                   ? 'bg-brand-accent text-white scale-110'
                   : 'bg-surface-medium bg-opacity-80 text-secondary hover:bg-brand-accent hover:text-white hover:scale-105'
               }`}
@@ -134,7 +118,7 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
               {item.icon}
               <span
                 className={`absolute right-full mr-3 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-surface-dark text-primary text-sm rounded transition-opacity whitespace-nowrap pointer-events-none z-50 ${
-                  item.id === 'projects' && showProjectSubmenu
+                  item.id === 'featured' && showProjectSubmenu
                     ? 'opacity-0'
                     : 'opacity-0 group-hover:opacity-100'
                 }`}
@@ -144,7 +128,7 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
             </button>
 
             {/* Project Submenu - Mac-style Arc */}
-            {item.id === 'projects' && showProjectSubmenu && (
+            {item.id === 'featured' && showProjectSubmenu && (
               <div
                 className="absolute right-full mr-2 top-1/2 transform -translate-y-1/2"
                 onMouseEnter={handleMouseEnter}
@@ -161,7 +145,10 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
                     return (
                       <button
                         key={project.id}
-                        onClick={() => scrollToSection(project.selector)}
+                        onClick={() => {
+                          onActiveSectionChange?.(project.id); // Set to specific project
+                          scrollToSection(project.id);
+                        }}
                         className={`group relative p-3 rounded-full bg-surface-medium bg-opacity-90 text-secondary hover:bg-brand-accent hover:text-white hover:scale-110 transition-all duration-300 transform ${yOffset} shadow-lg backdrop-blur-sm border border-subtle min-w-12 min-h-12 flex items-center justify-center`}
                         title={project.label}
                       >
