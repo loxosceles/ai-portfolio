@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { User, Code, MessageCircle, Briefcase } from 'lucide-react';
 import { ProjectType } from '@/shared/types';
+import { createProjectSlug } from '@/utils/helpers';
 
 interface NavigationItem {
   id: string;
@@ -33,10 +34,7 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
       id: 'projects',
       label: 'Projects',
       icon: <Briefcase className="h-4 w-4" />,
-      selector: `#${projects[0]?.title
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '')}`
+      selector: `#${projects[0] ? createProjectSlug(projects[0].title) : ''}`
     },
     {
       id: 'contact',
@@ -46,17 +44,18 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
     }
   ];
 
-  const projectItems: ProjectNavItem[] = projects.map((project) => {
-    const slug = project.title
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
-    return {
-      id: slug,
-      label: project.title,
-      selector: `#${slug}`
-    };
-  });
+  const projectItems: ProjectNavItem[] = useMemo(
+    () =>
+      projects.map((project) => {
+        const slug = createProjectSlug(project.title);
+        return {
+          id: slug,
+          label: project.title,
+          selector: `#${slug}`
+        };
+      }),
+    [projects]
+  );
 
   const scrollToSection = (selector: string) => {
     const element = document.querySelector(selector);
@@ -79,33 +78,30 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
     setHoverTimeout(timeout);
   };
 
+  const sections = useMemo(
+    () => [
+      { id: 'hero', element: () => document.querySelector('#hero') },
+      { id: 'skills', element: () => document.querySelector('#skills') },
+      ...projects.map((project) => ({
+        id: 'projects',
+        element: () => document.querySelector(`#${createProjectSlug(project.title)}`)
+      })),
+      { id: 'contact', element: () => document.querySelector('#contact') }
+    ],
+    [projects]
+  );
+
   useEffect(() => {
     const handleScroll = () => {
-      const sections = [
-        { id: 'hero', element: document.querySelector('#hero') },
-        { id: 'skills', element: document.querySelector('#skills') },
-        ...projects.map((project) => {
-          const slug = project.title
-            .toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^a-z0-9-]/g, '');
-          return { id: 'projects', element: document.querySelector(`#${slug}`) };
-        }),
-        { id: 'contact', element: document.querySelector('#contact') }
-      ];
-
       const scrollPosition = window.scrollY + window.innerHeight / 3;
 
-      for (const section of sections.reverse()) {
-        if (section.element) {
-          const rect = section.element.getBoundingClientRect();
+      for (const section of [...sections].reverse()) {
+        const element = section.element();
+        if (element) {
+          const rect = element.getBoundingClientRect();
           const elementTop = rect.top + window.scrollY;
-          const elementHeight = rect.height;
 
-          // For skills section, use a more generous detection area
-          const threshold = section.id === 'skills' ? elementHeight * 0.3 : 0;
-
-          if (scrollPosition >= elementTop - threshold) {
+          if (scrollPosition >= elementTop) {
             setActiveSection(section.id);
             break;
           }
@@ -117,7 +113,7 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
     handleScroll();
 
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [projects]);
+  }, [sections]);
 
   return (
     <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-40">
@@ -136,7 +132,13 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
               title={item.label}
             >
               {item.icon}
-              <span className="absolute right-full mr-3 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-surface-dark text-primary text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              <span
+                className={`absolute right-full mr-3 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-surface-dark text-primary text-sm rounded transition-opacity whitespace-nowrap pointer-events-none z-50 ${
+                  item.id === 'projects' && showProjectSubmenu
+                    ? 'opacity-0'
+                    : 'opacity-0 group-hover:opacity-100'
+                }`}
+              >
                 {item.label}
               </span>
             </button>
@@ -164,7 +166,7 @@ export default function FloatingNavigation({ projects }: FloatingNavigationProps
                         title={project.label}
                       >
                         <span className="text-sm font-semibold">{index + 1}</span>
-                        <span className="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2 px-3 py-1 bg-surface-dark text-primary text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
+                        <span className="absolute top-full mt-3 left-1/2 transform -translate-x-1/2 px-3 py-1 bg-surface-dark text-primary text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg pointer-events-none z-50">
                           {project.label}
                         </span>
                       </button>

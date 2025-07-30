@@ -11,7 +11,6 @@ interface AutoHideHeaderProps {
 
 export default function AutoHideHeader({ developer, projects }: AutoHideHeaderProps) {
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,13 +21,11 @@ export default function AutoHideHeader({ developer, projects }: AutoHideHeaderPr
       } else {
         setIsVisible(false);
       }
-
-      setLastScrollY(currentScrollY);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   return (
     <header

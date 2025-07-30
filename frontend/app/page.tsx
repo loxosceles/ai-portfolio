@@ -18,6 +18,7 @@ import ProjectDetailSection from '@/components/project-detail-section';
 import { getProjectDetail } from '@/lib/projects/project-details';
 import FloatingNavigation from '@/components/floating-navigation';
 import AutoHideHeader from '@/components/auto-hide-header';
+import { createProjectSlug } from '@/utils/helpers';
 
 const Portfolio = () => {
   const [isChecking, setIsChecking] = useState(true);
@@ -87,10 +88,7 @@ const Portfolio = () => {
 
       {/* Project Detail Sections */}
       {developer.projects?.map((project, index) => {
-        const projectSlug = project.title
-          .toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/[^a-z0-9-]/g, '');
+        const projectSlug = createProjectSlug(project.title);
         const projectDetail = getProjectDetail(projectSlug);
 
         if (isLocalEnvironment()) {
