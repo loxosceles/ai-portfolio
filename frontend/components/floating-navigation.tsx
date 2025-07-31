@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Code, MessageCircle, Briefcase } from 'lucide-react';
+import { User, Code, MessageCircle, Briefcase, Projector } from 'lucide-react';
 import { ProjectType } from '@/shared/types';
 
 interface NavigationItem {
@@ -22,6 +22,25 @@ interface FloatingNavigationProps {
   activeSection: string;
   onActiveSectionChange?: (sectionId: string) => void;
 }
+
+// CSS class constants
+const BUTTON_STYLES = {
+  ACTIVE: 'bg-brand-accent text-white scale-110',
+  INACTIVE:
+    'bg-surface-medium bg-opacity-80 text-secondary hover:bg-brand-accent hover:text-white hover:scale-105',
+  BASE: 'group relative p-3 rounded-full transition-all duration-300'
+} as const;
+
+const TOOLTIP_STYLES = {
+  VISIBLE: 'opacity-0 group-hover:opacity-100',
+  HIDDEN: 'opacity-0',
+  BASE: 'absolute right-full mr-3 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-surface-dark text-primary text-sm rounded transition-opacity whitespace-nowrap pointer-events-none z-50'
+} as const;
+
+// Helper functions
+const isActiveItem = (itemId: string, activeSection: string): boolean => {
+  return activeSection === itemId;
+};
 
 export default function FloatingNavigation({
   projects,
@@ -53,6 +72,12 @@ export default function FloatingNavigation({
     },
     { id: 'skills', label: 'Skills', icon: <Code className="h-4 w-4" />, selector: '#skills' },
     {
+      id: 'ai-portfolio',
+      label: 'AI Portfolio',
+      icon: <Projector className="h-4 w-4" />,
+      selector: '#ai-portfolio'
+    },
+    {
       id: 'contact',
       label: 'Contact',
       icon: <MessageCircle className="h-4 w-4" />,
@@ -60,12 +85,28 @@ export default function FloatingNavigation({
     }
   ];
 
-  const projectItems: ProjectNavItem[] = projects.map((project) => ({
-    id: project.slug,
-    label: project.title,
-    selector: `#${project.slug}`
-  }));
+  // const projectItems: ProjectNavItem[] = projects.map((project) => ({
+  //   id: project.slug,
+  //   label: project.title,
+  //   selector: `#${project.slug}`
+  // }));
 
+  // Helper functions
+  function isActiveItem(itemId: string, activeSection: string): boolean {
+    return activeSection === itemId;
+  }
+
+  function getButtonClassName(itemId: string, activeSection: string): string {
+    const isActive = isActiveItem(itemId, activeSection);
+    const stateClass = isActive ? BUTTON_STYLES.ACTIVE : BUTTON_STYLES.INACTIVE;
+    return `${BUTTON_STYLES.BASE} ${stateClass}`;
+  }
+
+  function getTooltipClassName(itemId: string, showProjectSubmenu: boolean): string {
+    const shouldHide = itemId === 'featured' && showProjectSubmenu;
+    const visibilityClass = shouldHide ? TOOLTIP_STYLES.HIDDEN : TOOLTIP_STYLES.VISIBLE;
+    return `${TOOLTIP_STYLES.BASE} ${visibilityClass}`;
+  }
   const scrollToSection = (sectionId: string) => {
     onActiveSectionChange?.(sectionId); // Set state FIRST
 
@@ -87,9 +128,9 @@ export default function FloatingNavigation({
     setHoverTimeout(timeout);
   };
 
-  const isProjectSection = (sectionId: string) => {
-    return projects.some((project) => project.slug === sectionId);
-  };
+  // const isProjectSection = (sectionId: string) => {
+  //   return projects.some((project) => project.slug === sectionId);
+  // };
 
   if (activeSection === 'hero' || isHeaderVisible) {
     return null;
@@ -102,33 +143,14 @@ export default function FloatingNavigation({
           <div key={item.id} className="relative">
             <button
               onClick={() => scrollToSection(item.id)}
-              onMouseEnter={() => item.id === 'featured' && handleMouseEnter()}
-              onMouseLeave={() => item.id === 'featured' && handleMouseLeave()}
-              className={`group relative p-3 rounded-full transition-all duration-300 ${
-                (
-                  item.id === 'featured'
-                    ? activeSection === 'featured' || isProjectSection(activeSection)
-                    : activeSection === item.id
-                )
-                  ? 'bg-brand-accent text-white scale-110'
-                  : 'bg-surface-medium bg-opacity-80 text-secondary hover:bg-brand-accent hover:text-white hover:scale-105'
-              }`}
+              className={getButtonClassName(item.id, activeSection)}
               title={item.label}
             >
               {item.icon}
-              <span
-                className={`absolute right-full mr-3 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-surface-dark text-primary text-sm rounded transition-opacity whitespace-nowrap pointer-events-none z-50 ${
-                  item.id === 'featured' && showProjectSubmenu
-                    ? 'opacity-0'
-                    : 'opacity-0 group-hover:opacity-100'
-                }`}
-              >
-                {item.label}
-              </span>
+              <span className={getTooltipClassName(item.id, showProjectSubmenu)}>{item.label}</span>
             </button>
-
             {/* Project Submenu - Mac-style Arc */}
-            {item.id === 'featured' && showProjectSubmenu && (
+            {/* {item.id === 'featured' && showProjectSubmenu && (
               <div
                 className="absolute right-full mr-2 top-1/2 transform -translate-y-1/2"
                 onMouseEnter={handleMouseEnter}
@@ -161,7 +183,7 @@ export default function FloatingNavigation({
                   })}
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         ))}
       </div>

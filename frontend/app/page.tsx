@@ -4,35 +4,96 @@ import React, { useEffect, useState } from 'react';
 import HeroSection from '@/components/hero-section';
 import FeaturedProjects from '@/components/featured-projects';
 import SkillsSection from '@/components/skills-section';
+import ContactSection from '@/components/contact-section';
 import Footer from '@/components/footer';
-
 import { setDevelopmentCookies } from '@/utils/dev-cookies';
-import MainContent from '@/components/main-content';
-
 import { GET_DEVELOPER_WITH_PROJECTS } from '@/queries/developers';
 import { useQuery } from '@apollo/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cookieAuth } from '@/lib/auth/cookie-auth';
-import { isLocalEnvironment, getEnvironment } from '@/lib/auth/auth-utils';
+import { isLocalEnvironment } from '@/lib/auth/auth-utils';
 import ProjectDetailSection from '@/components/project-detail-section';
 import { getProjectDetail } from '@/lib/projects/project-details';
 import FloatingNavigation from '@/components/floating-navigation';
 import AutoHideHeader from '@/components/auto-hide-header';
 import TransitionManager from '@/components/transition-manager';
-import { ProjectType } from '@/shared/types';
+import { ProjectType, DeveloperType } from '@/shared/types';
+
+interface SectionConfig {
+  id: string;
+  targetTransition: 'reset' | 'centerFromBottom' | 'centerFromTop';
+  component: (developer: DeveloperType) => React.ReactNode;
+}
+
+// Section configuration - defines order, transition behavior, and components
+const SECTIONS_CONFIG: SectionConfig[] = [
+  {
+    id: 'hero',
+    targetTransition: 'reset',
+    component: (developer: DeveloperType) => <HeroSection developer={developer} />
+  },
+  {
+    id: 'featured',
+    targetTransition: 'centerFromBottom', // slideDown becomes centerFromBottom
+    component: (developer: DeveloperType) => <FeaturedProjects developer={developer} />
+  },
+  {
+    id: 'skills',
+    targetTransition: 'centerFromBottom',
+    component: (developer: DeveloperType) => <SkillsSection developer={developer} />
+  },
+  {
+    id: 'ai-portfolio',
+    targetTransition: 'centerFromBottom',
+    component: (developer: DeveloperType) => (
+      <ProjectDetailSection
+        project={
+          developer.projects?.[0] ||
+          ({
+            id: 'ai-portfolio',
+            title: 'AI Portfolio',
+            slug: 'ai-portfolio',
+            description: 'Default project',
+            status: 'active',
+            developer: developer,
+            developerId: developer.id || 'default-dev'
+          } as unknown as ProjectType)
+        }
+        content={
+          getProjectDetail('ai-portfolio')?.content ||
+          `# AI Portfolio\n\n## Project Overview\n\nDefault project content`
+        }
+        id="ai-portfolio"
+      />
+    )
+  },
+  {
+    id: 'contact',
+    targetTransition: 'centerFromTop', // slideUp becomes centerFromTop
+    component: (developer: DeveloperType) => <ContactSection developer={developer} />
+  }
+];
 
 const Portfolio = () => {
   const [isChecking, setIsChecking] = useState(true);
-  const [activeSection, setActiveSection] = useState('hero');
+  const [targetSection, setTargetSection] = useState('hero');
   const { getQueryContext } = useAuth();
+  const [globalTransitionPhase, setGlobalTransitionPhase] = useState<
+    'normal' | 'transitioning' | 'centered'
+  >('normal');
 
-  const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
-    context: getQueryContext('public'),
-    onCompleted: (data: { getDeveloper: { name: string } }) => {},
-    onError: (error: Error) => {
-      console.error('Query error:', error);
+  // Track when target changes to trigger global transition
+  useEffect(() => {
+    if (targetSection !== 'hero') {
+      setGlobalTransitionPhase('transitioning');
+      const timer = setTimeout(() => {
+        setGlobalTransitionPhase('centered');
+      }, 800);
+      return () => clearTimeout(timer);
+    } else {
+      setGlobalTransitionPhase('normal');
     }
-  });
+  }, [targetSection]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -51,6 +112,37 @@ const Portfolio = () => {
     setIsChecking(false);
   }, []);
 
+  // Add scroll listener to reset global transition phase
+  useEffect(() => {
+    const handleScroll = () => {
+      if (globalTransitionPhase !== 'normal') {
+        setGlobalTransitionPhase('normal');
+      }
+    };
+
+    const handleClick = () => {
+      if (globalTransitionPhase !== 'normal') {
+        setGlobalTransitionPhase('normal');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('click', handleClick, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('click', handleClick);
+    };
+  }, [globalTransitionPhase]);
+
+  const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
+    context: getQueryContext('public'),
+    onCompleted: (data: { getDeveloper: { name: string } }) => {},
+    onError: (error: Error) => {
+      console.error('Query error:', error);
+    }
+  });
+
   // Show loading state if either checking cookies or loading data
   if (isChecking || loading) {
     return <div>Loading...</div>;
@@ -60,115 +152,174 @@ const Portfolio = () => {
 
   const developer = data?.getDeveloper || {};
 
+  function getSectionPosition(
+    sectionId: string,
+    targetSection: string
+  ): 'above' | 'below' | 'same' {
+    const sectionOrder = SECTIONS_CONFIG.map((s) => s.id);
+    const sectionIndex = sectionOrder.indexOf(sectionId);
+    const targetIndex = sectionOrder.indexOf(targetSection);
+
+    if (sectionIndex < targetIndex) return 'above';
+    if (sectionIndex > targetIndex) return 'below';
+    return 'same';
+  }
+
   return (
     <div className="min-h-screen gradient-bg pt-20">
       {/* {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />} */}
       <FloatingNavigation
         projects={developer.projects || []}
-        activeSection={activeSection}
-        onActiveSectionChange={setActiveSection}
+        activeSection={targetSection}
+        onActiveSectionChange={setTargetSection}
       />
       <AutoHideHeader
         developer={developer}
         projects={developer.projects || []}
-        onActiveSectionChange={setActiveSection}
+        onActiveSectionChange={setTargetSection}
       />
 
-      {/* Hero Section */}
-      <TransitionManager
-        sectionId="hero"
-        isActive={activeSection === 'hero'}
-        transitionType="reset"
-      >
-        <section id="hero" className="pt-16 pb-16 px-6">
-          <HeroSection developer={developer} />
-        </section>
-      </TransitionManager>
+      {SECTIONS_CONFIG.map((section) => (
+        <TransitionManager
+          key={section.id}
+          sectionId={section.id}
+          isTarget={targetSection === section.id}
+          positionRelativeToTarget={getSectionPosition(section.id, targetSection)}
+          targetTransition={section.targetTransition}
+          globalTransitionPhase={globalTransitionPhase}
+        >
+          {section.component(developer)}
+        </TransitionManager>
+      ))}
 
-      {/* Projects Section */}
-      <TransitionManager
-        sectionId="featured"
-        isActive={activeSection === 'featured'}
-        transitionType="slideDown"
-      >
-        <section id="featured" className="py-16 px-6 bg-glass-light">
-          <div className="container mx-auto">
-            <FeaturedProjects developer={developer} />
-          </div>
-        </section>
-      </TransitionManager>
-
-      {/* Skills Section */}
-      <TransitionManager
-        sectionId="skills"
-        isActive={activeSection === 'skills'}
-        transitionType="slideDown"
-      >
-        <section id="skills" className="py-16 px-6">
-          <SkillsSection developer={developer} />
-        </section>
-      </TransitionManager>
-
-      {/* Project Detail Sections */}
-      {developer.projects?.map((project: ProjectType) => {
-        const projectSlug = project.slug;
-        const projectDetail = getProjectDetail(projectSlug);
-
-        return projectDetail ? (
-          <TransitionManager
-            key={project.id}
-            sectionId={projectSlug}
-            isActive={activeSection === projectSlug}
-            transitionType="slideDown"
-          >
-            <ProjectDetailSection
-              project={project}
-              content={projectDetail.content}
-              id={projectSlug}
-            />
-          </TransitionManager>
-        ) : (
-          <TransitionManager
-            key={project.id}
-            sectionId={projectSlug}
-            isActive={activeSection === projectSlug}
-            transitionType="slideDown"
-          >
-            <ProjectDetailSection
-              project={project}
-              content={`# ${project.title}\n\n## Project Overview\n\n${project.description}\n\n## Key Highlights\n\n${project.highlights?.map((h) => `- ${h}`).join('\n') || 'No highlights available'}`}
-              id={projectSlug}
-            />
-          </TransitionManager>
-        );
-      })}
-
-      {!developer.projects?.length && (
-        <section className="min-h-screen bg-glass-light py-16 px-6">
-          <div className="container mx-auto max-w-4xl text-center">
-            <h2 className="text-4xl font-bold text-primary mb-4">No Projects Found</h2>
-            <p className="text-secondary">Projects are loading...</p>
-          </div>
-        </section>
-      )}
-
-      {/* Contact Section */}
-      <TransitionManager
-        sectionId="contact"
-        isActive={activeSection === 'contact'}
-        transitionType="slideUp"
-      >
-        <section id="contact" className="py-16 px-6 bg-glass-light">
-          <MainContent developer={developer} />
-        </section>
-      </TransitionManager>
-
-      {/* Footer */}
-      <footer className="py-8 px-6 border-t border-subtle">
-        <Footer developer={developer} />
-      </footer>
+      <Footer developer={developer} />
     </div>
   );
 };
 
 export default Portfolio;
+
+// return (
+//   <div className="min-h-screen gradient-bg pt-20">
+//     {/* {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />} */}
+//     <FloatingNavigation
+//       projects={developer.projects || []}
+//       activeSection={targetSection}
+//       onActiveSectionChange={setTargetSection}
+//     />
+//     <AutoHideHeader
+//       developer={developer}
+//       projects={developer.projects || []}
+//       onActiveSectionChange={setTargetSection}
+//     />
+
+//     {/* Hero Section */}
+//     <TransitionManager
+//       sectionId="hero"
+//       isTarget={targetSection === 'hero'}
+//       transitionType="reset"
+//       globalTransitionPhase={globalTransitionPhase}
+//     >
+//       <HeroSection developer={developer} />
+//     </TransitionManager>
+
+//     {/* Projects Section */}
+//     <TransitionManager
+//       sectionId="featured"
+//       isTarget={targetSection === 'featured'}
+//       transitionType="slideDown"
+//       globalTransitionPhase={globalTransitionPhase}
+//     >
+//       <FeaturedProjects developer={developer} />
+//     </TransitionManager>
+
+//     {/* Skills Section */}
+//     <TransitionManager
+//       sectionId="skills"
+//       isTarget={targetSection === 'skills'}
+//       transitionType="slideDown"
+//       globalTransitionPhase={globalTransitionPhase}
+//     >
+//       <SkillsSection developer={developer} />
+//     </TransitionManager>
+
+//     {/* Project Detail Sections
+//     {developer.projects?.map((project: ProjectType) => {
+//       const projectSlug = project.slug;
+//       const projectDetail = getProjectDetail(projectSlug);
+
+//       return projectDetail ? (
+//         <TransitionManager
+//           key={project.id}
+//           sectionId={projectSlug}
+//           isTarget={targetSection === projectSlug}
+//           transitionType="slideDown"
+//         >
+//           <ProjectDetailSection
+//             project={project}
+//             content={projectDetail.content}
+//             id={projectSlug}
+//           />
+//         </TransitionManager>
+//       ) : (
+//         <TransitionManager
+//           key={project.id}
+//           sectionId={projectSlug}
+//           isTarget={targetSection === projectSlug}
+//           transitionType="slideDown"
+//         >
+//           <ProjectDetailSection
+//             project={project}
+//             content={`# ${project.title}\n\n## Project Overview\n\n${project.description}\n\n## Key Highlights\n\n${project.highlights?.map((h) => `- ${h}`).join('\n') || 'No highlights available'}`}
+//             id={projectSlug}
+//           />
+//         </TransitionManager>
+//       );
+//     })}
+//     {!developer.projects?.length && (
+//       <section className="min-h-screen bg-glass-light py-16 px-6">
+//         <div className="container mx-auto max-w-4xl text-center">
+//           <h2 className="text-4xl font-bold text-primary mb-4">No Projects Found</h2>
+//           <p className="text-secondary">Projects are loading...</p>
+//         </div>
+//       </section>
+//     )} */}
+//     {/* Single Hard-coded Project */}
+//     <TransitionManager
+//       key="ai-portfolio"
+//       sectionId="ai-portfolio"
+//       isTarget={targetSection === 'ai-portfolio'}
+//       transitionType="slideDown"
+//       globalTransitionPhase={globalTransitionPhase}
+//     >
+//       <ProjectDetailSection
+//         project={
+//           developer.projects?.[0] || {
+//             id: 'ai-portfolio',
+//             title: 'AI Portfolio',
+//             slug: 'ai-portfolio',
+//             description: 'Default project'
+//           }
+//         }
+//         content={
+//           getProjectDetail('ai-portfolio')?.content ||
+//           `# AI Portfolio\n\n## Project Overview\n\nDefault project content`
+//         }
+//         id="ai-portfolio"
+//       />
+//     </TransitionManager>
+//     <TransitionManager
+//       sectionId="contact"
+//       isTarget={targetSection === 'contact'}
+//       transitionType="slideUp"
+//       globalTransitionPhase={globalTransitionPhase}
+//     >
+//       <ContactSection developer={developer} />
+//     </TransitionManager>
+
+//     {/* Footer */}
+//     <footer className="py-8 px-6 border-t border-subtle">
+//       <Footer developer={developer} />
+//     </footer>
+//   </div>
+// );

@@ -3,10 +3,10 @@ export type DeveloperType = {
   name: string;
   title: string;
   bio?: string;
-  email?: string;
+  email: string;
   website?: string;
-  github?: string;
-  linkedin?: string;
+  github: string;
+  linkedin: string;
   location?: string;
   yearsOfExperience?: number;
   skillSets?: SkillSetType[];
