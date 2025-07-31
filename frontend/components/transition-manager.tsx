@@ -56,7 +56,7 @@ export default function TransitionManager({
         setPhase('normal');
       }
     }
-  }, [isTarget, globalTransitionPhase, positionRelativeToTarget]);
+  }, [globalTransitionPhase, positionRelativeToTarget]);
 
   // Scroll reset for Contact section
   useEffect(() => {
@@ -70,7 +70,8 @@ export default function TransitionManager({
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [sectionId, phase]);
+  }, [phase]);
+
   // Combined scroll handling (detection + reset)
   // useEffect(() => {
   //   if (!isTarget || targetTransition === 'reset') return;
