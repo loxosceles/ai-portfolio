@@ -112,7 +112,8 @@ export default function FloatingNavigation({
 
     const element = document.querySelector(`#${sectionId}`);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      // element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
   };
 

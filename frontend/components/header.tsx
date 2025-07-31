@@ -16,12 +16,12 @@ function Header({ developer, projects = [], onActiveSectionChange }: HeaderProps
   const handleSectionClick = (section: string) => {
     const sectionId = section === 'about' ? 'hero' : section === 'projects' ? 'featured' : section;
     onActiveSectionChange?.(sectionId);
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById(sectionId)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   };
 
   const handleProjectClick = (project: ProjectType) => {
     onActiveSectionChange?.(project.slug);
-    document.getElementById(project.slug)?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById(project.slug)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     setShowProjectsDropdown(false);
   };
 

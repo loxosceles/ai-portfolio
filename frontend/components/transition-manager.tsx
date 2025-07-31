@@ -125,13 +125,13 @@ export default function TransitionManager({
   // };
 
   const getTransformClass = () => {
-    // Stage 1: Non-targets fade out immediately when transitioning starts
+    // Stage 1: Non-targets fade out
     if (!isTarget && (phase === 'transitioning' || phase === 'centered')) {
       return `${TRANSITIONS.BASE_TRANSITION} opacity-0`;
     }
 
-    // Stage 2: Target centers itself after delay
-    if (phase === 'centered' && isTarget) {
+    // Stage 2: Only Contact section gets the old centering behavior
+    if (phase === 'centered' && isTarget && sectionId === 'contact') {
       switch (targetTransition) {
         case 'centerFromTop':
           return TRANSITIONS.TARGET_FROM_TOP;
@@ -146,7 +146,7 @@ export default function TransitionManager({
   };
 
   return (
-    <div className={`relative ${getTransformClass()}`}>
+    <div className={`relative ${getTransformClass()} ${phase !== 'normal' ? 'fade-underlay' : ''}`}>
       {/* <div className="absolute top-0 left-0 bg-red-500 text-white text-xs p-2 z-50 max-w-xs">
         {getDebugInfo()}
       </div> */}
