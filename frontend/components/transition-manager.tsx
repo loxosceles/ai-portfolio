@@ -32,30 +32,45 @@ export default function TransitionManager({
   // Add state for scroll detection
   const [isScrolling, setIsScrolling] = useState(false);
 
-  // Target sections - only depend on isTarget and targetTransition
   useEffect(() => {
     if (isTarget && targetTransition !== 'reset') {
       setPhase('transitioning');
-      const timer = setTimeout(() => setPhase('centered'), 400);
+      // Contact waits longer (800ms) to let upper sections fade first
+      const delay = sectionId === 'contact' ? 800 : 400;
+      const timer = setTimeout(() => setPhase('centered'), delay);
       return () => clearTimeout(timer);
     } else if (isTarget) {
       setPhase('normal');
     }
-  }, [isTarget, targetTransition]);
+  }, [isTarget, targetTransition, sectionId]);
 
-  // Non-target sections - depend on globalTransitionPhase
+  // Non-target sections - Upper sections fade immediately
   useEffect(() => {
     if (!isTarget) {
       if (globalTransitionPhase !== 'normal') {
-        const delay = globalTransitionPhase === 'transitioning' ? 200 : 0;
+        // Upper sections (above contact) fade immediately, others wait
+        const delay = positionRelativeToTarget === 'above' ? 0 : 200;
         const timer = setTimeout(() => setPhase(globalTransitionPhase), delay);
         return () => clearTimeout(timer);
       } else {
         setPhase('normal');
       }
     }
-  }, [isTarget, globalTransitionPhase]);
+  }, [isTarget, globalTransitionPhase, positionRelativeToTarget]);
 
+  // Scroll reset for Contact section
+  useEffect(() => {
+    if (sectionId !== 'contact' || phase !== 'centered') return;
+
+    const handleScroll = () => {
+      setPhase('normal');
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [sectionId, phase]);
   // Combined scroll handling (detection + reset)
   // useEffect(() => {
   //   if (!isTarget || targetTransition === 'reset') return;
