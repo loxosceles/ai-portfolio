@@ -16,7 +16,7 @@ const TRANSITIONS = {
   TARGET_FROM_BOTTOM:
     'transition-transform duration-600 ease-in-out transform translate-y-[calc(50vh-50%)]',
   TARGET_FROM_TOP:
-    'transition-transform duration-600 ease-in-out transform -translate-y-[calc(50vh-50%)] z-50'
+    'transition-transform duration-600 ease-in-out transform -translate-y-[calc(50vh-50%)]'
 } as const;
 
 export default function TransitionManager({
@@ -32,23 +32,29 @@ export default function TransitionManager({
   // Add state for scroll detection
   const [isScrolling, setIsScrolling] = useState(false);
 
-  // Single effect handles all phase transitions
+  // Target sections - only depend on isTarget and targetTransition
   useEffect(() => {
     if (isTarget && targetTransition !== 'reset') {
-      // Target: start transition immediately
       setPhase('transitioning');
       const timer = setTimeout(() => setPhase('centered'), 400);
       return () => clearTimeout(timer);
-    } else if (!isTarget && globalTransitionPhase !== 'normal') {
-      // Non-target: follow global phase with delay
-      const delay = globalTransitionPhase === 'transitioning' ? 200 : 0;
-      const timer = setTimeout(() => setPhase(globalTransitionPhase), delay);
-      return () => clearTimeout(timer);
-    } else {
-      // Reset to normal (both targets when reset and non-targets when global is normal)
+    } else if (isTarget) {
       setPhase('normal');
     }
-  }, [isTarget, targetTransition, globalTransitionPhase]);
+  }, [isTarget, targetTransition]);
+
+  // Non-target sections - depend on globalTransitionPhase
+  useEffect(() => {
+    if (!isTarget) {
+      if (globalTransitionPhase !== 'normal') {
+        const delay = globalTransitionPhase === 'transitioning' ? 200 : 0;
+        const timer = setTimeout(() => setPhase(globalTransitionPhase), delay);
+        return () => clearTimeout(timer);
+      } else {
+        setPhase('normal');
+      }
+    }
+  }, [isTarget, globalTransitionPhase]);
 
   // Combined scroll handling (detection + reset)
   // useEffect(() => {
@@ -145,7 +151,7 @@ export default function TransitionManager({
       return `${TRANSITIONS.BASE_TRANSITION} opacity-0`;
     }
 
-    // Stage 2: Only Contact section gets the old centering behavior
+    // Stage 2: Only Contact section gets the old centering behavior when it's the target
     if (phase === 'centered' && isTarget && sectionId === 'contact') {
       switch (targetTransition) {
         case 'centerFromTop':
@@ -161,9 +167,7 @@ export default function TransitionManager({
   };
 
   return (
-    <div
-      className={`relative ${getTransformClass()} ${phase !== 'normal' ? 'fade-underlay' : ''} ${phase === 'centered' && sectionId === 'contact' ? 'z-50' : ''}`}
-    >
+    <div className={`relative ${getTransformClass()} ${phase !== 'normal' ? 'fade-underlay' : ''}`}>
       {/* <div className="absolute top-0 left-0 bg-red-500 text-white text-xs p-2 z-50 max-w-xs">
         {getDebugInfo()}
       </div> */}
