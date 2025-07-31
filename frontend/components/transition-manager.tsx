@@ -18,7 +18,8 @@ const TRANSITIONS = {
     'transition-transform duration-1000 ease-in-out transform -translate-y-[calc(50vh-50%)]',
 
   // Base transition class
-  BASE_TRANSITION: 'transition-transform duration-1000 ease-in-out'
+  // BASE_TRANSITION: 'transition-transform duration-1000 ease-in-out'
+  BASE_TRANSITION: 'transition-all duration-1000 ease-in-out'
 } as const;
 
 export default function TransitionManager({
