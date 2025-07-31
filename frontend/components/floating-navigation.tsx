@@ -133,12 +133,12 @@ export default function FloatingNavigation({
   //   return projects.some((project) => project.slug === sectionId);
   // };
 
-  if (activeSection === 'hero' || isHeaderVisible) {
+  if (isHeaderVisible) {
     return null;
   }
 
   return (
-    <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-40">
+    <div className="fixed right-6 top-[50vh] transform -translate-y-1/2 z-40">
       <div className="flex flex-col space-y-4">
         {navigationItems.map((item) => (
           <div key={item.id} className="relative">

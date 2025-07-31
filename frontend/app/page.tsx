@@ -114,47 +114,49 @@ const Portfolio = () => {
   const developer = data?.getDeveloper || {};
 
   return (
-    <div className="min-h-screen gradient-bg pt-20">
-      {/* {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />} */}
+    <>
       <FloatingNavigation
         projects={developer.projects || []}
         activeSection={targetSection}
         onActiveSectionChange={setTargetSection}
       />
-      <AutoHideHeader
-        developer={developer}
-        projects={developer.projects || []}
-        onActiveSectionChange={setTargetSection}
-      />
-
-      <TransitionManager targetSection={targetSection}>
-        <HeroSection id="hero" developer={developer} />
-        <FeaturedProjects id="featured" developer={developer} />
-        <SkillsSection id="skills" developer={developer} />
-        <ProjectDetailSection
-          id="ai-portfolio"
-          project={
-            developer.projects?.[0] ||
-            ({
-              id: 'ai-portfolio',
-              title: 'AI Portfolio',
-              slug: 'ai-portfolio',
-              description: 'Default project',
-              status: 'active',
-              developer: developer,
-              developerId: developer.id || 'default-dev'
-            } as unknown as ProjectType)
-          }
-          content={
-            getProjectDetail('ai-portfolio')?.content ||
-            `# AI Portfolio\n\n## Project Overview\n\nDefault project content`
-          }
+      <div className="min-h-screen gradient-bg pt-20 overscroll-none contain-layout">
+        {/* {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />} */}
+        <AutoHideHeader
+          developer={developer}
+          projects={developer.projects || []}
+          onActiveSectionChange={setTargetSection}
         />
-        <ContactSection id="contact" developer={developer} />
-      </TransitionManager>
 
-      <Footer developer={developer} />
-    </div>
+        <TransitionManager targetSection={targetSection}>
+          <HeroSection id="hero" developer={developer} />
+          <FeaturedProjects id="featured" developer={developer} />
+          <SkillsSection id="skills" developer={developer} />
+          <ProjectDetailSection
+            id="ai-portfolio"
+            project={
+              developer.projects?.[0] ||
+              ({
+                id: 'ai-portfolio',
+                title: 'AI Portfolio',
+                slug: 'ai-portfolio',
+                description: 'Default project',
+                status: 'active',
+                developer: developer,
+                developerId: developer.id || 'default-dev'
+              } as unknown as ProjectType)
+            }
+            content={
+              getProjectDetail('ai-portfolio')?.content ||
+              `# AI Portfolio\n\n## Project Overview\n\nDefault project content`
+            }
+          />
+          <ContactSection id="contact" developer={developer} />
+        </TransitionManager>
+
+        <Footer developer={developer} />
+      </div>
+    </>
   );
 };
 

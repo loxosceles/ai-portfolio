@@ -29,6 +29,15 @@
 }
 
 @layer utilities {
+  /* Overscroll Prevention */
+  .overscroll-none {
+    overscroll-behavior: none;
+  }
+  
+  .contain-layout {
+    contain: layout;
+  }
+
   /* Brand Colors */
   .bg-brand-primary {
     background-color: theme(--color-brand-primary);
@@ -181,4 +190,8 @@
 .fade-underlay .bg-glass-light {
   background: transparent !important;
   transition: background 1000ms ease-in-out;
+}
+
+html, body {
+  overscroll-behavior: none;
 }
