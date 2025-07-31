@@ -12,14 +12,11 @@ interface TransitionManagerProps {
 // Transition constants
 const TRANSITIONS = {
   // Target transitions - slide into center
+  BASE_TRANSITION: 'transition-all duration-600 ease-in-out',
   TARGET_FROM_BOTTOM:
-    'transition-transform duration-1000 ease-in-out transform translate-y-[calc(50vh-50%)]',
+    'transition-transform duration-600 ease-in-out transform translate-y-[calc(50vh-50%)]',
   TARGET_FROM_TOP:
-    'transition-transform duration-1000 ease-in-out transform -translate-y-[calc(50vh-50%)]',
-
-  // Base transition class
-  // BASE_TRANSITION: 'transition-transform duration-1000 ease-in-out'
-  BASE_TRANSITION: 'transition-all duration-1000 ease-in-out'
+    'transition-transform duration-600 ease-in-out transform -translate-y-[calc(50vh-50%)] z-50'
 } as const;
 
 export default function TransitionManager({
@@ -35,52 +32,70 @@ export default function TransitionManager({
   // Add state for scroll detection
   const [isScrolling, setIsScrolling] = useState(false);
 
-  // Combined scroll handling (detection + reset)
+  // Single effect handles all phase transitions
   useEffect(() => {
-    if (!isTarget || targetTransition === 'reset') return;
-
-    let scrollTimeout: NodeJS.Timeout;
-
-    const handleScroll = () => {
-      // Reset if already centered
-      if (phase === 'centered') {
-        setPhase('normal');
-        return;
-      }
-
-      // Detect scroll completion
-      setIsScrolling(true);
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => setIsScrolling(false), 150);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      clearTimeout(scrollTimeout);
-    };
-  }, [isTarget, targetTransition, phase]);
-
-  // Combined transition logic (target + non-target)
-  useEffect(() => {
-    if (isTarget && targetTransition !== 'reset' && !isScrolling) {
-      // Target: start transition after scroll completes
+    if (isTarget && targetTransition !== 'reset') {
+      // Target: start transition immediately
       setPhase('transitioning');
-      const timer = setTimeout(() => setPhase('centered'), 800);
+      const timer = setTimeout(() => setPhase('centered'), 400);
       return () => clearTimeout(timer);
-    } else if (!isTarget) {
-      // Non-target: reset immediately when target resets OR follow global phase
-      if (globalTransitionPhase === 'normal') {
-        setPhase('normal');
-      } else {
-        const delay = globalTransitionPhase === 'transitioning' ? 200 : 0;
-        const timer = setTimeout(() => setPhase(globalTransitionPhase), delay);
-        return () => clearTimeout(timer);
-      }
+    } else if (!isTarget && globalTransitionPhase !== 'normal') {
+      // Non-target: follow global phase with delay
+      const delay = globalTransitionPhase === 'transitioning' ? 200 : 0;
+      const timer = setTimeout(() => setPhase(globalTransitionPhase), delay);
+      return () => clearTimeout(timer);
     } else {
+      // Reset to normal (both targets when reset and non-targets when global is normal)
       setPhase('normal');
     }
-  }, [isTarget, targetTransition, isScrolling, globalTransitionPhase]);
+  }, [isTarget, targetTransition, globalTransitionPhase]);
+
+  // Combined scroll handling (detection + reset)
+  // useEffect(() => {
+  //   if (!isTarget || targetTransition === 'reset') return;
+
+  //   let scrollTimeout: NodeJS.Timeout;
+
+  //   const handleScroll = () => {
+  //     // Reset if already centered
+  //     if (phase === 'centered') {
+  //       setPhase('normal');
+  //       return;
+  //     }
+
+  //     // Detect scroll completion
+  //     setIsScrolling(true);
+  //     clearTimeout(scrollTimeout);
+  //     scrollTimeout = setTimeout(() => setIsScrolling(false), 150);
+  //   };
+
+  //   window.addEventListener('scroll', handleScroll, { passive: true });
+  //   return () => {
+  //     window.removeEventListener('scroll', handleScroll);
+  //     clearTimeout(scrollTimeout);
+  //   };
+  // }, [isTarget, targetTransition, phase]);
+
+  // // Combined transition logic (target + non-target)
+  // useEffect(() => {
+  //   if (isTarget && targetTransition !== 'reset' && !isScrolling) {
+  //     // Target: start transition after scroll completes
+  //     setPhase('transitioning');
+  //     const timer = setTimeout(() => setPhase('centered'), 400);
+  //     return () => clearTimeout(timer);
+  //   } else if (!isTarget) {
+  //     // Non-target: reset immediately when target resets OR follow global phase
+  //     if (globalTransitionPhase === 'normal') {
+  //       setPhase('normal');
+  //     } else {
+  //       const delay = globalTransitionPhase === 'transitioning' ? 200 : 0;
+  //       const timer = setTimeout(() => setPhase(globalTransitionPhase), delay);
+  //       return () => clearTimeout(timer);
+  //     }
+  //   } else {
+  //     setPhase('normal');
+  //   }
+  // }, [isTarget, targetTransition, isScrolling, globalTransitionPhase]);
 
   // Enhanced debug display
   const getDebugInfo = () => {
@@ -146,7 +161,9 @@ export default function TransitionManager({
   };
 
   return (
-    <div className={`relative ${getTransformClass()} ${phase !== 'normal' ? 'fade-underlay' : ''}`}>
+    <div
+      className={`relative ${getTransformClass()} ${phase !== 'normal' ? 'fade-underlay' : ''} ${phase === 'centered' && sectionId === 'contact' ? 'z-50' : ''}`}
+    >
       {/* <div className="absolute top-0 left-0 bg-red-500 text-white text-xs p-2 z-50 max-w-xs">
         {getDebugInfo()}
       </div> */}
