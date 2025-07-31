@@ -1,193 +1,115 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import StandardViewWrapper from './standard-view-wrapper';
+import CenteredViewWrapper from './centered-view-wrapper';
+import UpwardTransitionWrapper from './upward-transition-wrapper';
 
-interface TransitionManagerProps {
-  sectionId: string;
-  isTarget: boolean;
-  positionRelativeToTarget?: 'above' | 'below' | 'same';
-  children: React.ReactNode;
-  targetTransition?: 'reset' | 'centerFromBottom' | 'centerFromTop';
-  globalTransitionPhase?: 'normal' | 'transitioning' | 'centered';
+interface NewTransitionManagerProps {
+  targetSection: string;
+  children: React.ReactNode[];
 }
 
-// Transition constants
-const TRANSITIONS = {
-  // Target transitions - slide into center
-  BASE_TRANSITION: 'transition-all duration-600 ease-in-out',
-  TARGET_FROM_BOTTOM:
-    'transition-transform duration-600 ease-in-out transform translate-y-[calc(50vh-50%)]',
-  TARGET_FROM_TOP:
-    'transition-transform duration-600 ease-in-out transform -translate-y-[calc(50vh-50%)]'
-} as const;
+export default function NewTransitionManager({
+  targetSection,
+  children
+}: NewTransitionManagerProps) {
+  const [globalTransitionPhase, setGlobalTransitionPhase] = useState<
+    'normal' | 'transitioning' | 'centered'
+  >('normal');
 
-export default function TransitionManager({
-  sectionId,
-  isTarget,
-  positionRelativeToTarget,
-  children,
-  targetTransition = 'reset',
-  globalTransitionPhase = 'normal'
-}: TransitionManagerProps) {
-  const [phase, setPhase] = useState<'normal' | 'transitioning' | 'centered'>('normal');
-
-  // Add state for scroll detection
-  const [isScrolling, setIsScrolling] = useState(false);
-
+  // Track when target changes to trigger global transition
   useEffect(() => {
-    if (isTarget && targetTransition !== 'reset') {
-      setPhase('transitioning');
-      // Contact waits longer (800ms) to let upper sections fade first
-      const delay = sectionId === 'contact' ? 800 : 400;
-      const timer = setTimeout(() => setPhase('centered'), delay);
+    if (targetSection !== 'hero') {
+      setGlobalTransitionPhase('transitioning');
+      const timer = setTimeout(() => {
+        setGlobalTransitionPhase('centered');
+      }, 800);
       return () => clearTimeout(timer);
-    } else if (isTarget) {
-      setPhase('normal');
+    } else {
+      setGlobalTransitionPhase('normal');
     }
-  }, [isTarget, targetTransition, sectionId]);
+  }, [targetSection]);
 
-  // Non-target sections - Upper sections fade immediately
+  // Add scroll listener to reset global transition phase
   useEffect(() => {
-    if (!isTarget) {
-      if (globalTransitionPhase !== 'normal') {
-        // Upper sections (above contact) fade immediately, others wait
-        const delay = positionRelativeToTarget === 'above' ? 0 : 200;
-        const timer = setTimeout(() => setPhase(globalTransitionPhase), delay);
-        return () => clearTimeout(timer);
-      } else {
-        setPhase('normal');
-      }
-    }
-  }, [globalTransitionPhase, positionRelativeToTarget]);
-
-  // Scroll reset for Contact section
-  useEffect(() => {
-    if (sectionId !== 'contact' || phase !== 'centered') return;
-
     const handleScroll = () => {
-      setPhase('normal');
+      if (globalTransitionPhase !== 'normal') {
+        setGlobalTransitionPhase('normal');
+      }
+    };
+
+    const handleClick = () => {
+      if (globalTransitionPhase !== 'normal') {
+        setGlobalTransitionPhase('normal');
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('click', handleClick, { passive: true });
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('click', handleClick);
     };
-  }, [phase]);
+  }, [globalTransitionPhase]);
 
-  // Combined scroll handling (detection + reset)
-  // useEffect(() => {
-  //   if (!isTarget || targetTransition === 'reset') return;
+  // Helper to get position relative to contact
+  const getPositionRelativeToContact = (sectionId: string): 'above' | 'below' | 'same' => {
+    const sectionOrder = ['hero', 'featured', 'skills', 'ai-portfolio', 'contact'];
+    const sectionIndex = sectionOrder.indexOf(sectionId);
+    const contactIndex = sectionOrder.indexOf('contact');
 
-  //   let scrollTimeout: NodeJS.Timeout;
-
-  //   const handleScroll = () => {
-  //     // Reset if already centered
-  //     if (phase === 'centered') {
-  //       setPhase('normal');
-  //       return;
-  //     }
-
-  //     // Detect scroll completion
-  //     setIsScrolling(true);
-  //     clearTimeout(scrollTimeout);
-  //     scrollTimeout = setTimeout(() => setIsScrolling(false), 150);
-  //   };
-
-  //   window.addEventListener('scroll', handleScroll, { passive: true });
-  //   return () => {
-  //     window.removeEventListener('scroll', handleScroll);
-  //     clearTimeout(scrollTimeout);
-  //   };
-  // }, [isTarget, targetTransition, phase]);
-
-  // // Combined transition logic (target + non-target)
-  // useEffect(() => {
-  //   if (isTarget && targetTransition !== 'reset' && !isScrolling) {
-  //     // Target: start transition after scroll completes
-  //     setPhase('transitioning');
-  //     const timer = setTimeout(() => setPhase('centered'), 400);
-  //     return () => clearTimeout(timer);
-  //   } else if (!isTarget) {
-  //     // Non-target: reset immediately when target resets OR follow global phase
-  //     if (globalTransitionPhase === 'normal') {
-  //       setPhase('normal');
-  //     } else {
-  //       const delay = globalTransitionPhase === 'transitioning' ? 200 : 0;
-  //       const timer = setTimeout(() => setPhase(globalTransitionPhase), delay);
-  //       return () => clearTimeout(timer);
-  //     }
-  //   } else {
-  //     setPhase('normal');
-  //   }
-  // }, [isTarget, targetTransition, isScrolling, globalTransitionPhase]);
-
-  // Enhanced debug display
-  const getDebugInfo = () => {
-    const parts = [
-      `ID: ${sectionId}`,
-      `Phase: ${phase}`,
-      `Target: ${isTarget}`,
-      `Position: ${positionRelativeToTarget}`,
-      `TransType: ${targetTransition}`
-    ];
-    return parts.join(' | ');
-  };
-
-  // const getTransformClass = () => {
-  //   // // Non-target sections slide based on position
-  //   // if (!isTarget && phase === 'centered') {
-  //   //   if (positionRelativeToTarget === 'above') {
-  //   //     return `${TRANSITIONS.BASE_TRANSITION} transform translate-y-[-100vh]`; // Slide up
-  //   //   }
-  //   //   if (positionRelativeToTarget === 'below') {
-  //   //     return `${TRANSITIONS.BASE_TRANSITION} transform translate-y-[100vh]`; // Slide down
-  //   //   }
-  //   // }
-
-  //   if (!isTarget && phase === 'centered') {
-  //     return `${TRANSITIONS.BASE_TRANSITION} opacity-0`;
-  //   }
-
-  //   // Target sections center themselves
-  //   if (phase === 'centered' && isTarget) {
-  //     switch (targetTransition) {
-  //       case 'centerFromTop':
-  //         return TRANSITIONS.TARGET_FROM_TOP;
-  //       case 'centerFromBottom':
-  //         return TRANSITIONS.TARGET_FROM_BOTTOM;
-  //       default:
-  //         return TRANSITIONS.BASE_TRANSITION;
-  //     }
-  //   }
-
-  //   return TRANSITIONS.BASE_TRANSITION;
-  // };
-
-  const getTransformClass = () => {
-    // Stage 1: Non-targets fade out
-    if (!isTarget && (phase === 'transitioning' || phase === 'centered')) {
-      return `${TRANSITIONS.BASE_TRANSITION} opacity-0`;
-    }
-
-    // Stage 2: Only Contact section gets the old centering behavior when it's the target
-    if (phase === 'centered' && isTarget && sectionId === 'contact') {
-      switch (targetTransition) {
-        case 'centerFromTop':
-          return TRANSITIONS.TARGET_FROM_TOP;
-        case 'centerFromBottom':
-          return TRANSITIONS.TARGET_FROM_BOTTOM;
-        default:
-          return TRANSITIONS.BASE_TRANSITION;
-      }
-    }
-
-    return TRANSITIONS.BASE_TRANSITION;
+    if (sectionIndex < contactIndex) return 'above';
+    if (sectionIndex > contactIndex) return 'below';
+    return 'same';
   };
 
   return (
-    <div className={`relative ${getTransformClass()} ${phase !== 'normal' ? 'fade-underlay' : ''}`}>
-      {/* <div className="absolute top-0 left-0 bg-red-500 text-white text-xs p-2 z-50 max-w-xs">
-        {getDebugInfo()}
-      </div> */}
-      {children}
-    </div>
+    <>
+      {React.Children.map(children, (child, index) => {
+        if (!React.isValidElement(child)) return child;
+
+        const isTarget = targetSection === child.props.id;
+        const isFirst = index === 0;
+        const isLast = index === React.Children.count(children) - 1;
+        const positionRelativeToContact = getPositionRelativeToContact(child.props.id);
+
+        if (isFirst) {
+          return (
+            <StandardViewWrapper
+              key={child.props.id}
+              isTarget={isTarget}
+              globalTransitionPhase={globalTransitionPhase}
+              positionRelativeToContact={positionRelativeToContact}
+            >
+              {child}
+            </StandardViewWrapper>
+          );
+        }
+
+        if (isLast) {
+          return (
+            <UpwardTransitionWrapper
+              key={child.props.id}
+              isTarget={isTarget}
+              globalTransitionPhase={globalTransitionPhase}
+              positionRelativeToContact={positionRelativeToContact}
+            >
+              {child}
+            </UpwardTransitionWrapper>
+          );
+        }
+
+        return (
+          <CenteredViewWrapper
+            key={child.props.id}
+            isTarget={isTarget}
+            globalTransitionPhase={globalTransitionPhase}
+            positionRelativeToContact={positionRelativeToContact}
+          >
+            {child}
+          </CenteredViewWrapper>
+        );
+      })}
+    </>
   );
 }

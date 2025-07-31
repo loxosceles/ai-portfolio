@@ -1,7 +1,12 @@
 import { DeveloperType } from '@/shared/types';
 import { isLocalEnvironment } from '@/lib/auth/auth-utils';
 
-function FeaturedProjects({ developer }: { developer: DeveloperType }) {
+interface FeaturedProjectsProps {
+  id?: string;
+  developer: DeveloperType;
+}
+
+function FeaturedProjects({ id, developer }: FeaturedProjectsProps) {
   if (isLocalEnvironment()) {
     // console.log("Developer's project:", developer.projects);
   }
@@ -16,7 +21,7 @@ function FeaturedProjects({ developer }: { developer: DeveloperType }) {
   }
 
   return (
-    <section id="featured" className="py-16 px-6 bg-glass-light">
+    <section id={id} className="py-16 px-6 bg-glass-light">
       <h2 className="text-4xl font-bold text-primary text-center mb-12">Featured Projects</h2>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {projects.map((project, index) => (

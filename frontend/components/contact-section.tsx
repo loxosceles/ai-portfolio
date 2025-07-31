@@ -3,10 +3,15 @@ import Link from 'next/link';
 import IconWrapper from '@/components/icon-wrapper';
 import { DeveloperType } from '@/shared/types';
 
-function ContactSection({ developer }: { developer: DeveloperType }) {
+interface ContactSectionProps {
+  id?: string;
+  developer: DeveloperType;
+}
+
+function ContactSection({ id, developer }: ContactSectionProps) {
   const { email, github, linkedin } = developer;
   return (
-    <section id="contact" className="py-16 px-6 bg-glass-light">
+    <section id={id} className="py-16 px-6 bg-glass-light">
       <div className="container mx-auto text-center">
         <h2 className="text-4xl font-bold text-primary mb-8">Let&apos;s Connect</h2>
         <p className="text-xl text-secondary mb-8 max-w-2xl mx-auto">

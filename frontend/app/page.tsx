@@ -78,22 +78,6 @@ const Portfolio = () => {
   const [isChecking, setIsChecking] = useState(true);
   const [targetSection, setTargetSection] = useState('hero');
   const { getQueryContext } = useAuth();
-  const [globalTransitionPhase, setGlobalTransitionPhase] = useState<
-    'normal' | 'transitioning' | 'centered'
-  >('normal');
-
-  // Track when target changes to trigger global transition
-  useEffect(() => {
-    if (targetSection !== 'hero') {
-      setGlobalTransitionPhase('transitioning');
-      const timer = setTimeout(() => {
-        setGlobalTransitionPhase('centered');
-      }, 800);
-      return () => clearTimeout(timer);
-    } else {
-      setGlobalTransitionPhase('normal');
-    }
-  }, [targetSection]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -112,29 +96,6 @@ const Portfolio = () => {
     setIsChecking(false);
   }, []);
 
-  // Add scroll listener to reset global transition phase
-  useEffect(() => {
-    const handleScroll = () => {
-      if (globalTransitionPhase !== 'normal') {
-        setGlobalTransitionPhase('normal');
-      }
-    };
-
-    const handleClick = () => {
-      if (globalTransitionPhase !== 'normal') {
-        setGlobalTransitionPhase('normal');
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('click', handleClick, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('click', handleClick);
-    };
-  }, [globalTransitionPhase]);
-
   const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
     context: getQueryContext('public'),
     onCompleted: (data: { getDeveloper: { name: string } }) => {},
@@ -152,19 +113,6 @@ const Portfolio = () => {
 
   const developer = data?.getDeveloper || {};
 
-  function getSectionPosition(
-    sectionId: string,
-    targetSection: string
-  ): 'above' | 'below' | 'same' {
-    const sectionOrder = SECTIONS_CONFIG.map((s) => s.id);
-    const sectionIndex = sectionOrder.indexOf(sectionId);
-    const targetIndex = sectionOrder.indexOf(targetSection);
-
-    if (sectionIndex < targetIndex) return 'above';
-    if (sectionIndex > targetIndex) return 'below';
-    return 'same';
-  }
-
   return (
     <div className="min-h-screen gradient-bg pt-20">
       {/* {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />} */}
@@ -179,18 +127,31 @@ const Portfolio = () => {
         onActiveSectionChange={setTargetSection}
       />
 
-      {SECTIONS_CONFIG.map((section) => (
-        <TransitionManager
-          key={section.id}
-          sectionId={section.id}
-          isTarget={targetSection === section.id}
-          positionRelativeToTarget={getSectionPosition(section.id, targetSection)}
-          targetTransition={section.targetTransition}
-          globalTransitionPhase={globalTransitionPhase}
-        >
-          {section.component(developer)}
-        </TransitionManager>
-      ))}
+      <TransitionManager targetSection={targetSection}>
+        <HeroSection id="hero" developer={developer} />
+        <FeaturedProjects id="featured" developer={developer} />
+        <SkillsSection id="skills" developer={developer} />
+        <ProjectDetailSection
+          id="ai-portfolio"
+          project={
+            developer.projects?.[0] ||
+            ({
+              id: 'ai-portfolio',
+              title: 'AI Portfolio',
+              slug: 'ai-portfolio',
+              description: 'Default project',
+              status: 'active',
+              developer: developer,
+              developerId: developer.id || 'default-dev'
+            } as unknown as ProjectType)
+          }
+          content={
+            getProjectDetail('ai-portfolio')?.content ||
+            `# AI Portfolio\n\n## Project Overview\n\nDefault project content`
+          }
+        />
+        <ContactSection id="contact" developer={developer} />
+      </TransitionManager>
 
       <Footer developer={developer} />
     </div>

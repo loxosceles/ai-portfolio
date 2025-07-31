@@ -1,10 +1,15 @@
 import { DeveloperType } from '@/shared/types';
 
-function SkillsSection({ developer }: { developer: DeveloperType }) {
+interface SkillsSectionProps {
+  id?: string;
+  developer: DeveloperType;
+}
+
+function SkillsSection({ id, developer }: SkillsSectionProps) {
   const { skillSets } = developer;
 
   return (
-    <section id="skills" className="py-16 px-6">
+    <section id={id} className="py-16 px-6">
       <div className="container mx-auto">
         <h2 className="text-4xl font-bold text-primary text-center mb-12">Technical Skills</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">

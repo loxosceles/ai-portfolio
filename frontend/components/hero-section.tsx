@@ -5,13 +5,18 @@ import IconWrapper from '@/components/icon-wrapper';
 import { DeveloperType } from '@/shared/types';
 import AIQuestion from '@/components/ai-question';
 
-function HeroSection({ developer }: { developer: DeveloperType }) {
+interface HeroSectionProps {
+  id?: string;
+  developer: DeveloperType;
+}
+
+function HeroSection({ id, developer }: HeroSectionProps) {
   const [showAIQuestion, setShowAIQuestion] = useState(false);
   const { name } = developer;
   const firstName = name.split(' ')[0];
 
   return (
-    <section id="hero" className="pt-16 pb-16 px-6">
+    <section id={id} className="pt-16 pb-16 px-6">
       <div className="container mx-auto text-center">
         <div className="transform transition-all duration-1000 translate-y-0 opacity-100 animate-fadeIn">
           <h1 className="text-5xl md:text-7xl font-bold text-primary mb-6">
