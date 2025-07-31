@@ -77,7 +77,46 @@ const SECTIONS_CONFIG: SectionConfig[] = [
 const Portfolio = () => {
   const [isChecking, setIsChecking] = useState(true);
   const [targetSection, setTargetSection] = useState('hero');
+  const [scrollSection, setScrollSection] = useState('hero');
+  const [isNavigating, setIsNavigating] = useState(false);
   const { getQueryContext } = useAuth();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isNavigating) return;
+
+      // Check if at bottom of page
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 10) {
+        setScrollSection('contact');
+        return;
+      }
+
+      const sections = ['hero', 'featured', 'skills', 'ai-portfolio', 'contact'];
+      const viewportCenter = window.innerHeight / 2;
+
+      for (const sectionId of sections) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= viewportCenter && rect.bottom >= viewportCenter) {
+            setScrollSection(sectionId);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isNavigating]);
+
+  const handleNavigation = (sectionId: string) => {
+    setIsNavigating(true);
+    setTargetSection(sectionId);
+    setTimeout(() => setIsNavigating(false), 1000);
+  };
+
+  const activeSection = isNavigating ? targetSection : scrollSection;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -117,15 +156,15 @@ const Portfolio = () => {
     <>
       <FloatingNavigation
         projects={developer.projects || []}
-        activeSection={targetSection}
-        onActiveSectionChange={setTargetSection}
+        activeSection={activeSection}
+        onActiveSectionChange={handleNavigation}
       />
       <div className="min-h-screen gradient-bg pt-20 overscroll-none contain-layout">
         {/* {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />} */}
         <AutoHideHeader
           developer={developer}
           projects={developer.projects || []}
-          onActiveSectionChange={setTargetSection}
+          onActiveSectionChange={handleNavigation}
         />
 
         <TransitionManager targetSection={targetSection}>
