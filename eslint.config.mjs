@@ -21,14 +21,14 @@ const IGNORE_PATTERNS = [
   '**/*.config.js',
   '**/.eslintrc.js',
   '**/__bak__*/**',
-  '**/__bak__*'
+  '**/__bak__*',
+  '**/frontend/out/** '
 ];
 
 const SHARED_RULES = {
   'eol-last': ['error', 'always'],
   'no-console': ['warn', { allow: ['error', 'warn', 'dir', 'time', 'timeEnd'] }],
   'no-unused-vars': 'off',
-  '@typescript-eslint/no-unused-vars': 'warn'
 };
 
 export default [
@@ -115,7 +115,8 @@ export default [
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
-      'import/no-unresolved': 'error'
+      'import/no-unresolved': 'error',
+      '@typescript-eslint/no-unused-vars': 'warn'
     }
   },
 

@@ -45,3 +45,6 @@ ai-portfolio.code-workspace
 
 # Amazon Q rules
 /.amazonq/
+
+# Planning docs
+docs/planning/

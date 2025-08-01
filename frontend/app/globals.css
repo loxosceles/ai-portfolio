@@ -29,6 +29,15 @@
 }
 
 @layer utilities {
+  /* Overscroll Prevention */
+  .overscroll-none {
+    overscroll-behavior: none;
+  }
+  
+  .contain-layout {
+    contain: layout;
+  }
+
   /* Brand Colors */
   .bg-brand-primary {
     background-color: theme(--color-brand-primary);
@@ -160,14 +169,29 @@
     background-color: rgba(168, 85, 247, 0.2);
     color: #c4b5fd;
   }
-  
+
   /* Animations */
   .animate-fadeIn {
     animation: fadeIn 0.5s ease-in-out;
   }
-  
+
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
+}
+
+.fade-underlay .bg-glass-light {
+  background: transparent !important;
+  transition: background 1000ms ease-in-out;
+}
+
+html, body {
+  overscroll-behavior: none;
 }

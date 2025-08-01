@@ -17,6 +17,7 @@ type Developer @aws_iam @aws_cognito_user_pools @aws_api_key {
 type Project @aws_iam @aws_cognito_user_pools @aws_api_key {
   id: ID!
   title: String!
+  slug: String!
   description: String!
   status: String!
   highlights: [String]
@@ -86,6 +87,7 @@ input UpdateDeveloperInput {
 
 input CreateProjectInput {
   title: String!
+  slug: String!
   description: String!
   status: String!
   highlights: [String]
@@ -103,6 +105,7 @@ input CreateProjectInput {
 input UpdateProjectInput {
   id: ID!
   title: String
+  slug: String
   description: String
   status: String
   highlights: [String]

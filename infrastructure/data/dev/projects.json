@@ -2,6 +2,7 @@
   {
     "id": "proj-1",
     "title": "AI-Powered Portfolio Platform",
+    "slug": "ai-portfolio",
     "description": "A dynamic portfolio platform using React and AWS services, featuring AI-driven content recommendations and real-time analytics",
     "status": "Active",
     "highlights": [
@@ -16,6 +17,7 @@
   {
     "id": "proj-2",
     "title": "Secure Authentication Service",
+    "slug": "image-processor",
     "description": "A robust authentication system implementing OAuth2.0 and JWT, with multi-factor authentication and role-based access control",
     "status": "Completed",
     "highlights": [
@@ -30,6 +32,7 @@
   {
     "id": "proj-3",
     "title": "Real-time Analytics Dashboard",
+    "slug": "web3snapshot",
     "description": "An interactive analytics dashboard with real-time data visualization, supporting multiple data sources and custom reporting",
     "status": "Completed",
     "highlights": [
