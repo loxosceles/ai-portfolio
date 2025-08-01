@@ -3,15 +3,12 @@ import StandardViewWrapper from './standard-view-wrapper';
 import CenteredViewWrapper from './centered-view-wrapper';
 import UpwardTransitionWrapper from './upward-transition-wrapper';
 
-interface NewTransitionManagerProps {
+interface TransitionManagerProps {
   targetSection: string;
   children: React.ReactNode[];
 }
 
-export default function NewTransitionManager({
-  targetSection,
-  children
-}: NewTransitionManagerProps) {
+export default function TransitionManager({ targetSection, children }: TransitionManagerProps) {
   const [globalTransitionPhase, setGlobalTransitionPhase] = useState<
     'normal' | 'transitioning' | 'centered'
   >('normal');
@@ -68,15 +65,17 @@ export default function NewTransitionManager({
       {React.Children.map(children, (child, index) => {
         if (!React.isValidElement(child)) return child;
 
-        const isTarget = targetSection === child.props.id;
+        const isTarget = targetSection === (child.props as { id: string }).id;
         const isFirst = index === 0;
         const isLast = index === React.Children.count(children) - 1;
-        const positionRelativeToContact = getPositionRelativeToContact(child.props.id);
+        const positionRelativeToContact = getPositionRelativeToContact(
+          (child.props as { id: string }).id
+        );
 
         if (isFirst) {
           return (
             <StandardViewWrapper
-              key={child.props.id}
+              key={(child.props as { id: string }).id}
               isTarget={isTarget}
               globalTransitionPhase={globalTransitionPhase}
               positionRelativeToContact={positionRelativeToContact}
@@ -89,7 +88,7 @@ export default function NewTransitionManager({
         if (isLast) {
           return (
             <UpwardTransitionWrapper
-              key={child.props.id}
+              key={(child.props as { id: string }).id}
               isTarget={isTarget}
               globalTransitionPhase={globalTransitionPhase}
               positionRelativeToContact={positionRelativeToContact}
@@ -101,7 +100,7 @@ export default function NewTransitionManager({
 
         return (
           <CenteredViewWrapper
-            key={child.props.id}
+            key={(child.props as { id: string }).id}
             isTarget={isTarget}
             globalTransitionPhase={globalTransitionPhase}
             positionRelativeToContact={positionRelativeToContact}
