@@ -214,7 +214,7 @@ const Portfolio = () => {
                   developerId: developer.id || 'default-dev'
                 } as unknown as ProjectType
               ]
-          ).map((project) => (
+          ).map((project, index) => (
             <ProjectDetailSection
               key={project.id}
               id={project.slug}
@@ -223,6 +223,7 @@ const Portfolio = () => {
                 getProjectDetail(project.slug)?.content ||
                 `# ${project.title}\n\n## Project Overview\n\nProject content for ${project.title}`
               }
+              backgroundIndex={index}
             />
           ))}
           <ContactSection id="contact" developer={developer} />

@@ -6,11 +6,20 @@ interface ProjectDetailSectionProps {
   project: ProjectType;
   content: string;
   id?: string;
+  backgroundIndex?: number;
 }
 
-export default function ProjectDetailSection({ project, content, id }: ProjectDetailSectionProps) {
+export default function ProjectDetailSection({
+  project,
+  content,
+  id,
+  backgroundIndex
+}: ProjectDetailSectionProps) {
+  const backgroundClass =
+    backgroundIndex !== undefined && backgroundIndex % 2 === 0 ? 'bg-glass-light' : '';
+
   return (
-    <section id={id} className="min-h-screen bg-glass-light py-16 px-6">
+    <section id={id} className={`min-h-screen ${backgroundClass} py-16 px-6`}>
       <div className="container mx-auto max-w-4xl">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-primary mb-4">{project.title}</h2>
