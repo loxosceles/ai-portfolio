@@ -118,27 +118,15 @@ const Portfolio = () => {
   }, [isNavigating]);
 
   const handleNavigation = (sectionId: string) => {
-    console.log('handleNavigation called with:', sectionId);
     setIsNavigating(true);
     setTargetSection(sectionId);
     setTimeout(() => {
-      console.log('clearing isNavigating');
       setScrollSection(sectionId);
       setIsNavigating(false);
     }, 1000);
   };
 
   const activeSection = isNavigating ? targetSection : scrollSection;
-  console.log(
-    'activeSection:',
-    activeSection,
-    'isNavigating:',
-    isNavigating,
-    'targetSection:',
-    targetSection,
-    'scrollSection:',
-    scrollSection
-  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -181,7 +169,7 @@ const Portfolio = () => {
         activeSection={activeSection}
         onActiveSectionChange={handleNavigation}
       />
-      <div className="min-h-screen gradient-bg pt-20 overscroll-none contain-layout">
+      <div className="min-h-screen gradient-bg pt-20 overscroll-none contain-layout md:px-20">
         {/* {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />} */}
         <AutoHideHeader
           developer={developer}

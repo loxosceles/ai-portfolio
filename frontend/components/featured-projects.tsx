@@ -23,7 +23,7 @@ function FeaturedProjects({ id, developer }: FeaturedProjectsProps) {
   return (
     <section id={id} className="py-16 px-6 bg-glass-light">
       <h2 className="text-4xl font-bold text-primary text-center mb-12">Featured Projects</h2>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-8">
         {projects.map((project, index) => (
           <div
             key={index}
