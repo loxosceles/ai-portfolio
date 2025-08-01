@@ -50,7 +50,6 @@ export default function FloatingNavigation({
   const [showProjectSubmenu, setShowProjectSubmenu] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -139,13 +138,7 @@ export default function FloatingNavigation({
   }
 
   return (
-    <div
-      className={`fixed right-6 top-[50vh] transform -translate-y-1/2 z-40 hidden md:block transition-opacity duration-300 ${
-        isHovered ? 'opacity-100' : 'opacity-30'
-      }`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <div className="fixed right-6 top-[50vh] transform -translate-y-1/2 z-40 hidden md:block">
       <div className="flex flex-col space-y-4">
         {navigationItems.map((item) => (
           <div key={item.id} className="relative">
