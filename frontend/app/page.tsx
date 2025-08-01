@@ -169,13 +169,13 @@ const Portfolio = () => {
         activeSection={activeSection}
         onActiveSectionChange={handleNavigation}
       />
+      <AutoHideHeader
+        developer={developer}
+        projects={developer.projects || []}
+        onActiveSectionChange={handleNavigation}
+      />
       <div className="min-h-screen gradient-bg pt-20 overscroll-none contain-layout md:px-20">
         {/* {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />} */}
-        <AutoHideHeader
-          developer={developer}
-          projects={developer.projects || []}
-          onActiveSectionChange={handleNavigation}
-        />
 
         <TransitionManager targetSection={targetSection}>
           <HeroSection id="hero" developer={developer} />
