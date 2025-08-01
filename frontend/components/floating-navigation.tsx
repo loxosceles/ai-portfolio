@@ -28,7 +28,9 @@ const BUTTON_STYLES = {
   ACTIVE: 'bg-brand-accent text-white scale-110',
   INACTIVE:
     'bg-surface-medium bg-opacity-80 text-secondary hover:bg-brand-accent hover:text-white hover:scale-105',
-  BASE: 'group relative p-3 rounded-full transition-all duration-300'
+  BASE: 'group relative p-3 rounded-full transition-all duration-300',
+  PROJECT:
+    'group relative p-2 rounded-full transition-all duration-300 w-10 h-10 flex items-center justify-center'
 } as const;
 
 const TOOLTIP_STYLES = {
@@ -47,13 +49,11 @@ export default function FloatingNavigation({
   activeSection,
   onActiveSectionChange
 }: FloatingNavigationProps) {
-  const [showProjectSubmenu, setShowProjectSubmenu] = useState(false);
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsHeaderVisible(window.scrollY < 100);
+      setIsHeaderVisible(window.scrollY < 50);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -83,6 +83,20 @@ export default function FloatingNavigation({
       selector: '#featured'
     },
     { id: 'skills', label: 'Skills', icon: <Code className="h-4 w-4" />, selector: '#skills' },
+    ...projectItems.map((project, index) => {
+      const projectSymbols = ['◆', '◆', '◆'];
+      const projectColors = ['text-orange-400', 'text-pink-400', 'text-cyan-400'];
+      return {
+        id: project.id,
+        label: project.label,
+        icon: (
+          <span className={`text-xl ${projectColors[index % projectColors.length]}`}>
+            {projectSymbols[index % projectSymbols.length]}
+          </span>
+        ),
+        selector: project.selector
+      };
+    }),
     {
       id: 'contact',
       label: 'Contact',
@@ -92,20 +106,28 @@ export default function FloatingNavigation({
   ];
 
   // Helper functions
-  function isActiveItem(itemId: string, activeSection: string): boolean {
+  function isActiveItem(
+    itemId: string,
+    activeSection: string,
+    projectItems: ProjectNavItem[]
+  ): boolean {
+    if (itemId === 'projects') {
+      // Projects button is active for featured section OR any individual project section
+      return activeSection === 'featured' || projectItems.some((p) => p.id === activeSection);
+    }
     return activeSection === itemId;
   }
 
   function getButtonClassName(itemId: string, activeSection: string): string {
-    const isActive = isActiveItem(itemId, activeSection);
+    const isActive = isActiveItem(itemId, activeSection, projectItems);
     const stateClass = isActive ? BUTTON_STYLES.ACTIVE : BUTTON_STYLES.INACTIVE;
-    return `${BUTTON_STYLES.BASE} ${stateClass}`;
+    const isProjectItem = projectItems.some((p) => p.id === itemId);
+    const baseClass = isProjectItem ? BUTTON_STYLES.PROJECT : BUTTON_STYLES.BASE;
+    return `${baseClass} ${stateClass}`;
   }
 
-  function getTooltipClassName(itemId: string, showProjectSubmenu: boolean): string {
-    const shouldHide = itemId === 'featured' && showProjectSubmenu;
-    const visibilityClass = shouldHide ? TOOLTIP_STYLES.HIDDEN : TOOLTIP_STYLES.VISIBLE;
-    return `${TOOLTIP_STYLES.BASE} ${visibilityClass}`;
+  function getTooltipClassName(): string {
+    return `${TOOLTIP_STYLES.BASE} ${TOOLTIP_STYLES.VISIBLE}`;
   }
   const scrollToSection = (sectionId: string) => {
     onActiveSectionChange?.(sectionId); // Set state FIRST
@@ -114,18 +136,6 @@ export default function FloatingNavigation({
     if (element) {
       element.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
-  };
-
-  const handleMouseEnter = () => {
-    if (hoverTimeout) clearTimeout(hoverTimeout);
-    setShowProjectSubmenu(true);
-  };
-
-  const handleMouseLeave = () => {
-    const timeout = setTimeout(() => {
-      setShowProjectSubmenu(false);
-    }, 300);
-    setHoverTimeout(timeout);
   };
 
   // const isProjectSection = (sectionId: string) => {
@@ -145,41 +155,10 @@ export default function FloatingNavigation({
               onClick={() => scrollToSection(item.id === 'projects' ? 'featured' : item.id)}
               className={getButtonClassName(item.id, activeSection)}
               title={item.label}
-              {...(item.id === 'projects' && {
-                onMouseEnter: handleMouseEnter,
-                onMouseLeave: handleMouseLeave
-              })}
             >
               {item.icon}
-              <span className={getTooltipClassName(item.id, showProjectSubmenu)}>{item.label}</span>
+              <span className={getTooltipClassName()}>{item.label}</span>
             </button>
-            {/* Project Submenu - Basic Horizontal */}
-            {item.id === 'projects' && showProjectSubmenu && (
-              <div
-                className="absolute right-full mr-2 top-1/2 transform -translate-y-1/2"
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-              >
-                <div className="flex flex-row space-x-3 items-center">
-                  {projectItems.map((project, index) => (
-                    <button
-                      key={project.id}
-                      onClick={() => {
-                        onActiveSectionChange?.(project.id);
-                        scrollToSection(project.id);
-                      }}
-                      className="group relative p-3 rounded-full bg-surface-medium bg-opacity-90 text-secondary hover:bg-brand-accent hover:text-white hover:scale-110 transition-all duration-300 shadow-lg backdrop-blur-sm border border-subtle min-w-12 min-h-12 flex items-center justify-center"
-                      title={project.label}
-                    >
-                      <span className="text-sm font-semibold">{index + 1}</span>
-                      <span className="absolute top-full mt-3 left-1/2 transform -translate-x-1/2 px-3 py-1 bg-surface-dark text-primary text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg pointer-events-none z-50">
-                        {project.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ))}
       </div>

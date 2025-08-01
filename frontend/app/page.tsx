@@ -104,6 +104,12 @@ const Portfolio = () => {
     const handleScroll = () => {
       if (isNavigating) return;
 
+      // Special case: if we're near the top, always show hero
+      if (window.scrollY < 100) {
+        setScrollSection('hero');
+        return;
+      }
+
       // Check if at bottom of page
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 10) {
         setScrollSection('contact');
@@ -214,18 +220,24 @@ const Portfolio = () => {
                   developerId: developer.id || 'default-dev'
                 } as unknown as ProjectType
               ]
-          ).map((project, index) => (
-            <ProjectDetailSection
-              key={project.id}
-              id={project.slug}
-              project={project}
-              content={
-                getProjectDetail(project.slug)?.content ||
-                `# ${project.title}\n\n## Project Overview\n\nProject content for ${project.title}`
-              }
-              backgroundIndex={index}
-            />
-          ))}
+          ).map((project, index) => {
+            const projectSymbols = ['◆', '◆', '◆'];
+            const projectColors = ['text-orange-400', 'text-pink-400', 'text-cyan-400'];
+            return (
+              <ProjectDetailSection
+                key={project.id}
+                id={project.slug}
+                project={project}
+                content={
+                  getProjectDetail(project.slug)?.content ||
+                  `# ${project.title}\n\n## Project Overview\n\nProject content for ${project.title}`
+                }
+                backgroundIndex={index}
+                projectSymbol={projectSymbols[index % projectSymbols.length]}
+                projectColor={projectColors[index % projectColors.length]}
+              />
+            );
+          })}
           <ContactSection id="contact" developer={developer} />
         </TransitionManager>
 

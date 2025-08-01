@@ -7,13 +7,17 @@ interface ProjectDetailSectionProps {
   content: string;
   id?: string;
   backgroundIndex?: number;
+  projectSymbol?: string;
+  projectColor?: string;
 }
 
 export default function ProjectDetailSection({
   project,
   content,
   id,
-  backgroundIndex
+  backgroundIndex,
+  projectSymbol,
+  projectColor
 }: ProjectDetailSectionProps) {
   const backgroundClass =
     backgroundIndex !== undefined && backgroundIndex % 2 === 0 ? 'bg-glass-light' : '';
@@ -22,7 +26,12 @@ export default function ProjectDetailSection({
     <section id={id} className={`min-h-screen ${backgroundClass} py-16 px-6`}>
       <div className="container mx-auto max-w-4xl">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-primary mb-4">{project.title}</h2>
+          <h2 className="text-4xl font-bold text-primary mb-4">
+            {projectSymbol && (
+              <span className={`mr-3 text-3xl ${projectColor}`}>{projectSymbol}</span>
+            )}
+            {project.title}
+          </h2>
           <p className="text-xl text-secondary max-w-2xl mx-auto">{project.description}</p>
         </div>
 
