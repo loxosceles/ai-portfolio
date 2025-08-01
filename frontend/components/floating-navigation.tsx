@@ -62,21 +62,27 @@ export default function FloatingNavigation({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const projectItems: ProjectNavItem[] =
+    projects.length > 0
+      ? projects.map((project) => ({
+          id: project.slug,
+          label: project.title,
+          selector: `#${project.slug}`
+        }))
+      : [
+          { id: 'ai-portfolio', label: 'AI Portfolio', selector: '#ai-portfolio' },
+          { id: 'test-project', label: 'Test Project', selector: '#test-project' }
+        ];
+
   const navigationItems: NavigationItem[] = [
     { id: 'hero', label: 'About', icon: <User className="h-4 w-4" />, selector: '#hero' },
     {
-      id: 'featured',
+      id: 'projects',
       label: 'Projects',
-      icon: <Briefcase className="h-4 w-4" />,
+      icon: <Projector className="h-4 w-4" />,
       selector: '#featured'
     },
     { id: 'skills', label: 'Skills', icon: <Code className="h-4 w-4" />, selector: '#skills' },
-    {
-      id: 'ai-portfolio',
-      label: 'AI Portfolio',
-      icon: <Projector className="h-4 w-4" />,
-      selector: '#ai-portfolio'
-    },
     {
       id: 'contact',
       label: 'Contact',
@@ -84,12 +90,6 @@ export default function FloatingNavigation({
       selector: '#contact'
     }
   ];
-
-  // const projectItems: ProjectNavItem[] = projects.map((project) => ({
-  //   id: project.slug,
-  //   label: project.title,
-  //   selector: `#${project.slug}`
-  // }));
 
   // Helper functions
   function isActiveItem(itemId: string, activeSection: string): boolean {
@@ -112,7 +112,6 @@ export default function FloatingNavigation({
 
     const element = document.querySelector(`#${sectionId}`);
     if (element) {
-      // element.scrollIntoView({ behavior: 'smooth' });
       element.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
   };
@@ -143,48 +142,44 @@ export default function FloatingNavigation({
         {navigationItems.map((item) => (
           <div key={item.id} className="relative">
             <button
-              onClick={() => scrollToSection(item.id)}
+              onClick={() => scrollToSection(item.id === 'projects' ? 'featured' : item.id)}
               className={getButtonClassName(item.id, activeSection)}
               title={item.label}
+              {...(item.id === 'projects' && {
+                onMouseEnter: handleMouseEnter,
+                onMouseLeave: handleMouseLeave
+              })}
             >
               {item.icon}
               <span className={getTooltipClassName(item.id, showProjectSubmenu)}>{item.label}</span>
             </button>
-            {/* Project Submenu - Mac-style Arc */}
-            {/* {item.id === 'featured' && showProjectSubmenu && (
+            {/* Project Submenu - Basic Horizontal */}
+            {item.id === 'projects' && showProjectSubmenu && (
               <div
                 className="absolute right-full mr-2 top-1/2 transform -translate-y-1/2"
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
               >
-                <div className="flex flex-row space-x-3 items-end pb-2">
-                  {projectItems.map((project, index) => {
-                    const yOffset =
-                      index === 1
-                        ? '-translate-y-2'
-                        : index === 0 || index === 2
-                          ? 'translate-y-1'
-                          : '';
-                    return (
-                      <button
-                        key={project.id}
-                        onClick={() => {
-                          onActiveSectionChange?.(project.id); // Set to specific project
-                          scrollToSection(project.id);
-                        }}
-                        className={`group relative p-3 rounded-full bg-surface-medium bg-opacity-90 text-secondary hover:bg-brand-accent hover:text-white hover:scale-110 transition-all duration-300 transform ${yOffset} shadow-lg backdrop-blur-sm border border-subtle min-w-12 min-h-12 flex items-center justify-center`}
-                        title={project.label}
-                      >
-                        <span className="text-sm font-semibold">{index + 1}</span>
-                        <span className="absolute top-full mt-3 left-1/2 transform -translate-x-1/2 px-3 py-1 bg-surface-dark text-primary text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg pointer-events-none z-50">
-                          {project.label}
-                        </span>
-                      </button>
-                    );
-                  })}
+                <div className="flex flex-row space-x-3 items-center">
+                  {projectItems.map((project, index) => (
+                    <button
+                      key={project.id}
+                      onClick={() => {
+                        onActiveSectionChange?.(project.id);
+                        scrollToSection(project.id);
+                      }}
+                      className="group relative p-3 rounded-full bg-surface-medium bg-opacity-90 text-secondary hover:bg-brand-accent hover:text-white hover:scale-110 transition-all duration-300 shadow-lg backdrop-blur-sm border border-subtle min-w-12 min-h-12 flex items-center justify-center"
+                      title={project.label}
+                    >
+                      <span className="text-sm font-semibold">{index + 1}</span>
+                      <span className="absolute top-full mt-3 left-1/2 transform -translate-x-1/2 px-3 py-1 bg-surface-dark text-primary text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg pointer-events-none z-50">
+                        {project.label}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </div>
-            )} */}
+            )}
           </div>
         ))}
       </div>

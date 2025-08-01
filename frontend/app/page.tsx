@@ -74,12 +74,31 @@ const SECTIONS_CONFIG: SectionConfig[] = [
   }
 ];
 
+// Helper function to generate section list dynamically
+const generateSectionList = (projects: ProjectType[] = []): string[] => {
+  const baseSections = ['hero', 'featured', 'skills'];
+  const projectSections =
+    projects.length > 0 ? projects.map((p) => p.slug) : ['ai-portfolio', 'test-project'];
+  return [...baseSections, ...projectSections, 'contact'];
+};
+
 const Portfolio = () => {
   const [isChecking, setIsChecking] = useState(true);
   const [targetSection, setTargetSection] = useState('hero');
   const [scrollSection, setScrollSection] = useState('hero');
   const [isNavigating, setIsNavigating] = useState(false);
+  const [projects, setProjects] = useState<ProjectType[]>([]);
   const { getQueryContext } = useAuth();
+
+  const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
+    context: getQueryContext('public'),
+    onCompleted: (data: { getDeveloper: { projects?: ProjectType[] } }) => {
+      setProjects(data.getDeveloper?.projects || []);
+    },
+    onError: (error: Error) => {
+      console.error('Query error:', error);
+    }
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -91,7 +110,7 @@ const Portfolio = () => {
         return;
       }
 
-      const sections = ['hero', 'featured', 'skills', 'ai-portfolio', 'contact'];
+      const sections = generateSectionList(projects);
       const viewportCenter = window.innerHeight / 2;
       let closestSection = 'hero';
       let closestDistance = Infinity;
@@ -115,7 +134,7 @@ const Portfolio = () => {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isNavigating]);
+  }, [isNavigating, projects]);
 
   const handleNavigation = (sectionId: string) => {
     setIsNavigating(true);
@@ -145,14 +164,6 @@ const Portfolio = () => {
     setIsChecking(false);
   }, []);
 
-  const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
-    context: getQueryContext('public'),
-    onCompleted: (data: { getDeveloper: { name: string } }) => {},
-    onError: (error: Error) => {
-      console.error('Query error:', error);
-    }
-  });
-
   // Show loading state if either checking cookies or loading data
   if (isChecking || loading) {
     return <div>Loading...</div>;
@@ -181,25 +192,39 @@ const Portfolio = () => {
           <HeroSection id="hero" developer={developer} />
           <FeaturedProjects id="featured" developer={developer} />
           <SkillsSection id="skills" developer={developer} />
-          <ProjectDetailSection
-            id="ai-portfolio"
-            project={
-              developer.projects?.[0] ||
-              ({
-                id: 'ai-portfolio',
-                title: 'AI Portfolio',
-                slug: 'ai-portfolio',
-                description: 'Default project',
-                status: 'active',
-                developer: developer,
-                developerId: developer.id || 'default-dev'
-              } as unknown as ProjectType)
-            }
-            content={
-              getProjectDetail('ai-portfolio')?.content ||
-              `# AI Portfolio\n\n## Project Overview\n\nDefault project content`
-            }
-          />
+          {(projects.length > 0
+            ? projects
+            : [
+                {
+                  id: 'ai-portfolio',
+                  title: 'AI Portfolio',
+                  slug: 'ai-portfolio',
+                  description: 'Default project',
+                  status: 'active',
+                  developer: developer,
+                  developerId: developer.id || 'default-dev'
+                } as unknown as ProjectType,
+                {
+                  id: 'test-project',
+                  title: 'Test Project',
+                  slug: 'test-project',
+                  description: 'Test project for navigation',
+                  status: 'active',
+                  developer: developer,
+                  developerId: developer.id || 'default-dev'
+                } as unknown as ProjectType
+              ]
+          ).map((project) => (
+            <ProjectDetailSection
+              key={project.id}
+              id={project.slug}
+              project={project}
+              content={
+                getProjectDetail(project.slug)?.content ||
+                `# ${project.title}\n\n## Project Overview\n\nProject content for ${project.title}`
+              }
+            />
+          ))}
           <ContactSection id="contact" developer={developer} />
         </TransitionManager>
 
