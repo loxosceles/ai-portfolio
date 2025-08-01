@@ -52,7 +52,6 @@ function HeroSection({ id, developer }: HeroSectionProps) {
         {/* AI System Preview */}
         <ProjectPreview />
       </div>
-      );
     </section>
   );
 }
