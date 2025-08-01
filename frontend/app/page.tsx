@@ -93,17 +93,24 @@ const Portfolio = () => {
 
       const sections = ['hero', 'featured', 'skills', 'ai-portfolio', 'contact'];
       const viewportCenter = window.innerHeight / 2;
+      let closestSection = 'hero';
+      let closestDistance = Infinity;
 
       for (const sectionId of sections) {
         const element = document.getElementById(sectionId);
         if (element) {
           const rect = element.getBoundingClientRect();
-          if (rect.top <= viewportCenter && rect.bottom >= viewportCenter) {
-            setScrollSection(sectionId);
-            break;
+          const sectionCenter = rect.top + rect.height / 2;
+          const distance = Math.abs(sectionCenter - viewportCenter);
+
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestSection = sectionId;
           }
         }
       }
+
+      setScrollSection(closestSection);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -111,12 +118,27 @@ const Portfolio = () => {
   }, [isNavigating]);
 
   const handleNavigation = (sectionId: string) => {
+    console.log('handleNavigation called with:', sectionId);
     setIsNavigating(true);
     setTargetSection(sectionId);
-    setTimeout(() => setIsNavigating(false), 1000);
+    setTimeout(() => {
+      console.log('clearing isNavigating');
+      setScrollSection(sectionId);
+      setIsNavigating(false);
+    }, 1000);
   };
 
   const activeSection = isNavigating ? targetSection : scrollSection;
+  console.log(
+    'activeSection:',
+    activeSection,
+    'isNavigating:',
+    isNavigating,
+    'targetSection:',
+    targetSection,
+    'scrollSection:',
+    scrollSection
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
