@@ -2,10 +2,10 @@
 
 @theme {
   /* Primary Brand Colors */
-  --color-brand-primary: #581c87;
-  --color-brand-primary-light: #7c3aed;
-  --color-brand-primary-lighter: #9333ea;
-  --color-brand-accent: #a855f7;
+  --color-brand-primary: #1e3a8a;
+  --color-brand-primary-light: #3b82f6;
+  --color-brand-primary-lighter: #60a5fa;
+  --color-brand-accent: #60a5fa;
 
   --color-surface-dark: #0f172a;
   --color-surface-medium: #1e293b;
