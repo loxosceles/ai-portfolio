@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import Link from 'next/link';
 import ProjectPreview from '@/components/project-preview';
 import { MessageCircle } from 'lucide-react';
-import IconWrapper from '@/components/icon-wrapper';
+import { GitHubIcon } from '@/components/icons';
 import { DeveloperType } from '@/shared/types';
 import AIQuestion from '@/components/ai-question';
 
@@ -27,16 +28,19 @@ function HeroSection({ id, developer }: HeroSectionProps) {
             between data and user experience
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 mb-12">
-            <button
-              onClick={() => {
-                const firstProject = document.querySelector('.project-section');
-                firstProject?.scrollIntoView({ behavior: 'smooth' });
-              }}
+            <Link
+              href={
+                developer.github.startsWith('http')
+                  ? developer.github
+                  : `https://github.com/${developer.github}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center space-x-2 btn-primary px-6 py-3 rounded-lg"
             >
-              <IconWrapper icon="github" className="h-5 w-5" />
+              <GitHubIcon className="h-5 w-5" />
               <span>View Work</span>
-            </button>
+            </Link>
             <button
               onClick={() => setShowAIQuestion(!showAIQuestion)}
               className="flex items-center space-x-2 btn-outline px-6 py-3 rounded-lg"

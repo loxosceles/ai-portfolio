@@ -89,7 +89,7 @@ export default function ProjectDetailSection({
 
               <div className="card-glass rounded-xl p-6">
                 <div className="flex items-center mb-4">
-                  <Lightbulb className="h-6 w-6 text-cyan-400 mr-3" />
+                  <Lightbulb className="h-6 w-6 text-project-tertiary mr-3" />
                   <h3 className="text-xl font-semibold text-primary">Solution</h3>
                 </div>
                 <p className="text-secondary leading-relaxed">{projectDetail.solution}</p>

@@ -1,6 +1,6 @@
 import { Mail } from 'lucide-react';
 import Link from 'next/link';
-import IconWrapper from '@/components/icon-wrapper';
+import { TelegramIcon, LinkedInIcon } from '@/components/icons';
 import { DeveloperType } from '@/shared/types';
 
 interface ContactSectionProps {
@@ -9,7 +9,7 @@ interface ContactSectionProps {
 }
 
 function ContactSection({ id, developer }: ContactSectionProps) {
-  const { email, github, linkedin } = developer;
+  const { email, telegram, linkedin } = developer;
   return (
     <section id={id} className="py-16 px-6 bg-glass-light">
       <div className="container mx-auto text-center">
@@ -24,28 +24,28 @@ function ContactSection({ id, developer }: ContactSectionProps) {
         >
           <a
             href={`mailto:${email}`}
-            className="flex items-center space-x-2 bg-surface-light hover:bg-surface-medium text-primary px-6 py-3 rounded-lg transition-colors duration-200"
+            className="flex items-center space-x-2 btn-primary px-6 py-3 rounded-lg"
           >
             <Mail className="h-5 w-5" />
             <span>{email}</span>
           </a>
           <Link
-            href={linkedin}
+            href={linkedin.startsWith('http') ? linkedin : `https://linkedin.com/${linkedin}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-2 bg-surface-light hover:bg-surface-medium text-primary px-6 py-3 rounded-lg transition-colors duration-200"
+            className="flex items-center space-x-2 btn-primary px-6 py-3 rounded-lg"
           >
-            <IconWrapper icon="linkedin" className="h-5 w-5" />
-            LinkedIn
+            <LinkedInIcon className="h-5 w-5" />
+            <span>LinkedIn</span>
           </Link>
           <Link
-            href={github}
+            href={telegram?.startsWith('http') ? telegram : `https://t.me/${telegram}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-2 bg-surface-light hover:bg-surface-medium text-primary px-6 py-3 rounded-lg transition-colors duration-200"
+            className="flex items-center space-x-2 btn-primary px-6 py-3 rounded-lg"
           >
-            <IconWrapper icon="github" className="h-5 w-5" width={30} height={30} />
-            <span>GitHub</span>
+            <TelegramIcon className="h-5 w-5" />
+            <span>Telegram</span>
           </Link>
         </div>
       </div>

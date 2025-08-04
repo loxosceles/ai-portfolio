@@ -7,7 +7,7 @@ function ProjectPreview() {
         <div className="flex items-center space-x-3">
           <Bot className="h-6 w-6 text-brand-accent" />
           <span className="text-lg font-semibold text-primary">AI-Powered Portfolio System</span>
-          <div className="px-3 py-1 status-badge-complete rounded-full text-sm">Active</div>
+          <div className="px-3 py-1 status-badge-dev rounded-full text-sm">Active</div>
         </div>
       </div>
 
@@ -21,7 +21,7 @@ function ProjectPreview() {
         </div>
 
         <div className="bg-surface-light bg-opacity-50 rounded-lg p-4">
-          <Code className="h-8 w-8 text-status-success mb-3" />
+          <Code className="h-8 w-8 text-status-info mb-3" />
           <h3 className="font-semibold text-primary mb-2">Smart Matching</h3>
           <p className="text-secondary text-sm">
             AI generates personalized responses based on job requirements
@@ -29,7 +29,7 @@ function ProjectPreview() {
         </div>
 
         <div className="bg-surface-light bg-opacity-50 rounded-lg p-4">
-          <Cloud className="h-8 w-8 text-brand-accent mb-3" />
+          <Cloud className="h-8 w-8 text-status-info mb-3" />
           <h3 className="font-semibold text-primary mb-2">Serverless</h3>
           <p className="text-secondary text-sm">
             Cost-optimized AWS infrastructure with Lambda and RDS

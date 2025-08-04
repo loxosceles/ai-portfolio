@@ -177,7 +177,11 @@ const Portfolio = () => {
               ]
           ).map((project, index) => {
             const projectSymbols = ['◆', '◆', '◆'];
-            const projectColors = ['text-orange-400', 'text-pink-400', 'text-cyan-400'];
+            const projectColors = [
+              'text-project-primary',
+              'text-project-secondary',
+              'text-project-tertiary'
+            ];
             return (
               <ProjectDetailSection
                 key={project.id}

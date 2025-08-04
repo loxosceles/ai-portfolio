@@ -34,8 +34,13 @@ export default function TransitionManager({ targetSection, children }: Transitio
       }
     };
 
-    const handleClick = () => {
-      if (globalTransitionPhase !== 'normal') {
+    const handleClick = (e: MouseEvent) => {
+      // Check if click is on an external link (target="_blank")
+      const clickedElement = e.target as HTMLElement;
+      const linkElement = clickedElement.closest('a');
+      const isExternalLink = linkElement && linkElement.getAttribute('target') === '_blank';
+
+      if (globalTransitionPhase !== 'normal' && !isExternalLink) {
         setGlobalTransitionPhase('normal');
       }
     };

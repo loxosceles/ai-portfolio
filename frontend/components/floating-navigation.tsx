@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Code, MessageCircle, Briefcase } from 'lucide-react';
+import { User, Wrench, MessageCircle, Cog } from 'lucide-react';
 import { ProjectType } from '@/shared/types';
 
 interface NavigationItem {
@@ -25,9 +25,10 @@ interface FloatingNavigationProps {
 
 // CSS class constants
 const BUTTON_STYLES = {
-  ACTIVE: 'bg-brand-accent text-white scale-110',
+  ACTIVE:
+    'bg-surface-medium bg-opacity-80 text-secondary shadow-[inset_0_0_0_2px_rgba(192,132,252,1),inset_0_0_16px_rgba(192,132,252,0.6)]',
   INACTIVE:
-    'bg-surface-medium bg-opacity-80 text-secondary hover:bg-brand-accent hover:text-white hover:scale-105',
+    'bg-surface-medium bg-opacity-80 text-secondary hover:shadow-[0_0_20px_rgba(192,132,252,0.5)] hover:border-brand-accent hover:scale-105',
   BASE: 'group relative p-3 rounded-full transition-all duration-300',
   PROJECT:
     'group relative p-2 rounded-full transition-all duration-300 w-10 h-10 flex items-center justify-center'
@@ -74,13 +75,17 @@ export default function FloatingNavigation({
     {
       id: 'projects',
       label: 'Projects',
-      icon: <Briefcase className="h-4 w-4" />,
+      icon: <Cog className="h-4 w-4" />,
       selector: '#featured'
     },
-    { id: 'skills', label: 'Skills', icon: <Code className="h-4 w-4" />, selector: '#skills' },
+    { id: 'skills', label: 'Skills', icon: <Wrench className="h-4 w-4" />, selector: '#skills' },
     ...projectItems.map((project, index) => {
       const projectSymbols = ['◆', '◆', '◆'];
-      const projectColors = ['text-orange-400', 'text-pink-400', 'text-cyan-400'];
+      const projectColors = [
+        'text-project-primary',
+        'text-project-secondary',
+        'text-project-tertiary'
+      ];
       return {
         id: project.id,
         label: project.label,

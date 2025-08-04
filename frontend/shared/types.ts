@@ -7,6 +7,7 @@ export type DeveloperType = {
   website?: string;
   github: string;
   linkedin: string;
+  telegram?: string;
   location?: string;
   yearsOfExperience?: number;
   skillSets?: SkillSetType[];
