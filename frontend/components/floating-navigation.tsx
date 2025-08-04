@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Code, MessageCircle, Briefcase, Projector } from 'lucide-react';
+import { User, Code, MessageCircle, Briefcase } from 'lucide-react';
 import { ProjectType } from '@/shared/types';
 
 interface NavigationItem {
@@ -39,11 +39,6 @@ const TOOLTIP_STYLES = {
   BASE: 'absolute right-full mr-3 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-surface-dark text-primary text-sm rounded transition-opacity whitespace-nowrap pointer-events-none z-50'
 } as const;
 
-// Helper functions
-const isActiveItem = (itemId: string, activeSection: string): boolean => {
-  return activeSection === itemId;
-};
-
 export default function FloatingNavigation({
   projects,
   activeSection,
@@ -79,7 +74,7 @@ export default function FloatingNavigation({
     {
       id: 'projects',
       label: 'Projects',
-      icon: <Projector className="h-4 w-4" />,
+      icon: <Briefcase className="h-4 w-4" />,
       selector: '#featured'
     },
     { id: 'skills', label: 'Skills', icon: <Code className="h-4 w-4" />, selector: '#skills' },
@@ -130,17 +125,15 @@ export default function FloatingNavigation({
     return `${TOOLTIP_STYLES.BASE} ${TOOLTIP_STYLES.VISIBLE}`;
   }
   const scrollToSection = (sectionId: string) => {
-    onActiveSectionChange?.(sectionId); // Set state FIRST
+    onActiveSectionChange?.(sectionId);
 
     const element = document.querySelector(`#${sectionId}`);
     if (element) {
-      element.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      const isProjectSection = projectItems.some((p) => p.id === sectionId);
+      const scrollBehavior = isProjectSection ? 'start' : 'center';
+      element.scrollIntoView({ block: scrollBehavior, behavior: 'smooth' });
     }
   };
-
-  // const isProjectSection = (sectionId: string) => {
-  //   return projects.some((project) => project.slug === sectionId);
-  // };
 
   if (isHeaderVisible) {
     return null;

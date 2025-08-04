@@ -13,7 +13,6 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { cookieAuth } from '@/lib/auth/cookie-auth';
 import { isLocalEnvironment } from '@/lib/auth/auth-utils';
 import ProjectDetailSection from '@/components/project-detail-section';
-import { getProjectDetail } from '@/lib/projects/project-details';
 import FloatingNavigation from '@/components/floating-navigation';
 import AutoHideHeader from '@/components/auto-hide-header';
 import TransitionManager from '@/components/transition-manager';
@@ -23,7 +22,9 @@ import { ProjectType } from '@/shared/types';
 const generateSectionList = (projects: ProjectType[] = []): string[] => {
   const baseSections = ['hero', 'featured', 'skills'];
   const projectSections =
-    projects.length > 0 ? projects.map((p) => p.slug) : ['ai-portfolio', 'test-project'];
+    projects.length > 0
+      ? projects.map((p) => p.slug)
+      : ['ai-portfolio', 'image-processor', 'web3snapshot'];
   return [...baseSections, ...projectSections, 'contact'];
 };
 
@@ -150,20 +151,29 @@ const Portfolio = () => {
                   id: 'ai-portfolio',
                   title: 'AI Portfolio',
                   slug: 'ai-portfolio',
-                  description: 'Default project',
+                  description: 'Serverless web application with AI-powered personalization',
                   status: 'active',
                   developer: developer,
                   developerId: developer.id || 'default-dev'
-                } as unknown as ProjectType,
+                } as ProjectType,
                 {
-                  id: 'test-project',
-                  title: 'Test Project',
-                  slug: 'test-project',
-                  description: 'Test project for navigation',
+                  id: 'image-processor',
+                  title: 'Image Processor CLI',
+                  slug: 'image-processor',
+                  description: 'Production-ready Python application for batch image processing',
                   status: 'active',
                   developer: developer,
                   developerId: developer.id || 'default-dev'
-                } as unknown as ProjectType
+                } as ProjectType,
+                {
+                  id: 'web3snapshot',
+                  title: 'Web3 Snapshot Dashboard',
+                  slug: 'web3snapshot',
+                  description: 'Real-time cryptocurrency market analysis application',
+                  status: 'active',
+                  developer: developer,
+                  developerId: developer.id || 'default-dev'
+                } as ProjectType
               ]
           ).map((project, index) => {
             const projectSymbols = ['◆', '◆', '◆'];
@@ -173,10 +183,6 @@ const Portfolio = () => {
                 key={project.id}
                 id={project.slug}
                 project={project}
-                content={
-                  getProjectDetail(project.slug)?.content ||
-                  `# ${project.title}\n\n## Project Overview\n\nProject content for ${project.title}`
-                }
                 backgroundIndex={index}
                 projectSymbol={projectSymbols[index % projectSymbols.length]}
                 projectColor={projectColors[index % projectColors.length]}
