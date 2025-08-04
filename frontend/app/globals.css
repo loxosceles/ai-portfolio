@@ -22,8 +22,8 @@
   --color-status-warning: #f59e0b;
   --color-status-success: #16a34a;
 
-  --color-border-subtle: rgba(139, 92, 246, 0.2);
-  --color-border-hover: rgba(139, 92, 246, 0.4);
+  --color-border-subtle: rgba(59, 130, 246, 0.2);
+  --color-border-hover: rgba(59, 130, 246, 0.4);
   --color-bg-glass: rgba(30, 41, 59, 0.5);
   --color-bg-glass-light: rgba(30, 41, 59, 0.3);
 }
@@ -33,7 +33,7 @@
   .overscroll-none {
     overscroll-behavior: none;
   }
-  
+
   .contain-layout {
     contain: layout;
   }
@@ -166,8 +166,8 @@
   }
 
   .tech-tag {
-    background-color: rgba(168, 85, 247, 0.2);
-    color: #c4b5fd;
+    background-color: rgba(59, 130, 246, 0.2);
+    color: theme(--color-brand-accent);
   }
 
   /* Animations */
@@ -192,6 +192,7 @@
   transition: background 1000ms ease-in-out;
 }
 
-html, body {
+html,
+body {
   overscroll-behavior: none;
 }
