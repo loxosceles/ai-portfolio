@@ -11,7 +11,7 @@ interface ContactSectionProps {
 function ContactSection({ id, developer }: ContactSectionProps) {
   const { email, telegram, linkedin } = developer;
   return (
-    <section id={id} className="py-16 px-6 bg-glass-light">
+    <section id={id} className="py-16 px-6">
       <div className="container mx-auto text-center">
         <h2 className="text-4xl font-bold text-primary mb-8">Let&apos;s Connect</h2>
         <p className="text-xl text-secondary mb-8 max-w-2xl mx-auto">

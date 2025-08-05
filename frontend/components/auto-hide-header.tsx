@@ -7,12 +7,14 @@ import { DeveloperType, ProjectType } from '@/shared/types';
 interface AutoHideHeaderProps {
   developer: DeveloperType;
   projects: ProjectType[];
+  activeSection?: string;
   onActiveSectionChange?: (sectionId: string) => void;
 }
 
 export default function AutoHideHeader({
   developer,
   projects,
+  activeSection,
   onActiveSectionChange
 }: AutoHideHeaderProps) {
   const [isVisible, setIsVisible] = useState(true);
@@ -41,6 +43,7 @@ export default function AutoHideHeader({
       <Header
         developer={developer}
         projects={projects}
+        activeSection={activeSection}
         onActiveSectionChange={onActiveSectionChange}
       />
     </header>

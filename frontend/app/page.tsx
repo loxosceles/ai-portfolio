@@ -136,6 +136,7 @@ const Portfolio = () => {
       <AutoHideHeader
         developer={developer}
         projects={developer.projects || []}
+        activeSection={activeSection}
         onActiveSectionChange={handleNavigation}
       />
       <div className="min-h-screen gradient-bg pt-20 overscroll-none md:px-20">

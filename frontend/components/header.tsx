@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Bot, ChevronDown } from 'lucide-react';
+import { Terminal, ChevronDown } from 'lucide-react';
 import { DeveloperType, ProjectType } from '@/shared/types';
 
 interface HeaderProps {
   developer: DeveloperType;
   projects?: ProjectType[];
+  activeSection?: string;
   onActiveSectionChange?: (sectionId: string) => void;
 }
 
-function Header({ developer, projects = [], onActiveSectionChange }: HeaderProps) {
+function Header({ developer, projects = [], activeSection, onActiveSectionChange }: HeaderProps) {
   const { email } = developer;
   const [showProjectsDropdown, setShowProjectsDropdown] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -41,13 +42,14 @@ function Header({ developer, projects = [], onActiveSectionChange }: HeaderProps
     <nav className="container mx-auto px-6 py-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <Bot className="h-8 w-8 text-brand-accent" />
-          <span className="text-xl font-bold text-primary">{email}</span>
+          <Terminal className="h-8 w-8 text-brand-accent" />
         </div>
         <div className="hidden md:flex space-x-8">
           <button
             onClick={() => handleSectionClick('about')}
-            className="capitalize transition-colors duration-200 pb-1 text-secondary hover:text-brand-accent"
+            className={`capitalize transition-colors duration-200 pb-1 hover:text-brand-accent ${
+              activeSection === 'hero' ? 'text-brand-accent' : 'text-secondary'
+            }`}
           >
             About
           </button>
