@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Wrench, MessageCircle, Cog } from 'lucide-react';
+import { User, Wrench, MessageCircle, Cog, Bot, Zap, Hexagon } from 'lucide-react';
 import { ProjectType } from '@/shared/types';
 
 interface NavigationItem {
@@ -80,20 +80,12 @@ export default function FloatingNavigation({
     },
     { id: 'skills', label: 'Skills', icon: <Wrench className="h-4 w-4" />, selector: '#skills' },
     ...projectItems.map((project, index) => {
-      const projectSymbols = ['◆', '◆', '◆'];
-      const projectColors = [
-        'text-project-primary',
-        'text-project-secondary',
-        'text-project-tertiary'
-      ];
+      const ProjectIcons = [Bot, Zap, Hexagon];
+      const IconComponent = ProjectIcons[index % ProjectIcons.length];
       return {
         id: project.id,
         label: project.label,
-        icon: (
-          <span className={`text-xl ${projectColors[index % projectColors.length]}`}>
-            {projectSymbols[index % projectSymbols.length]}
-          </span>
-        ),
+        icon: <IconComponent className="h-4 w-4 text-white" />,
         selector: project.selector
       };
     }),
@@ -105,7 +97,6 @@ export default function FloatingNavigation({
     }
   ];
 
-  // Helper functions
   function isActiveItem(
     itemId: string,
     activeSection: string,

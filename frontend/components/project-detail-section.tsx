@@ -8,7 +8,8 @@ import {
   Code,
   Layers,
   Zap,
-  CheckCircle
+  CheckCircle,
+  Wrench
 } from 'lucide-react';
 import TechBadge from './tech-badge';
 import { getProjectDetail } from '@/lib/projects/project-details';
@@ -17,7 +18,7 @@ interface ProjectDetailSectionProps {
   project: ProjectType;
   id?: string;
   backgroundIndex?: number;
-  projectSymbol?: string;
+  projectSymbol?: React.ReactNode;
   projectColor?: string;
 }
 
@@ -38,10 +39,8 @@ export default function ProjectDetailSection({
       <div className="container mx-auto max-w-5xl">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-primary mb-4">
-            {projectSymbol && (
-              <span className={`mr-3 text-3xl ${projectColor}`}>{projectSymbol}</span>
-            )}
+          <h2 className="text-4xl font-bold text-primary mb-4 flex items-center justify-center">
+            {projectSymbol && <span className="mr-3">{projectSymbol}</span>}
             {projectDetail?.title || project.title}
           </h2>
           <p className="text-xl text-secondary max-w-3xl mx-auto mb-8">
@@ -81,7 +80,7 @@ export default function ProjectDetailSection({
             <div className="grid md:grid-cols-2 gap-6">
               <div className="card-glass rounded-xl p-6">
                 <div className="flex items-center mb-4">
-                  <Target className="h-6 w-6 text-orange-400 mr-3" />
+                  <Target className="h-6 w-6 text-status-warning mr-3" />
                   <h3 className="text-xl font-semibold text-primary">Challenge</h3>
                 </div>
                 <p className="text-secondary leading-relaxed">{projectDetail.challenge}</p>
@@ -89,7 +88,7 @@ export default function ProjectDetailSection({
 
               <div className="card-glass rounded-xl p-6">
                 <div className="flex items-center mb-4">
-                  <Lightbulb className="h-6 w-6 text-project-tertiary mr-3" />
+                  <Lightbulb className="h-6 w-6 text-status-warning mr-3" />
                   <h3 className="text-xl font-semibold text-primary">Solution</h3>
                 </div>
                 <p className="text-secondary leading-relaxed">{projectDetail.solution}</p>
@@ -99,12 +98,12 @@ export default function ProjectDetailSection({
             {/* Technical Architecture */}
             <div className="card-glass rounded-xl p-8">
               <div className="flex items-center mb-6">
-                <Layers className="h-6 w-6 text-primary mr-3" />
+                <Layers className="h-6 w-6 text-status-warning mr-3" />
                 <h3 className="text-2xl font-semibold text-primary">Technical Architecture</h3>
               </div>
               <div className="grid md:grid-cols-2 gap-6">
                 {projectDetail.architecture.map((arch, index) => (
-                  <div key={index} className="border-l-4 border-primary/30 pl-4">
+                  <div key={index} className="border-l-4 border-brand-accent/30 pl-4">
                     <h4 className="text-lg font-medium text-primary mb-2">{arch.component}</h4>
                     <p className="text-secondary text-sm leading-relaxed">{arch.details}</p>
                   </div>
@@ -115,7 +114,7 @@ export default function ProjectDetailSection({
             {/* Code Example */}
             <div className="card-glass rounded-xl p-8">
               <div className="flex items-center mb-6">
-                <Code className="h-6 w-6 text-primary mr-3" />
+                <Code className="h-6 w-6 text-status-warning mr-3" />
                 <h3 className="text-2xl font-semibold text-primary">
                   {projectDetail.codeExample.title}
                 </h3>
@@ -130,7 +129,10 @@ export default function ProjectDetailSection({
             {/* Technology Stack & Performance */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="card-glass rounded-xl p-6">
-                <h3 className="text-xl font-semibold text-primary mb-4">Technology Stack</h3>
+                <div className="flex items-center mb-4">
+                  <Wrench className="h-6 w-6 text-status-warning mr-3" />
+                  <h3 className="text-xl font-semibold text-primary">Technology Stack</h3>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {projectDetail.techStack.map((tech, index) => (
                     <TechBadge key={index} tech={tech} />
@@ -140,7 +142,7 @@ export default function ProjectDetailSection({
 
               <div className="card-glass rounded-xl p-6">
                 <div className="flex items-center mb-4">
-                  <Zap className="h-6 w-6 text-yellow-400 mr-3" />
+                  <Zap className="h-6 w-6 text-status-warning mr-3" />
                   <h3 className="text-xl font-semibold text-primary">Performance</h3>
                 </div>
                 <div className="space-y-2">
@@ -171,7 +173,7 @@ export default function ProjectDetailSection({
                 <div className="space-y-3">
                   {projectDetail.highlights.map((highlight, index) => (
                     <div key={index} className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-green-400 mr-3 mt-0.5 flex-shrink-0" />
+                      <CheckCircle className="h-5 w-5 text-status-warning mr-3 mt-0.5 flex-shrink-0" />
                       <span className="text-secondary text-sm">{highlight}</span>
                     </div>
                   ))}

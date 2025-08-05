@@ -22,10 +22,6 @@
   --color-status-warning: #f59e0b;
   --color-status-success: #16a34a;
 
-  --color-project-primary: #fb923c;
-  --color-project-secondary: #f472b6;
-  --color-project-tertiary: #2dd4bf;
-
   --color-border-subtle: rgba(59, 130, 246, 0.2);
   --color-border-hover: rgba(59, 130, 246, 0.4);
   --color-bg-glass: rgba(30, 41, 59, 0.5);
@@ -105,17 +101,6 @@
   }
   .text-status-info {
     color: theme(--color-info);
-  }
-
-  /* Project Colors */
-  .text-project-primary {
-    color: theme(--color-project-primary);
-  }
-  .text-project-secondary {
-    color: theme(--color-project-secondary);
-  }
-  .text-project-tertiary {
-    color: theme(--color-project-tertiary);
   }
 
   /* Interactive Elements */
