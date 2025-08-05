@@ -222,8 +222,9 @@ eventSource.onmessage = (event) => {
   }
 };
 
-export function getProjectDetail(slug: string) {
-  return projectDetails[slug as keyof typeof projectDetails];
+export function getProjectDetail(slug: string): ProjectDetail | null {
+  const detail = projectDetails[slug as keyof typeof projectDetails];
+  return detail ?? null;
 }
 
 export function getProjectSlugs() {
