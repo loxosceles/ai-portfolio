@@ -96,8 +96,8 @@ function validateProject(project: Partial<IProject>): boolean {
     throw new Error('Project highlights must be an array');
   }
 
-  if (!Array.isArray(project.tech)) {
-    throw new Error('Project tech must be an array');
+  if (!Array.isArray(project.techStack)) {
+    throw new Error('Project techStack must be an array');
   }
 
   if (!project.developerId) {

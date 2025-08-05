@@ -21,16 +21,34 @@ type Project @aws_iam @aws_cognito_user_pools @aws_api_key {
   description: String!
   status: String!
   highlights: [String]
-  tech: [String]
+  techStack: [String]
   githubUrl: String
   liveUrl: String
   imageUrl: String
+  icon: String
   startDate: AWSDateTime
   endDate: AWSDateTime
   featured: Boolean
   order: Int
+  overview: String
+  challenge: String
+  solution: String
+  architecture: [ArchitectureItem]
+  codeExamples: [CodeExample]
+  archPatterns: [String]
+  performance: [String]
   developer: Developer! @belongsTo(fields: ["developerId"])
   developerId: ID!
+}
+
+type ArchitectureItem @aws_iam @aws_cognito_user_pools @aws_api_key {
+  name: String!
+  details: String!
+}
+
+type CodeExample @aws_iam @aws_cognito_user_pools @aws_api_key {
+  name: String!
+  code: String!
 }
 
 type SkillSet @aws_iam @aws_cognito_user_pools @aws_api_key {
@@ -91,10 +109,11 @@ input CreateProjectInput {
   description: String!
   status: String!
   highlights: [String]
-  tech: [String]
+  techStack: [String]
   githubUrl: String
   liveUrl: String
   imageUrl: String
+  icon: String
   startDate: AWSDateTime
   endDate: AWSDateTime
   featured: Boolean
@@ -109,10 +128,11 @@ input UpdateProjectInput {
   description: String
   status: String
   highlights: [String]
-  tech: [String]
+  techStack: [String]
   githubUrl: String
   liveUrl: String
   imageUrl: String
+  icon: String
   startDate: AWSDateTime
   endDate: AWSDateTime
   featured: Boolean

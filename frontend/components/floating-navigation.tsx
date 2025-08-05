@@ -1,9 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Wrench, MessageCircle, Cog, Bot, Zap, Hexagon } from 'lucide-react';
+import { User, Wrench, MessageCircle, Cog } from 'lucide-react';
 import { ProjectType } from '@/shared/types';
 import { NAVIGATION_SWITCH_SCROLL_THRESHOLD } from '@/shared/constants';
+import { useProjectIcon } from '@/hooks/useProjectIcon';
+
+function ProjectNavIcon({ iconName }: { iconName?: string }) {
+  const IconComponent = useProjectIcon(iconName);
+  return IconComponent ? <IconComponent className="h-4 w-4 text-white" /> : null;
+}
 
 interface NavigationItem {
   id: string;
@@ -80,13 +86,12 @@ export default function FloatingNavigation({
       selector: '#featured'
     },
     { id: 'skills', label: 'Skills', icon: <Wrench className="h-4 w-4" />, selector: '#skills' },
-    ...projectItems.map((project, index) => {
-      const ProjectIcons = [Bot, Zap, Hexagon];
-      const IconComponent = ProjectIcons[index % ProjectIcons.length];
+    ...projectItems.map((project) => {
+      const projectData = projects.find((p) => p.slug === project.id);
       return {
         id: project.id,
         label: project.label,
-        icon: <IconComponent className="h-4 w-4 text-white" />,
+        icon: <ProjectNavIcon iconName={projectData?.icon} />,
         selector: project.selector
       };
     }),

@@ -9,8 +9,7 @@ interface HeaderProps {
   onActiveSectionChange?: (sectionId: string) => void;
 }
 
-function Header({ developer, projects = [], activeSection, onActiveSectionChange }: HeaderProps) {
-  const { email } = developer;
+function Header({ projects = [], activeSection, onActiveSectionChange }: HeaderProps) {
   const [showProjectsDropdown, setShowProjectsDropdown] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 

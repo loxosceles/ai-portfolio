@@ -1,13 +1,18 @@
-import { DeveloperType } from '@/shared/types';
+import { DeveloperType, ProjectType } from '@/shared/types';
 import { isLocalEnvironment } from '@/lib/auth/auth-utils';
-import { Bot, Zap, Hexagon } from 'lucide-react';
+import { useProjectIcon } from '@/hooks/useProjectIcon';
 
-// Project color constants
-const PROJECT_COLORS = {
-  0: 'text-project-primary',
-  1: 'text-project-secondary',
-  2: 'text-project-tertiary'
-} as const;
+function ProjectIcon({ project }: { project: ProjectType }) {
+  const IconComponent = useProjectIcon(project.icon);
+  return (
+    <div className="flex justify-between items-start mb-4">
+      <h3 className="text-xl font-semibold text-primary">{project.title}</h3>
+      <div className="text-status-warning">
+        {IconComponent && <IconComponent className="h-6 w-6" />}
+      </div>
+    </div>
+  );
+}
 
 interface FeaturedProjectsProps {
   id?: string;
@@ -38,19 +43,11 @@ function FeaturedProjects({ id, developer, onNavigate }: FeaturedProjectsProps) 
             key={index}
             className="card-glass rounded-xl p-6 hover:border-hover transition-all duration-300 hover:transform hover:scale-105"
           >
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-semibold text-primary">{project.title}</h3>
-              <div className="text-status-warning">
-                {index === 0 && <Bot className="h-6 w-6" />}
-                {index === 1 && <Zap className="h-6 w-6" />}
-                {index === 2 && <Hexagon className="h-6 w-6" />}
-                {index > 2 && <Bot className="h-6 w-6" />}
-              </div>
-            </div>
+            <ProjectIcon project={project} />
             <p className="text-secondary mb-4">{project.description}</p>
             <div className="mb-4">
               <div className="flex flex-wrap gap-2">
-                {project.tech?.map((tech, techIndex) => (
+                {project.techStack?.map((tech, techIndex) => (
                   <span key={techIndex} className="px-2 py-1 tech-tag rounded text-xs">
                     {tech}
                   </span>

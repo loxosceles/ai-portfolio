@@ -21,6 +21,16 @@ type SkillSetType = {
   skills: string[];
 };
 
+export type ArchitectureItem = {
+  name: string;
+  details: string;
+};
+
+export type CodeExample = {
+  name: string;
+  code: string;
+};
+
 export type ProjectType = {
   id: string;
   title: string;
@@ -28,14 +38,22 @@ export type ProjectType = {
   description: string;
   status: string;
   highlights?: string[];
-  tech?: string[];
+  techStack?: string[];
   githubUrl?: string;
   liveUrl?: string;
   imageUrl?: string;
+  icon?: string;
   startDate?: string;
   endDate?: string;
   featured?: boolean;
   order?: number;
+  overview?: string;
+  challenge?: string;
+  solution?: string;
+  architecture?: ArchitectureItem[];
+  codeExamples?: CodeExample[];
+  archPatterns?: string[];
+  performance?: string[];
   developer: DeveloperType;
   developerId: string;
 };
@@ -75,7 +93,7 @@ export type CreateProjectInputType = {
   description: string;
   status: string;
   highlights?: string[];
-  tech?: string[];
+  techStack?: string[];
   githubUrl?: string;
   liveUrl?: string;
   imageUrl?: string;
@@ -93,7 +111,7 @@ export type UpdateProjectInputType = {
   description?: string;
   status?: string;
   highlights?: string[];
-  tech?: string[];
+  techStack?: string[];
   githubUrl?: string;
   liveUrl?: string;
   imageUrl?: string;
