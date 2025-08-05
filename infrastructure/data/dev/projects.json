@@ -1,47 +1,190 @@
 [
   {
     "id": "proj-1",
-    "title": "AI-Powered Portfolio Platform",
+    "title": "AI Portfolio Frontend",
     "slug": "ai-portfolio",
-    "description": "A dynamic portfolio platform using React and AWS services, featuring AI-driven content recommendations and real-time analytics",
+    "description": "A modern, serverless web application that showcases a developer's professional profile with AI-powered personalization features using Next.js and AWS services.",
     "status": "Active",
     "highlights": [
-      "AI-driven content recommendations",
-      "Real-time analytics",
-      "Dynamic portfolio management"
+      "AI-powered content personalization with Amazon Bedrock",
+      "Invisible authentication using virtual Cognito users",
+      "Multi-region serverless architecture",
+      "Comprehensive CI/CD with environment management"
     ],
-    "tech": ["React", "AWS Lambda", "DynamoDB", "OpenAI API", "TypeScript"],
-    "imageUrl": "https://example.com/portfolio-platform.jpg",
+    "techStack": [
+      "Next.js",
+      "TypeScript",
+      "AWS AppSync",
+      "AWS Lambda",
+      "DynamoDB",
+      "Amazon Bedrock",
+      "CloudFront",
+      "S3",
+      "Cognito",
+      "CDK"
+    ],
+    "overview": "A modern, serverless web application that showcases a developer's professional profile with AI-powered personalization features using Next.js and AWS services.",
+    "challenge": "Creating personalized portfolio experiences for recruiters while maintaining cost-effective serverless architecture and seamless user experience.",
+    "solution": "Next.js frontend with AWS services backend, featuring AI-powered personalization, invisible authentication, and multi-region deployment strategy.",
+    "architecture": [
+      {
+        "name": "Frontend Architecture",
+        "details": "Next.js with React 19, TypeScript, Apollo Client for GraphQL, TailwindCSS for styling, and centralized auth context"
+      },
+      {
+        "name": "Backend Architecture",
+        "details": "AWS AppSync GraphQL API, Lambda resolvers, DynamoDB storage, Amazon Bedrock AI integration, S3 & CloudFront hosting"
+      },
+      {
+        "name": "Infrastructure as Code",
+        "details": "AWS CDK multi-stack approach with environment-based deployments and automated CI/CD pipeline"
+      }
+    ],
+    "codeExamples": [
+      {
+        "name": "Centralized Auth Context",
+        "code": "// Environment-aware authentication with token management\nconst { getQueryContext } = useAuth();\n\nconst { data } = useQuery(GET_PERSONALIZED_CONTENT, {\n  context: getQueryContext('authenticated'),\n  variables: { recruiterId, jobContext }\n});\n\n// Smart header generation based on route type\nconst getAuthHeaders = (routeType: RouteType) => {\n  if (environment === 'local') {\n    return { 'x-api-key': process.env.NEXT_PUBLIC_APPSYNC_API_KEY };\n  }\n  \n  return routeType === 'public' \n    ? { 'x-api-key': process.env.NEXT_PUBLIC_APPSYNC_API_KEY }\n    : { Authorization: `Bearer ${tokens.accessToken}` };\n};"
+      },
+      {
+        "name": "Cookie-Based Token Management",
+        "code": "// Lambda@Edge sets authentication cookies for invisible auth\nexport const cookieAuth = {\n  getTokens(): { accessToken: string | null; idToken: string | null } {\n    const accessToken = getCookie('AccessToken');\n    const idToken = getCookie('IdToken');\n    return { accessToken, idToken };\n  },\n\n  async makeAuthenticatedRequest(url: string, options: RequestInit = {}) {\n    const { accessToken } = this.getTokens();\n    return fetch(url, {\n      ...options,\n      credentials: 'include',\n      headers: {\n        ...options.headers,\n        ...(accessToken && { Authorization: `Bearer ${accessToken}` })\n      }\n    });\n  }\n};"
+      },
+      {
+        "name": "AI-Powered Personalization",
+        "code": "// AI-generated content using Amazon Bedrock\nconst personalizedGreeting = await bedrock.invoke({\n  modelId: 'anthropic.claude-v2',\n  body: JSON.stringify({\n    prompt: `Generate personalized greeting for ${company} recruiter`,\n    max_tokens: 200\n  })\n});\n\n// Context-aware content delivery\nconst { data } = useQuery(GET_ADVOCATE_GREETING, {\n  context: getQueryContext('authenticated'),\n  variables: { linkId: visitorParam }\n});\n\n// Dynamic content based on recruiter context\nif (data?.getAdvocateGreeting) {\n  setGreeting(data.getAdvocateGreeting);\n}"
+      }
+    ],
+    "archPatterns": [
+      "Serverless Architecture: Pay-per-use model with Lambda, AppSync, and DynamoDB",
+      "Event-Driven Design: AI processing triggered by recruiter interactions",
+      "Multi-Region Strategy: Frontend in US, backend in EU for data residency"
+    ],
+    "performance": [
+      "Cost optimization: <$5/month operational costs",
+      "Global CDN: CloudFront distribution for sub-100ms response times",
+      "Serverless scaling: Auto-scaling from 0 to handle traffic spikes"
+    ],
     "developerId": "DEVELOPER_PROFILE"
   },
   {
     "id": "proj-2",
-    "title": "Secure Authentication Service",
+    "title": "Image Processor CLI",
     "slug": "image-processor",
-    "description": "A robust authentication system implementing OAuth2.0 and JWT, with multi-factor authentication and role-based access control",
+    "description": "A production-ready Python application for batch image processing with enterprise-level reliability, concurrent processing, and containerized deployment.",
     "status": "Completed",
     "highlights": [
-      "Multi-factor authentication",
-      "Role-based access control",
-      "OAuth2.0 implementation"
+      "Concurrent batch processing with ThreadPoolExecutor",
+      "EXIF-aware rotation with metadata preservation",
+      "Production-ready containerization with Alpine Linux",
+      "Comprehensive test suite with parametrized tests"
     ],
-    "tech": ["Express.js", "JWT", "PostgreSQL", "Redis", "OAuth2.0"],
-    "imageUrl": "https://example.com/auth-service.jpg",
+    "techStack": [
+      "Python 3.11+",
+      "Pillow (PIL)",
+      "piexif",
+      "Docker",
+      "Alpine Linux",
+      "pytest",
+      "ThreadPoolExecutor",
+      "tqdm",
+      "uv"
+    ],
+    "overview": "A production-ready Python application for batch image processing with enterprise-level reliability, concurrent processing, and containerized deployment.",
+    "challenge": "Processing large image batches manually is time-consuming, lacks proper EXIF handling, concurrent processing, and containerized deployment options.",
+    "solution": "Containerized CLI tool with ThreadPoolExecutor concurrency, EXIF metadata preservation, and complete development/deployment pipeline.",
+    "architecture": [
+      {
+        "name": "Processing Engine",
+        "details": "Concurrent image processing using ThreadPoolExecutor with support for JPEG/PNG formats and EXIF metadata handling"
+      },
+      {
+        "name": "CLI Interface",
+        "details": "Argument parsing with argparse, input validation, error handling, and flexible task selection system"
+      },
+      {
+        "name": "Container Infrastructure",
+        "details": "Multi-stage Docker build using uv package manager with development and production configurations"
+      }
+    ],
+    "codeExamples": [
+      {
+        "name": "Concurrent Processing Implementation",
+        "code": "# Concurrent image processing with error resilience\nwith ThreadPoolExecutor() as executor:\n    jobs = [executor.submit(process_function, input_path, output_path)\n            for input_path, output_path in image_pairs]\n    \n    for job in tqdm(as_completed(jobs), total=len(jobs)):\n        try:\n            result = job.result()\n            logger.info(f\"Processed: {result}\")\n        except Exception as e:\n            logger.error(f\"Processing failed: {e}\")\n            # Continue processing other images"
+      }
+    ],
+    "archPatterns": [
+      "Command Pattern: Each operation (resize, blur, rotate) implements consistent interface",
+      "Factory Pattern: Task selection maps string commands to processing functions",
+      "Pipeline Pattern: Validation → Processing → Output with error handling"
+    ],
+    "performance": [
+      "Thread-based parallelism scales with available CPU cores",
+      "Memory efficiency: processes images individually to avoid bloat",
+      "Container optimization: multi-stage builds reduce deployment time"
+    ],
     "developerId": "DEVELOPER_PROFILE"
   },
   {
     "id": "proj-3",
-    "title": "Real-time Analytics Dashboard",
+    "title": "Web3 Snapshot Dashboard",
     "slug": "web3snapshot",
-    "description": "An interactive analytics dashboard with real-time data visualization, supporting multiple data sources and custom reporting",
+    "description": "A production-ready full-stack application providing real-time cryptocurrency market analysis with microservices architecture and Server-Sent Events.",
     "status": "Completed",
     "highlights": [
-      "Real-time data visualization",
-      "Multiple data source support",
-      "Custom reporting"
+      "Real-time market data streaming with Server-Sent Events",
+      "Microservices container architecture with service isolation",
+      "Advanced caching strategies with Redis pub/sub",
+      "Comprehensive testing with pytest and React Testing Library"
     ],
-    "tech": ["Vue.js", "D3.js", "GraphQL", "AWS AppSync", "Elasticsearch"],
-    "imageUrl": "https://example.com/analytics-dashboard.jpg",
+    "techStack": [
+      "React 18",
+      "Flask 3.0",
+      "Redis 7.2",
+      "Docker",
+      "SQLite",
+      "Nginx",
+      "Gunicorn",
+      "Zustand",
+      "SCSS",
+      "pytest"
+    ],
+    "overview": "A production-ready full-stack application providing real-time cryptocurrency market analysis with microservices architecture and Server-Sent Events.",
+    "challenge": "Cryptocurrency markets move rapidly requiring real-time data access, comprehensive tokenomics analysis, and historical trends in digestible format.",
+    "solution": "Containerized dashboard with live CoinGecko API integration, Redis pub/sub messaging, Server-Sent Events, and responsive React interface.",
+    "architecture": [
+      {
+        "name": "Frontend (React SPA)",
+        "details": "React 18 with functional components, SCSS styling, real-time updates via Server-Sent Events, interactive tables with sorting/filtering"
+      },
+      {
+        "name": "Backend API (Flask)",
+        "details": "RESTful API with Redis caching, real-time streaming endpoints, pub/sub messaging system, environment-specific configurations"
+      },
+      {
+        "name": "Data Processing Engine",
+        "details": "Automated CoinGecko API fetching, MC/FDV calculations, intelligent data diffing, cron-based scheduling"
+      },
+      {
+        "name": "Infrastructure",
+        "details": "Multi-container Docker architecture, Redis caching/pub-sub, SQLite database, Nginx reverse proxy with SSL/TLS"
+      }
+    ],
+    "codeExamples": [
+      {
+        "name": "Real-Time Data Streaming",
+        "code": "# Server-Sent Events implementation\n@bp.route(\"/coin-stream\", methods=[\"GET\"])\ndef get_coin_stream():\n    redis_conn = current_app.redis_conn\n    pubsub = redis_conn.pubsub(ignore_subscribe_messages=True)\n    pubsub.subscribe(\"coins\")\n    return Response(event_stream(redis_conn, pubsub), \n                   mimetype=\"text/event-stream\")\n\n# React real-time updates\nconst eventSource = new EventSource('/api/coin-stream');\neventSource.onmessage = (event) => {\n  const data = JSON.parse(event.data);\n  updateMarketData(data);\n};"
+      }
+    ],
+    "archPatterns": [
+      "Microservices Design: Separate containers for frontend, backend, caching, enabling independent scaling",
+      "Event-Driven Architecture: Redis pub/sub decouples data processing from API responses",
+      "Observer Pattern: Server-Sent Events allow multiple clients to receive real-time updates"
+    ],
+    "performance": [
+      "Redis caching with intelligent cache invalidation",
+      "Data diffing algorithms reduce unnecessary database writes",
+      "Server-Sent Events eliminate polling overhead"
+    ],
     "developerId": "DEVELOPER_PROFILE"
   }
 ]

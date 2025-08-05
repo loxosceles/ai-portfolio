@@ -54,7 +54,7 @@ jest.mock('fs/promises', () => ({
             description: 'Test description',
             status: 'Active',
             highlights: ['Feature 1'],
-            tech: ['React'],
+            techStack: ['React'],
             developerId: 'dev1'
           }
         ])
@@ -107,7 +107,7 @@ describe('Data Management Command Tests', () => {
               description: 'Test description',
               status: 'Active',
               highlights: ['Feature 1'],
-              tech: ['React'],
+              techStack: ['React'],
               developerId: 'dev1'
             }
           ]);

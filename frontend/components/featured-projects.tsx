@@ -2,13 +2,6 @@ import { DeveloperType } from '@/shared/types';
 import { isLocalEnvironment } from '@/lib/auth/auth-utils';
 import { Bot, Zap, Hexagon } from 'lucide-react';
 
-// Project color constants
-const PROJECT_COLORS = {
-  0: 'text-project-primary',
-  1: 'text-project-secondary',
-  2: 'text-project-tertiary'
-} as const;
-
 interface FeaturedProjectsProps {
   id?: string;
   developer: DeveloperType;
@@ -50,7 +43,7 @@ function FeaturedProjects({ id, developer, onNavigate }: FeaturedProjectsProps) 
             <p className="text-secondary mb-4">{project.description}</p>
             <div className="mb-4">
               <div className="flex flex-wrap gap-2">
-                {project.tech?.map((tech, techIndex) => (
+                {project.techStack?.map((tech, techIndex) => (
                   <span key={techIndex} className="px-2 py-1 tech-tag rounded text-xs">
                     {tech}
                   </span>

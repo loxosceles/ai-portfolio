@@ -16,7 +16,7 @@ export interface IProject {
   description: string;
   status: ProjectStatus;
   highlights: string[];
-  tech: string[];
+  techStack: string[];
   imageUrl?: string;
   developerId: string;
 }

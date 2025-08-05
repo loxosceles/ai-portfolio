@@ -25,7 +25,7 @@ export const GET_DEVELOPER_WITH_PROJECTS = gql`
         description
         status
         highlights
-        tech
+        techStack
         githubUrl
         liveUrl
         imageUrl
@@ -33,6 +33,19 @@ export const GET_DEVELOPER_WITH_PROJECTS = gql`
         endDate
         featured
         order
+        overview
+        challenge
+        solution
+        architecture {
+          name
+          details
+        }
+        codeExamples {
+          name
+          code
+        }
+        archPatterns
+        performance
       }
     }
   }
