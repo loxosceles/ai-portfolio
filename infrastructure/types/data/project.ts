@@ -18,5 +18,6 @@ export interface IProject {
   highlights: string[];
   techStack: string[];
   imageUrl?: string;
+  icon?: string;
   developerId: string;
 }

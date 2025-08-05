@@ -3,6 +3,7 @@
     "id": "proj-1",
     "title": "AI Portfolio Frontend",
     "slug": "ai-portfolio",
+    "icon": "Bot",
     "description": "A modern, serverless web application that showcases a developer's professional profile with AI-powered personalization features using Next.js and AWS services.",
     "status": "Active",
     "highlights": [
@@ -70,6 +71,7 @@
     "id": "proj-2",
     "title": "Image Processor CLI",
     "slug": "image-processor",
+    "icon": "Images",
     "description": "A production-ready Python application for batch image processing with enterprise-level reliability, concurrent processing, and containerized deployment.",
     "status": "Completed",
     "highlights": [
@@ -128,6 +130,7 @@
     "id": "proj-3",
     "title": "Web3 Snapshot Dashboard",
     "slug": "web3snapshot",
+    "icon": "Aperture",
     "description": "A production-ready full-stack application providing real-time cryptocurrency market analysis with microservices architecture and Server-Sent Events.",
     "status": "Completed",
     "highlights": [

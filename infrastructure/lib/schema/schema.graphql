@@ -25,6 +25,7 @@ type Project @aws_iam @aws_cognito_user_pools @aws_api_key {
   githubUrl: String
   liveUrl: String
   imageUrl: String
+  icon: String
   startDate: AWSDateTime
   endDate: AWSDateTime
   featured: Boolean
@@ -112,6 +113,7 @@ input CreateProjectInput {
   githubUrl: String
   liveUrl: String
   imageUrl: String
+  icon: String
   startDate: AWSDateTime
   endDate: AWSDateTime
   featured: Boolean
@@ -130,6 +132,7 @@ input UpdateProjectInput {
   githubUrl: String
   liveUrl: String
   imageUrl: String
+  icon: String
   startDate: AWSDateTime
   endDate: AWSDateTime
   featured: Boolean

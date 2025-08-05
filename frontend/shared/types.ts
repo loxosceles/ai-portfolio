@@ -42,6 +42,7 @@ export type ProjectType = {
   githubUrl?: string;
   liveUrl?: string;
   imageUrl?: string;
+  icon?: string;
   startDate?: string;
   endDate?: string;
   featured?: boolean;

@@ -29,6 +29,7 @@ export const GET_DEVELOPER_WITH_PROJECTS = gql`
         githubUrl
         liveUrl
         imageUrl
+        icon
         startDate
         endDate
         featured
