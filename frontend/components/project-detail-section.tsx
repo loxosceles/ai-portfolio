@@ -26,8 +26,7 @@ export default function ProjectDetailSection({
   project,
   id,
   backgroundIndex,
-  projectSymbol,
-  projectColor
+  projectSymbol
 }: ProjectDetailSectionProps) {
   const backgroundClass =
     backgroundIndex !== undefined && backgroundIndex % 2 === 0 ? 'bg-glass-light' : '';

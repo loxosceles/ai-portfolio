@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Wrench, MessageCircle, Cog, Bot, Zap, Hexagon } from 'lucide-react';
 import { ProjectType } from '@/shared/types';
+import { NAVIGATION_SWITCH_SCROLL_THRESHOLD } from '@/shared/constants';
 
 interface NavigationItem {
   id: string;
@@ -49,7 +50,7 @@ export default function FloatingNavigation({
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsHeaderVisible(window.scrollY < 50);
+      setIsHeaderVisible(window.scrollY < NAVIGATION_SWITCH_SCROLL_THRESHOLD);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/header';
 import { DeveloperType, ProjectType } from '@/shared/types';
+import { NAVIGATION_SWITCH_SCROLL_THRESHOLD } from '@/shared/constants';
 
 interface AutoHideHeaderProps {
   developer: DeveloperType;
@@ -23,7 +24,7 @@ export default function AutoHideHeader({
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
-      if (currentScrollY < 50) {
+      if (currentScrollY < NAVIGATION_SWITCH_SCROLL_THRESHOLD) {
         setIsVisible(true);
       } else {
         setIsVisible(false);
