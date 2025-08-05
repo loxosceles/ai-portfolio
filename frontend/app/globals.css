@@ -2,10 +2,10 @@
 
 @theme {
   /* Primary Brand Colors */
-  --color-brand-primary: #581c87;
-  --color-brand-primary-light: #7c3aed;
-  --color-brand-primary-lighter: #9333ea;
-  --color-brand-accent: #a855f7;
+  --color-brand-primary: #1e3a8a;
+  --color-brand-primary-light: #c084fc;
+  --color-brand-primary-lighter: #c084fc;
+  --color-brand-accent: #c084fc;
 
   --color-surface-dark: #0f172a;
   --color-surface-medium: #1e293b;
@@ -22,13 +22,22 @@
   --color-status-warning: #f59e0b;
   --color-status-success: #16a34a;
 
-  --color-border-subtle: rgba(139, 92, 246, 0.2);
-  --color-border-hover: rgba(139, 92, 246, 0.4);
+  --color-border-subtle: rgba(59, 130, 246, 0.2);
+  --color-border-hover: rgba(59, 130, 246, 0.4);
   --color-bg-glass: rgba(30, 41, 59, 0.5);
   --color-bg-glass-light: rgba(30, 41, 59, 0.3);
 }
 
 @layer utilities {
+  /* Overscroll Prevention */
+  .overscroll-none {
+    overscroll-behavior: none;
+  }
+
+  .contain-layout {
+    contain: layout;
+  }
+
   /* Brand Colors */
   .bg-brand-primary {
     background-color: theme(--color-brand-primary);
@@ -110,12 +119,14 @@
 
   /* Component-specific utilities */
   .btn-primary {
-    background-color: theme(--color-brand-primary);
-    color: theme(--color-text-primary);
-    transition: background-color 0.2s;
+    background-color: transparent;
+    color: theme(--color-brand-accent);
+    border: 1px solid theme(--color-brand-accent);
+    transition: all 0.2s;
   }
   .btn-primary:hover {
-    background-color: theme(--color-brand-primary-light);
+    box-shadow: 0 0 20px rgba(192, 132, 252, 0.3);
+    border-color: theme(--color-brand-primary-light);
   }
 
   .btn-outline {
@@ -124,8 +135,8 @@
     transition: all 0.2s;
   }
   .btn-outline:hover {
-    background-color: theme(--color-brand-accent);
-    color: theme(--color-text-primary);
+    box-shadow: 0 0 20px rgba(192, 132, 252, 0.3);
+    border-color: theme(--color-brand-primary-light);
   }
 
   .card-glass {
@@ -157,17 +168,33 @@
   }
 
   .tech-tag {
-    background-color: rgba(168, 85, 247, 0.2);
-    color: #c4b5fd;
+    background-color: rgba(59, 130, 246, 0.2);
+    color: theme(--color-brand-accent);
   }
-  
+
   /* Animations */
   .animate-fadeIn {
     animation: fadeIn 0.5s ease-in-out;
   }
-  
+
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
+}
+
+.fade-underlay .bg-glass-light {
+  background: transparent !important;
+  transition: background 1000ms ease-in-out;
+}
+
+html,
+body {
+  overscroll-behavior: none;
 }

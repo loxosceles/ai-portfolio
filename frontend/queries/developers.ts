@@ -21,6 +21,7 @@ export const GET_DEVELOPER_WITH_PROJECTS = gql`
       projects {
         id
         title
+        slug
         description
         status
         highlights
