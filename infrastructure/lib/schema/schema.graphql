@@ -34,7 +34,7 @@ type Project @aws_iam @aws_cognito_user_pools @aws_api_key {
   challenge: String
   solution: String
   architecture: [ArchitectureItem]
-  codeExamples: [CodeExample]
+  technicalShowcases: [TechnicalShowcase]
   archPatterns: [String]
   performance: [String]
   developer: Developer! @belongsTo(fields: ["developerId"])
@@ -46,9 +46,10 @@ type ArchitectureItem @aws_iam @aws_cognito_user_pools @aws_api_key {
   details: String!
 }
 
-type CodeExample @aws_iam @aws_cognito_user_pools @aws_api_key {
-  name: String!
-  code: String!
+type TechnicalShowcase @aws_iam @aws_cognito_user_pools @aws_api_key {
+  title: String!
+  description: String!
+  highlights: [String]!
 }
 
 type SkillSet @aws_iam @aws_cognito_user_pools @aws_api_key {

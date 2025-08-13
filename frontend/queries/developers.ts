@@ -41,9 +41,10 @@ export const GET_DEVELOPER_WITH_PROJECTS = gql`
           name
           details
         }
-        codeExamples {
-          name
-          code
+        technicalShowcases {
+          title
+          description
+          highlights
         }
         archPatterns
         performance

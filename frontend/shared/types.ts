@@ -26,9 +26,10 @@ export type ArchitectureItem = {
   details: string;
 };
 
-export type CodeExample = {
-  name: string;
-  code: string;
+export type TechnicalShowcase = {
+  title: string;
+  description: string;
+  highlights: string[];
 };
 
 export type ProjectType = {
@@ -51,7 +52,7 @@ export type ProjectType = {
   challenge?: string;
   solution?: string;
   architecture?: ArchitectureItem[];
-  codeExamples?: CodeExample[];
+  technicalShowcases?: TechnicalShowcase[];
   archPatterns?: string[];
   performance?: string[];
   developer: DeveloperType;

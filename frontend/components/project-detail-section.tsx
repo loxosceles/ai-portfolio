@@ -107,26 +107,9 @@ export default function ProjectDetailSection({
               </div>
             </div>
 
-            {/* Code Examples */}
-            {project.codeExamples && project.codeExamples.length > 0 && (
-              <div className="card-glass rounded-xl p-8">
-                <div className="flex items-center mb-6">
-                  <Code className="h-6 w-6 text-status-warning mr-3" />
-                  <h3 className="text-2xl font-semibold text-primary">Code Examples</h3>
-                </div>
-                <div className="space-y-6">
-                  {project.codeExamples.map((example, index) => (
-                    <div key={index}>
-                      <h4 className="text-lg font-medium text-primary mb-3">{example.name}</h4>
-                      <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                        <pre className="text-sm text-gray-300">
-                          <code>{example.code}</code>
-                        </pre>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {/* Technical Showcases */}
+            {project.technicalShowcases && project.technicalShowcases.length > 0 && (
+              <TechnicalShowcaseTabs showcases={project.technicalShowcases} />
             )}
 
             {/* Technology Stack & Performance */}
