@@ -22,7 +22,8 @@
       "CloudFront",
       "S3",
       "Cognito",
-      "CDK"
+      "CDK",
+      "TailwindCSS"
     ],
     "overview": "A modern, serverless web application that showcases a developer's professional profile with AI-powered personalization features using Next.js and AWS services.",
     "challenge": "Creating personalized portfolio experiences for recruiters while maintaining cost-effective serverless architecture and seamless user experience.",
