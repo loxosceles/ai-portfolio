@@ -206,7 +206,7 @@ function TechnicalShowcaseTabs({ showcases }: TechnicalShowcaseTabsProps) {
       </div>
 
       {/* Tab Content */}
-      <div className="h-[420px] pb-8">
+      <div className="h-[480px] pb-8">
         <div className="mb-8 h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-brand-accent scrollbar-track-brand-accent/20">
           <p className="text-secondary leading-relaxed pr-2">{showcases[activeTab].description}</p>
         </div>
