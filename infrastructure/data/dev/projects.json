@@ -41,18 +41,57 @@
         "details": "AWS CDK multi-stack approach with environment-based deployments and automated CI/CD pipeline"
       }
     ],
-    "codeExamples": [
+    "technicalShowcases": [
       {
-        "name": "Centralized Auth Context",
-        "code": "// Environment-aware authentication with token management\nconst { getQueryContext } = useAuth();\n\nconst { data } = useQuery(GET_PERSONALIZED_CONTENT, {\n  context: getQueryContext('authenticated'),\n  variables: { recruiterId, jobContext }\n});\n\n// Smart header generation based on route type\nconst getAuthHeaders = (routeType: RouteType) => {\n  if (environment === 'local') {\n    return { 'x-api-key': process.env.NEXT_PUBLIC_APPSYNC_API_KEY };\n  }\n  \n  return routeType === 'public' \n    ? { 'x-api-key': process.env.NEXT_PUBLIC_APPSYNC_API_KEY }\n    : { Authorization: `Bearer ${tokens.accessToken}` };\n};"
+        "title": "Lambda@Edge Authentication",
+        "description": "The authentication system requires no user login actions by intercepting HTTP requests at CloudFront edge locations using Lambda@Edge functions. When a recruiter accesses a personalized link containing a visitor token, the edge function validates the token against DynamoDB and performs an AdminInitiateAuth call to AWS Cognito to generate JWT tokens for a virtual user. The function sets HttpOnly cookies (AccessToken, IdToken, LinkId) in response headers, enabling the static Next.js frontend to make authenticated GraphQL requests without user interaction. The implementation uses viewer-request events to intercept incoming requests and viewer-response events to inject authentication cookies, with graceful handling for standard website visitors and personalized features available for recruiters using special links.",
+        "highlights": [
+          "Lambda@Edge functions execute at 200+ CloudFront edge locations for sub-100ms authentication latency",
+          "Virtual Cognito users created via AdminInitiateAuth API calls eliminate traditional login requirements",
+          "HttpOnly cookies (AccessToken, IdToken, LinkId) set by edge functions maintain session state across static frontend",
+          "Viewer-request/viewer-response event handling enables token validation and cookie injection in a single request cycle",
+          "Static asset bypassing (_next/, .js, .css) prevents unnecessary Lambda@Edge invocations and reduces costs",
+          "Graceful fallback to original request ensures system resilience when authentication components fail"
+        ]
       },
       {
-        "name": "Cookie-Based Token Management",
-        "code": "// Lambda@Edge sets authentication cookies for invisible auth\nexport const cookieAuth = {\n  getTokens(): { accessToken: string | null; idToken: string | null } {\n    const accessToken = getCookie('AccessToken');\n    const idToken = getCookie('IdToken');\n    return { accessToken, idToken };\n  },\n\n  async makeAuthenticatedRequest(url: string, options: RequestInit = {}) {\n    const { accessToken } = this.getTokens();\n    return fetch(url, {\n      ...options,\n      credentials: 'include',\n      headers: {\n        ...options.headers,\n        ...(accessToken && { Authorization: `Bearer ${accessToken}` })\n      }\n    });\n  }\n};"
+        "title": "Bedrock AI Integration",
+        "description": "The AI system integrates with Amazon Bedrock using Claude 3.5 Sonnet through a model adapter pattern that abstracts different AI providers. The BedrockRuntimeClient sends InvokeModelCommand requests with JSON payloads formatted according to the model's API specification. Conversation history is maintained in DynamoDB using role-based message storage (user/assistant) with timestamps and message limits to improve user experience by keeping responses focused and concise. The system implements dynamic prompt generation incorporating recruiter context and developer profile data for personalized responses. Fine-tuned rules keep responses factual and grounded, combined with low temperature settings, with token limits ensuring concise answers and graceful degradation when Bedrock is unavailable.",
+        "highlights": [
+          "Model adapter pattern supports multiple AI providers through standardized formatPrompt/parseResponse interfaces",
+          "Claude 3.5 Sonnet integration uses Bedrock's latest API specification for optimal performance",
+          "Conversation history stored in DynamoDB with message limits to prevent item size constraints",
+          "Dynamic prompt generation incorporates recruiter context and developer profile for personalized responses",
+          "Temperature settings optimized for consistent Q&A and creative greetings with token limits for concise responses",
+          "Graceful degradation to static content when Bedrock API calls fail or timeout",
+          "Role-based message storage (user/assistant) with timestamps enables conversation context tracking"
+        ]
       },
       {
-        "name": "AI-Powered Personalization",
-        "code": "// AI-generated content using Amazon Bedrock\nconst personalizedGreeting = await bedrock.invoke({\n  modelId: 'anthropic.claude-v2',\n  body: JSON.stringify({\n    prompt: `Generate personalized greeting for ${company} recruiter`,\n    max_tokens: 200\n  })\n});\n\n// Context-aware content delivery\nconst { data } = useQuery(GET_ADVOCATE_GREETING, {\n  context: getQueryContext('authenticated'),\n  variables: { linkId: visitorParam }\n});\n\n// Dynamic content based on recruiter context\nif (data?.getAdvocateGreeting) {\n  setGreeting(data.getAdvocateGreeting);\n}"
+        "title": "Cost-Optimized Serverless Design",
+        "description": "The system achieves low operational costs through careful serverless component selection and configuration. S3 static hosting eliminates server costs entirely, with CloudFront CDN providing global distribution at competitive pricing. Lambda functions provide fast, cheap, and scalable compute, scaling from zero with millisecond billing precision within free tier limits. DynamoDB uses on-demand billing eliminating capacity planning, while AppSync GraphQL API uses per-request pricing with built-in caching. Lambda@Edge functions are optimized to bypass static assets, minimizing invocation costs. The entire stack typically operates under $5/month for moderate traffic, with linear cost scaling and zero fixed infrastructure costs.",
+        "highlights": [
+          "S3 static hosting eliminates server costs entirely, with CloudFront CDN providing competitive global distribution pricing",
+          "Lambda functions provide serverless compute that scales to zero when unused, staying within monthly free tier limits",
+          "DynamoDB on-demand billing charges only for actual read/write operations, eliminating fixed costs",
+          "AppSync GraphQL API uses per-request pricing with built-in caching to reduce redundant data fetching costs",
+          "Lambda@Edge optimized to bypass static assets, minimizing authentication-related invocation costs",
+          "Zero fixed infrastructure costs - entire stack scales to $0 when unused",
+          "Linear cost scaling only occurs with significant traffic increases, maintaining predictable economics"
+        ]
+      },
+      {
+        "title": "Multi-Environment Deployment",
+        "description": "The deployment system uses local automation scripts and cloud-based CI/CD pipelines for different development workflows. Local deployment is handled by a bash script that orchestrates pnpm commands across infrastructure and frontend directories, including CDK provisioning, SSM parameter synchronization, Next.js production builds, S3 publishing, and CloudFront cache invalidation. The CI/CD pipeline uses GitHub Actions to trigger AWS CodePipeline based on branch merges. Infrastructure as Code is implemented using AWS CDK with TypeScript, managing multi-stack deployments for web hosting, AI services, and data storage. The system uses an internal CLI API with shared code structure and manager classes for efficient business logic separation.",
+        "highlights": [
+          "Bash deployment script (deploy.sh) orchestrates pnpm commands across infrastructure and frontend directories",
+          "GitHub Actions triggers AWS CodePipeline based on branch merges (dev→dev pipeline, main→prod pipeline)",
+          "AWS CDK with TypeScript manages multi-stack Infrastructure as Code deployments",
+          "Environment isolation through separate AWS accounts and SSM parameter namespacing (/portfolio/env/)",
+          "Parameter synchronization commands support preview, apply, and cleanup of obsolete SSM parameters",
+          "Forward-only deployments support version management through code reversion and pipeline re-execution",
+          "Multi-service environment generation (frontend, link-generator) from deployed stack outputs"
+        ]
       }
     ],
     "archPatterns": [
@@ -108,12 +147,7 @@
         "details": "Multi-stage Docker build using uv package manager with development and production configurations"
       }
     ],
-    "codeExamples": [
-      {
-        "name": "Concurrent Processing Implementation",
-        "code": "# Concurrent image processing with error resilience\nwith ThreadPoolExecutor() as executor:\n    jobs = [executor.submit(process_function, input_path, output_path)\n            for input_path, output_path in image_pairs]\n    \n    for job in tqdm(as_completed(jobs), total=len(jobs)):\n        try:\n            result = job.result()\n            logger.info(f\"Processed: {result}\")\n        except Exception as e:\n            logger.error(f\"Processing failed: {e}\")\n            # Continue processing other images"
-      }
-    ],
+    "technicalShowcases": [],
     "archPatterns": [
       "Command Pattern: Each operation (resize, blur, rotate) implements consistent interface",
       "Factory Pattern: Task selection maps string commands to processing functions",
@@ -172,12 +206,7 @@
         "details": "Multi-container Docker architecture, Redis caching/pub-sub, SQLite database, Nginx reverse proxy with SSL/TLS"
       }
     ],
-    "codeExamples": [
-      {
-        "name": "Real-Time Data Streaming",
-        "code": "# Server-Sent Events implementation\n@bp.route(\"/coin-stream\", methods=[\"GET\"])\ndef get_coin_stream():\n    redis_conn = current_app.redis_conn\n    pubsub = redis_conn.pubsub(ignore_subscribe_messages=True)\n    pubsub.subscribe(\"coins\")\n    return Response(event_stream(redis_conn, pubsub), \n                   mimetype=\"text/event-stream\")\n\n# React real-time updates\nconst eventSource = new EventSource('/api/coin-stream');\neventSource.onmessage = (event) => {\n  const data = JSON.parse(event.data);\n  updateMarketData(data);\n};"
-      }
-    ],
+    "technicalShowcases": [],
     "archPatterns": [
       "Microservices Design: Separate containers for frontend, backend, caching, enabling independent scaling",
       "Event-Driven Architecture: Redis pub/sub decouples data processing from API responses",
