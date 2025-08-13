@@ -117,7 +117,7 @@
       "Concurrent batch processing with ThreadPoolExecutor",
       "EXIF-aware rotation with metadata preservation",
       "Production-ready containerization with Alpine Linux",
-      "Comprehensive test suite with parametrized tests"
+      "Integrated interactive IPython tooling and DevContainer setup for development"
     ],
     "techStack": [
       "Python",
@@ -128,7 +128,9 @@
       "pytest",
       "ThreadPoolExecutor",
       "tqdm",
-      "uv"
+      "uv",
+      "IPython",
+      "DevContainer"
     ],
     "overview": "A production-ready Python application for batch image processing with enterprise-level reliability, concurrent processing, and containerized deployment.",
     "challenge": "Processing large image batches manually is time-consuming, lacks proper EXIF handling, concurrent processing, and containerized deployment options.",
@@ -170,20 +172,23 @@
     "highlights": [
       "Real-time market data streaming with Server-Sent Events",
       "Microservices container architecture with service isolation",
-      "Advanced caching strategies with Redis pub/sub",
-      "Comprehensive testing with pytest and React Testing Library"
+      "Real-time data synchronization with Redis caching and pub/sub messaging",
+      "CI/CD pipeline with GitHub Actions for container builds and AWS ECR deployment"
     ],
     "techStack": [
       "React",
       "Flask",
       "Redis",
       "Docker",
-      "SQLite",
       "Nginx",
       "Gunicorn",
       "Zustand",
       "SCSS",
-      "pytest"
+      "pytest",
+      "GitHub Actions",
+      "AWS ECR",
+      "Let's Encrypt",
+      "Shell Script"
     ],
     "overview": "A production-ready full-stack application providing real-time cryptocurrency market analysis with microservices architecture and Server-Sent Events.",
     "challenge": "Cryptocurrency markets move rapidly requiring real-time data access, comprehensive tokenomics analysis, and historical trends in digestible format.",
