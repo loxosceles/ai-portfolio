@@ -4,11 +4,11 @@ import ProjectIcon from './project-icon';
 
 function ProjectHeader({ project }: { project: ProjectType }) {
   return (
-    <div className="flex justify-between items-start mb-4">
-      <h3 className="text-xl font-semibold text-primary">{project.title}</h3>
+    <div className="flex items-center gap-3 mb-4">
       <div className="text-status-warning">
         <ProjectIcon project={project} />
       </div>
+      <h3 className="text-xl font-semibold text-primary">{project.title}</h3>
     </div>
   );
 }
@@ -40,27 +40,29 @@ function FeaturedProjects({ id, developer, onNavigate }: FeaturedProjectsProps) 
         {projects.map((project, index) => (
           <div
             key={index}
-            className="card-glass rounded-xl p-6 hover:border-hover transition-all duration-300 hover:transform hover:scale-105"
+            className="card-glass rounded-xl p-6 hover:border-hover transition-all duration-300 hover:transform hover:scale-105 min-h-[400px] grid grid-rows-[auto_1fr_auto]"
           >
             <ProjectHeader project={project} />
-            <p className="text-secondary mb-4">{project.description}</p>
-            <div className="mb-4">
-              <div className="flex flex-wrap gap-2">
-                {project.techStack?.map((tech, techIndex) => (
-                  <span key={techIndex} className="px-2 py-1 tech-tag rounded text-xs">
-                    {tech}
-                  </span>
-                ))}
+            <div className="grid grid-rows-[auto_150px_1fr]">
+              <p className="text-secondary mb-6">{project.description}</p>
+              <div className="h-full overflow-y-auto mb-2">
+                <div className="flex flex-wrap gap-2 mt-auto">
+                  {project.techStack?.map((tech, techIndex) => (
+                    <span key={techIndex} className="px-2 py-1 tech-tag rounded text-xs">
+                      {tech}
+                    </span>
+                  ))}
+                </div>
               </div>
+              <ul className="text-sm text-muted space-y-1 mb-6">
+                {project.highlights?.map((highlight, hIndex) => (
+                  <li key={hIndex} className="flex items-start">
+                    <span className="text-status-warning mr-2">•</span>
+                    {highlight}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="text-sm text-muted space-y-1 mb-4">
-              {project.highlights?.map((highlight, hIndex) => (
-                <li key={hIndex} className="flex items-start">
-                  <span className="text-status-warning mr-2">•</span>
-                  {highlight}
-                </li>
-              ))}
-            </ul>
             <button
               onClick={() => {
                 onNavigate?.(project.slug);

@@ -1,7 +1,7 @@
 [
   {
     "id": "proj-1",
-    "title": "AI-Powered Portfolio Platform",
+    "title": "AI-Powered Portfolio",
     "slug": "ai-portfolio",
     "icon": "Bot",
     "description": "A modern, serverless web application that showcases a developer's professional profile with AI-powered personalization features using Next.js and AWS services.",
@@ -120,7 +120,7 @@
       "Comprehensive test suite with parametrized tests"
     ],
     "techStack": [
-      "Python 3.11+",
+      "Python",
       "Pillow (PIL)",
       "piexif",
       "Docker",
@@ -162,7 +162,7 @@
   },
   {
     "id": "proj-3",
-    "title": "Web3 Snapshot Dashboard",
+    "title": "Web3 Snapshot",
     "slug": "web3snapshot",
     "icon": "Aperture",
     "description": "A production-ready full-stack application providing real-time cryptocurrency market analysis with microservices architecture and Server-Sent Events.",
@@ -174,9 +174,9 @@
       "Comprehensive testing with pytest and React Testing Library"
     ],
     "techStack": [
-      "React 18",
-      "Flask 3.0",
-      "Redis 7.2",
+      "React",
+      "Flask",
+      "Redis",
       "Docker",
       "SQLite",
       "Nginx",
