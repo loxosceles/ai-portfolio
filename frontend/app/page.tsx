@@ -17,7 +17,6 @@ import FloatingNavigation from '@/components/floating-navigation';
 import AutoHideHeader from '@/components/auto-hide-header';
 import TransitionManager from '@/components/transition-manager';
 import { ProjectType } from '@/shared/types';
-import { Bot, Zap, Hexagon } from 'lucide-react';
 
 // Helper function to generate section list dynamically
 const generateSectionList = (projects: ProjectType[] = []): string[] => {
@@ -177,20 +176,14 @@ const Portfolio = () => {
                   developerId: developer.id || 'default-dev'
                 } as ProjectType
               ]
-          ).map((project, index) => {
-            const ProjectIcons = [Bot, Zap, Hexagon];
-            const IconComponent = ProjectIcons[index % ProjectIcons.length];
-            return (
-              <ProjectDetailSection
-                key={project.id}
-                id={project.slug}
-                project={project}
-                backgroundIndex={index}
-                projectSymbol={<IconComponent className="h-8 w-8 text-white" />}
-                projectColor=""
-              />
-            );
-          })}
+          ).map((project, index) => (
+            <ProjectDetailSection
+              key={project.id}
+              id={project.slug}
+              project={project}
+              backgroundIndex={index}
+            />
+          ))}
           <ContactSection id="contact" developer={developer} />
         </TransitionManager>
 

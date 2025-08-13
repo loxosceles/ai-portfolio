@@ -1,14 +1,13 @@
 import { DeveloperType, ProjectType } from '@/shared/types';
 import { isLocalEnvironment } from '@/lib/auth/auth-utils';
-import { useProjectIcon } from '@/hooks/useProjectIcon';
+import ProjectIcon from './project-icon';
 
-function ProjectIcon({ project }: { project: ProjectType }) {
-  const IconComponent = useProjectIcon(project.icon);
+function ProjectHeader({ project }: { project: ProjectType }) {
   return (
     <div className="flex justify-between items-start mb-4">
       <h3 className="text-xl font-semibold text-primary">{project.title}</h3>
       <div className="text-status-warning">
-        {IconComponent && <IconComponent className="h-6 w-6" />}
+        <ProjectIcon project={project} />
       </div>
     </div>
   );
@@ -43,7 +42,7 @@ function FeaturedProjects({ id, developer, onNavigate }: FeaturedProjectsProps) 
             key={index}
             className="card-glass rounded-xl p-6 hover:border-hover transition-all duration-300 hover:transform hover:scale-105"
           >
-            <ProjectIcon project={project} />
+            <ProjectHeader project={project} />
             <p className="text-secondary mb-4">{project.description}</p>
             <div className="mb-4">
               <div className="flex flex-wrap gap-2">

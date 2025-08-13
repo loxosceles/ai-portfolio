@@ -4,12 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Wrench, MessageCircle, Cog } from 'lucide-react';
 import { ProjectType } from '@/shared/types';
 import { NAVIGATION_SWITCH_SCROLL_THRESHOLD } from '@/shared/constants';
-import { useProjectIcon } from '@/hooks/useProjectIcon';
-
-function ProjectNavIcon({ iconName }: { iconName?: string }) {
-  const IconComponent = useProjectIcon(iconName);
-  return IconComponent ? <IconComponent className="h-4 w-4 text-white" /> : null;
-}
+import ProjectIcon from './project-icon';
 
 interface NavigationItem {
   id: string;
@@ -91,7 +86,9 @@ export default function FloatingNavigation({
       return {
         id: project.id,
         label: project.label,
-        icon: <ProjectNavIcon iconName={projectData?.icon} />,
+        icon: projectData ? (
+          <ProjectIcon project={projectData} className="h-4 w-4 text-white" />
+        ) : null,
         selector: project.selector
       };
     }),

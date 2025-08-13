@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ProjectType } from '@/shared/types';
 import {
   Github,
@@ -9,23 +9,22 @@ import {
   Layers,
   Zap,
   CheckCircle,
+  ChevronRight,
   Wrench
 } from 'lucide-react';
 import TechBadge from './tech-badge';
+import ProjectIcon from './project-icon';
 
 interface ProjectDetailSectionProps {
   project: ProjectType;
   id?: string;
   backgroundIndex?: number;
-  projectSymbol?: React.ReactNode;
-  projectColor?: string;
 }
 
 export default function ProjectDetailSection({
   project,
   id,
-  backgroundIndex,
-  projectSymbol
+  backgroundIndex
 }: ProjectDetailSectionProps) {
   const backgroundClass =
     backgroundIndex !== undefined && backgroundIndex % 2 === 0 ? 'bg-glass-light' : '';
@@ -36,7 +35,9 @@ export default function ProjectDetailSection({
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-primary mb-4 flex items-center justify-center">
-            {projectSymbol && <span className="mr-3">{projectSymbol}</span>}
+            <span className="mr-3 text-status-warning">
+              <ProjectIcon project={project} className="h-8 w-8" />
+            </span>
             {project.title}
           </h2>
           <p className="text-xl text-secondary max-w-3xl mx-auto mb-8">
@@ -95,7 +96,7 @@ export default function ProjectDetailSection({
             <div className="card-glass rounded-xl p-8">
               <div className="flex items-center mb-6">
                 <Layers className="h-6 w-6 text-status-warning mr-3" />
-                <h3 className="text-2xl font-semibold text-primary">Technical Architecture</h3>
+                <h3 className="text-2xl font-semibold text-primary">Architecture</h3>
               </div>
               <div className="grid md:grid-cols-2 gap-6">
                 {project.architecture?.map((arch, index) => (
@@ -170,5 +171,54 @@ export default function ProjectDetailSection({
         )}
       </div>
     </section>
+  );
+}
+
+interface TechnicalShowcaseTabsProps {
+  showcases: { title: string; description: string; highlights: string[] }[];
+}
+
+function TechnicalShowcaseTabs({ showcases }: TechnicalShowcaseTabsProps) {
+  const [activeTab, setActiveTab] = useState(0);
+
+  return (
+    <div className="card-glass rounded-xl p-8">
+      <div className="flex items-center mb-6">
+        <Code className="h-6 w-6 text-status-warning mr-3" />
+        <h3 className="text-2xl font-semibold text-primary">Technical Deep Dive</h3>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="flex flex-wrap gap-2 mb-6 border-b border-brand-accent/20">
+        {showcases.map((showcase, index) => (
+          <button
+            key={index}
+            onClick={() => setActiveTab(index)}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+              activeTab === index
+                ? 'bg-brand-accent/20 text-primary border-b-2 border-brand-accent'
+                : 'text-secondary hover:text-primary hover:bg-brand-accent/10'
+            }`}
+          >
+            {showcase.title}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className="h-[420px] pb-8">
+        <div className="mb-8 h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-brand-accent scrollbar-track-brand-accent/20">
+          <p className="text-secondary leading-relaxed pr-2">{showcases[activeTab].description}</p>
+        </div>
+        <div className="space-y-3 h-64">
+          {showcases[activeTab].highlights.map((highlight, index) => (
+            <div key={index} className="flex items-start">
+              <ChevronRight className="h-4 w-4 text-status-warning mr-3 mt-1 flex-shrink-0" />
+              <span className="text-secondary text-sm">{highlight}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
