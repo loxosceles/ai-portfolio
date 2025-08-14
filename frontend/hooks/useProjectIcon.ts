@@ -2,7 +2,7 @@ import * as LucideIcons from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
 const isValidLucideIcon = (icon: unknown): icon is LucideIcon => {
-  return typeof icon === 'function';
+  return typeof icon === 'object' && icon !== null && ('render' in icon || '$$typeof' in icon);
 };
 
 export const useProjectIcon = (iconName?: string): LucideIcon | null => {
