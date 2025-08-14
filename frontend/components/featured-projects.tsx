@@ -43,7 +43,7 @@ function FeaturedProjects({ id, developer, onNavigate }: FeaturedProjectsProps) 
             className="card-glass rounded-xl p-6 hover:border-hover transition-all duration-300 hover:transform hover:scale-105 min-h-[400px] grid grid-rows-[auto_1fr_auto]"
           >
             <ProjectHeader project={project} />
-            <div className="grid grid-rows-[auto_150px_1fr]">
+            <div className="grid grid-rows-[auto_min-content_1fr]">
               <p className="text-secondary mb-6">{project.description}</p>
               <div className="h-full overflow-y-auto mb-2">
                 <div className="flex flex-wrap gap-2 mt-auto">
