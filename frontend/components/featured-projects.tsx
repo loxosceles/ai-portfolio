@@ -34,7 +34,7 @@ function FeaturedProjects({ id, developer, onNavigate }: FeaturedProjectsProps) 
   }
 
   return (
-    <section id={id} className="py-16 px-6 bg-glass-light">
+    <section id={id} className="py-16 px-6 bg-glass-light xl:max-w-[1400px] xl:mx-auto">
       <div className="container mx-auto max-w-7xl">
         <h2 className="text-4xl font-bold text-primary text-center mb-12">Featured Projects</h2>
         <div className="grid lg:grid-cols-3 gap-8">

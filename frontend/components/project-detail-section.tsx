@@ -30,7 +30,10 @@ export default function ProjectDetailSection({
     backgroundIndex !== undefined && backgroundIndex % 2 === 0 ? 'bg-glass-light' : '';
 
   return (
-    <section id={id} className={`min-h-screen ${backgroundClass} py-16 px-6`}>
+    <section
+      id={id}
+      className={`min-h-screen ${backgroundClass} py-16 px-6 ${backgroundClass ? 'xl:max-w-[1400px] xl:mx-auto' : ''}`}
+    >
       <div className="container mx-auto max-w-7xl">
         {/* Header */}
         <div className="text-center mb-12">
