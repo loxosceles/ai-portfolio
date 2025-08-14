@@ -31,7 +31,7 @@ export default function ProjectDetailSection({
 
   return (
     <section id={id} className={`min-h-screen ${backgroundClass} py-16 px-6`}>
-      <div className="container mx-auto max-w-5xl">
+      <div className="container mx-auto max-w-7xl">
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-primary mb-4 flex items-center justify-center">
