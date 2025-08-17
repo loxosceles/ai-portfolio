@@ -25,6 +25,7 @@
       "CDK",
       "TailwindCSS"
     ],
+    "githubUrl": "https: //github.com/example",
     "overview": "A modern, serverless web application that showcases a developer's professional profile with AI-powered personalization features using Next.js and AWS services.",
     "challenge": "Creating personalized portfolio experiences for recruiters while maintaining cost-effective serverless architecture and seamless user experience.",
     "solution": "Next.js frontend with AWS services backend, featuring AI-powered personalization, invisible authentication, and multi-region deployment strategy.",
@@ -105,6 +106,15 @@
       "Global CDN: CloudFront distribution for sub-100ms response times",
       "Serverless scaling: Auto-scaling from 0 to handle traffic spikes"
     ],
+    "repositoryAndDevelopment": {
+      "plannedFeatures": [
+        "Company website scraping",
+        "Enhanced AI Q&A",
+        "Cover letter generation",
+        "RAG implementation"
+      ],
+      "vision": "This portfolio demonstrates a foundation for AI-powered recruitment tools. Future development will focus on intelligent company analysis and automated personalization at scale."
+    },
     "developerId": "DEVELOPER_PROFILE"
   },
   {
@@ -133,6 +143,7 @@
       "IPython",
       "DevContainer"
     ],
+    "githubUrl": "https: //github.com/example",
     "overview": "A containerized Python CLI tool for batch image processing with concurrent execution, EXIF metadata preservation, and production-ready deployment infrastructure.",
     "challenge": "Processing large image batches manually is time-consuming and lacks proper EXIF handling, concurrent processing capabilities, and containerized deployment options.",
     "solution": "Containerized CLI tool with ThreadPoolExecutor concurrency, EXIF metadata preservation, comprehensive testing suite, and complete development/deployment pipeline.",
@@ -209,6 +220,15 @@
       "Memory efficiency: processes images individually to avoid memory bloat during large batch operations",
       "Container optimization: multi-stage builds and Alpine Linux reduce deployment size and startup time"
     ],
+    "repositoryAndDevelopment": {
+      "plannedFeatures": [
+        "Frontend application to show images",
+        "Image upload and cloud storage",
+        "User accounts",
+        "Extended image processing capabilities"
+      ],
+      "vision": "While currently a basic CLI tool, this project will evolve into the backbone of a larger photo collection management system that prioritizes privacy and optimization."
+    },
     "developerId": "DEVELOPER_PROFILE"
   },
   {
@@ -239,6 +259,7 @@
       "Let's Encrypt",
       "Shell Script"
     ],
+    "githubUrl": "https: //github.com/example",
     "overview": "A real-time cryptocurrency market dashboard providing live data streaming and comprehensive tokenomics analysis through microservices architecture and Server-Sent Events integration.",
     "challenge": "Cryptocurrency markets require real-time data access with sub-minute updates and comprehensive tokenomics analysis including market cap ratios.",
     "solution": "Containerized microservices dashboard with CoinGecko API integration, Redis pub/sub messaging for real-time updates, Server-Sent Events streaming, and automated deployment pipeline.",
@@ -320,6 +341,15 @@
       "Data Efficiency: Data diffing algorithms reduce database writes by 60-80% compared to full updates",
       "Container Optimization: Multi-stage Docker builds reduce image sizes and deployment times"
     ],
+    "repositoryAndDevelopment": {
+      "plannedFeatures": [
+        "Enhanced AI capabilities",
+        "User accounts and personalization",
+        "Custom portfolio watchlists",
+        "Technical analysis charts"
+      ],
+      "vision": "Currently focused on market analysis, this platform will evolve into a comprehensive DeFi portfolio management suite with advanced trading insights and cross-chain analytics."
+    },
     "developerId": "DEVELOPER_PROFILE"
   }
 ]
