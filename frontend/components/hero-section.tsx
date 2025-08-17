@@ -52,9 +52,6 @@ function HeroSection({ id, developer }: HeroSectionProps) {
         </div>
         {/* AI Question Modal */}
         {showAIQuestion && <AIQuestion onClose={() => setShowAIQuestion(false)} />}
-
-        {/* AI System Preview */}
-        <ProjectPreview />
       </div>
     </section>
   );
