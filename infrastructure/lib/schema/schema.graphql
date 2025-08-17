@@ -37,6 +37,7 @@ type Project @aws_iam @aws_cognito_user_pools @aws_api_key {
   technicalShowcases: [TechnicalShowcase]
   archPatterns: [String]
   performance: [String]
+  repositoryAndDevelopment: RepositoryAndDevelopment
   developer: Developer! @belongsTo(fields: ["developerId"])
   developerId: ID!
 }
@@ -50,6 +51,11 @@ type TechnicalShowcase @aws_iam @aws_cognito_user_pools @aws_api_key {
   title: String!
   description: String!
   highlights: [String]!
+}
+
+type RepositoryAndDevelopment @aws_iam @aws_cognito_user_pools @aws_api_key {
+  plannedFeatures: [String]!
+  vision: String!
 }
 
 type SkillSet @aws_iam @aws_cognito_user_pools @aws_api_key {

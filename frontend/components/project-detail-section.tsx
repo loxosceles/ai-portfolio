@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ProjectType } from '@/shared/types';
 import {
-  Github,
   ExternalLink,
   Target,
   Lightbulb,
@@ -10,10 +9,12 @@ import {
   Zap,
   CheckCircle,
   ChevronRight,
-  Wrench
+  Wrench,
+  GitBranch
 } from 'lucide-react';
 import TechBadge from './tech-badge';
 import ProjectIcon from './project-icon';
+import GitHubIcon from './icons/github-icon';
 
 interface ProjectDetailSectionProps {
   project: ProjectType;
@@ -28,6 +29,16 @@ export default function ProjectDetailSection({
 }: ProjectDetailSectionProps) {
   const backgroundClass =
     backgroundIndex !== undefined && backgroundIndex % 2 === 0 ? 'bg-glass-light' : '';
+
+  const repositoryContent = project.repositoryAndDevelopment || {
+    plannedFeatures: [
+      'Enhanced capabilities',
+      'Real-time features',
+      'Mobile support',
+      'Cloud integration'
+    ],
+    vision: 'This project continues to evolve with new features and improvements.'
+  };
 
   return (
     <section
@@ -56,7 +67,7 @@ export default function ProjectDetailSection({
                 rel="noopener noreferrer"
                 className="btn-primary px-6 py-3 rounded-lg flex items-center space-x-2"
               >
-                <Github className="h-5 w-5" />
+                <GitHubIcon className="h-5 w-5" />
                 <span>View Code</span>
               </a>
             )}
@@ -146,17 +157,54 @@ export default function ProjectDetailSection({
               </div>
             </div>
 
-            {/* Architecture Patterns & Highlights */}
+            {/* Repository & Development & Highlights */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="card-glass rounded-xl p-6">
-                <h3 className="text-xl font-semibold text-primary mb-4">Architecture Patterns</h3>
-                <div className="space-y-2">
-                  {project.archPatterns?.map((pattern, index) => (
-                    <div key={index} className="flex items-start">
-                      <span className="text-status-warning mr-3 mt-0.5 flex-shrink-0">•</span>
-                      <span className="text-secondary text-sm">{pattern}</span>
+                <div className="flex items-center mb-4">
+                  <GitBranch className="h-6 w-6 text-status-warning mr-3" />
+                  <h3 className="text-xl font-semibold text-primary">Repository & Development</h3>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full mr-3">
+                        Active
+                      </span>
+                      <span className="text-secondary text-sm">Development Status</span>
                     </div>
-                  ))}
+                    {project.githubUrl && (
+                      <a
+                        href={project.githubUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 border border-brand-accent text-brand-accent hover:bg-brand-accent/10 rounded-lg transition-colors text-xs"
+                      >
+                        <GitHubIcon className="h-3 w-3 mr-1" />
+                        <span>View Repository</span>
+                        <ExternalLink className="h-2 w-2 ml-1" />
+                      </a>
+                    )}
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-primary mb-2">Planned Features</h4>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-3">
+                      {repositoryContent.plannedFeatures.map((feature, index) => (
+                        <div key={index} className="flex items-center">
+                          <span className="text-status-warning mr-2 flex-shrink-0">•</span>
+                          <span className="text-secondary text-xs">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="border-t border-brand-accent/20 pt-3">
+                      <h4 className="text-sm font-medium text-primary mb-2">Development Vision</h4>
+                      <p className="text-secondary text-xs leading-relaxed">
+                        {repositoryContent.vision}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 

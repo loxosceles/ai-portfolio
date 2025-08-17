@@ -48,6 +48,10 @@ export const GET_DEVELOPER_WITH_PROJECTS = gql`
         }
         archPatterns
         performance
+        repositoryAndDevelopment {
+          plannedFeatures
+          vision
+        }
       }
     }
   }

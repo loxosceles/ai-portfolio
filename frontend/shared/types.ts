@@ -32,6 +32,11 @@ export type TechnicalShowcase = {
   highlights: string[];
 };
 
+export type RepositoryAndDevelopment = {
+  plannedFeatures: string[];
+  vision: string;
+};
+
 export type ProjectType = {
   id: string;
   title: string;
@@ -55,6 +60,7 @@ export type ProjectType = {
   technicalShowcases?: TechnicalShowcase[];
   archPatterns?: string[];
   performance?: string[];
+  repositoryAndDevelopment?: RepositoryAndDevelopment;
   developer: DeveloperType;
   developerId: string;
 };
