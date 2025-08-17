@@ -137,8 +137,9 @@ export default function ProjectDetailSection({
                 </div>
                 <div className="space-y-2">
                   {project.performance?.map((perf, index) => (
-                    <div key={index} className="text-secondary text-sm">
-                      • {perf}
+                    <div key={index} className="flex items-start">
+                      <span className="text-status-warning mr-3 mt-0.5 flex-shrink-0">•</span>
+                      <span className="text-secondary text-sm">{perf}</span>
                     </div>
                   ))}
                 </div>
@@ -151,8 +152,9 @@ export default function ProjectDetailSection({
                 <h3 className="text-xl font-semibold text-primary mb-4">Architecture Patterns</h3>
                 <div className="space-y-2">
                   {project.archPatterns?.map((pattern, index) => (
-                    <div key={index} className="text-secondary text-sm">
-                      • {pattern}
+                    <div key={index} className="flex items-start">
+                      <span className="text-status-warning mr-3 mt-0.5 flex-shrink-0">•</span>
+                      <span className="text-secondary text-sm">{pattern}</span>
                     </div>
                   ))}
                 </div>
