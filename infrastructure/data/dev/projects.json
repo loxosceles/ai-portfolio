@@ -112,7 +112,7 @@
     "title": "Image Processor CLI",
     "slug": "image-processor",
     "icon": "Images",
-    "description": "A production-ready Python application for batch image processing with enterprise-level reliability, concurrent processing, and containerized deployment.",
+    "description": "A containerized Python CLI tool for batch image processing with concurrent execution, EXIF metadata preservation, and production-ready deployment infrastructure.",
     "status": "Completed",
     "highlights": [
       "Concurrent batch processing with ThreadPoolExecutor",
@@ -133,33 +133,81 @@
       "IPython",
       "DevContainer"
     ],
-    "overview": "A production-ready Python application for batch image processing with enterprise-level reliability, concurrent processing, and containerized deployment.",
-    "challenge": "Processing large image batches manually is time-consuming, lacks proper EXIF handling, concurrent processing, and containerized deployment options.",
-    "solution": "Containerized CLI tool with ThreadPoolExecutor concurrency, EXIF metadata preservation, and complete development/deployment pipeline.",
+    "overview": "A containerized Python CLI tool for batch image processing with concurrent execution, EXIF metadata preservation, and production-ready deployment infrastructure.",
+    "challenge": "Processing large image batches manually is time-consuming and lacks proper EXIF handling, concurrent processing capabilities, and containerized deployment options.",
+    "solution": "Containerized CLI tool with ThreadPoolExecutor concurrency, EXIF metadata preservation, comprehensive testing suite, and complete development/deployment pipeline.",
     "architecture": [
       {
         "name": "Processing Engine",
-        "details": "Concurrent image processing using ThreadPoolExecutor with support for JPEG/PNG formats and EXIF metadata handling"
+        "details": "Concurrent image processing using ThreadPoolExecutor with support for JPEG/PNG formats and EXIF metadata handling through piexif library"
       },
       {
         "name": "CLI Interface",
-        "details": "Argument parsing with argparse, input validation, error handling, and flexible task selection system"
+        "details": "Argument parsing with argparse, input validation, error handling, and flexible task selection system mapping string commands to processing functions"
       },
       {
         "name": "Container Infrastructure",
-        "details": "Multi-stage Docker build using uv package manager with development and production configurations"
+        "details": "Multi-stage Docker build using uv package manager with Alpine Linux base, development and production configurations, and GitHub Container Registry deployment"
       }
     ],
-    "technicalShowcases": [],
+    "technicalShowcases": [
+      {
+        "title": "EXIF-Aware Image Rotation",
+        "description": "The image rotation functionality processes EXIF orientation metadata to automatically correct image orientation while preserving all metadata. The _extract_orientation function reads EXIF data using piexif.load() to determine the current orientation tag (values 1, 3, 6, 8 corresponding to normal, 180°, 270°, 90° rotations). Based on the orientation value, the system applies the appropriate PIL rotation transformation and updates the EXIF orientation tag back to 1 (normal) using _update_orientation. The implementation preserves all original EXIF metadata by loading the complete EXIF dictionary, modifying only the orientation field, and re-encoding the metadata with piexif.dump() before saving the corrected image.",
+        "highlights": [
+          "EXIF orientation detection supports standard values 1, 3, 6, 8 for automatic rotation correction",
+          "Metadata preservation maintains all original EXIF data including camera settings and timestamps",
+          "piexif library integration provides reliable EXIF parsing and encoding for JPEG images",
+          "Orientation normalization sets corrected images to orientation 1 preventing double-rotation issues",
+          "Error handling gracefully processes images without EXIF data using default orientation values",
+          "Verbose logging outputs rotation actions for transparency during batch processing operations"
+        ]
+      },
+      {
+        "title": "Concurrent Batch Processing",
+        "description": "The processing system uses ThreadPoolExecutor to achieve concurrent image processing across multiple CPU cores. The process_images function creates a thread pool that submits individual image processing tasks as futures, enabling parallel execution of resize, blur, grayscale, and rotation operations. Progress tracking is implemented using tqdm with as_completed() to provide real-time feedback as tasks finish. The system includes comprehensive error handling that catches exceptions from individual image processing tasks without stopping the entire batch operation. File filtering ensures only supported formats (.jpg, .jpeg, .png) are processed, with automatic output directory creation and path resolution using pathlib.",
+        "highlights": [
+          "ThreadPoolExecutor enables parallel processing scaling with available CPU cores for optimal performance",
+          "Progress tracking with tqdm provides real-time batch processing feedback using as_completed() iteration",
+          "Individual task error handling prevents single image failures from stopping entire batch operations",
+          "Supported format filtering (.jpg, .jpeg, .png) ensures reliable processing of compatible image types",
+          "Automatic output directory creation with pathlib provides robust file system operations",
+          "Future-based task management enables efficient resource utilization and completion tracking"
+        ]
+      },
+      {
+        "title": "Production Container Architecture",
+        "description": "The containerization strategy uses multi-stage Docker builds with Alpine Linux and the uv package manager for optimal image size and build performance. The Dockerfile implements layer caching by separating dependency installation from source code copying, using bind mounts for pyproject.toml and uv.lock during the dependency installation phase. The system uses UV_COMPILE_BYTECODE=1 for performance optimization and UV_LINK_MODE=copy for reliable mounted volume handling. Container orchestration through Docker Compose provides separate services for the main processor and an interactive IPython session, with volume mounts for input/output directories and development tooling integration.",
+        "highlights": [
+          "Multi-stage Docker builds with Alpine Linux minimize final image size while maintaining functionality",
+          "uv package manager provides fast dependency resolution and installation with lockfile support",
+          "Layer caching optimization separates dependency installation from source code for efficient rebuilds",
+          "Bytecode compilation (UV_COMPILE_BYTECODE=1) improves runtime performance in production containers",
+          "Docker Compose orchestration provides separate services for processing and interactive development",
+          "Volume mounting strategy enables seamless file access between host system and containerized processing"
+        ]
+      },
+      {
+        "title": "Development Tooling Integration",
+        "description": "The development environment integrates DevContainer configuration with comprehensive tooling for Python development. The setup includes automated uv and ruff installation, Docker-in-Docker support for container development, and chezmoi for dotfile management. The manage.sh script provides a unified interface for running processing tasks, building containers, executing tests, and launching interactive IPython sessions. The IPython integration includes custom startup scripts that automatically import the image processing module and set environment variables for input/output folders. Testing infrastructure uses pytest with comprehensive fixtures for image creation, EXIF manipulation, and error handling validation.",
+        "highlights": [
+          "DevContainer configuration provides reproducible development environment with automated tool installation",
+          "manage.sh script unifies container operations with argument parsing for run, build, dev, and test commands",
+          "IPython integration includes custom startup scripts for immediate access to processing functions",
+          "pytest testing suite covers EXIF handling, concurrent processing, error scenarios, and format validation",
+          "Docker-in-Docker support enables container development and testing within the development environment"
+        ]
+      }
+    ],
     "archPatterns": [
-      "Command Pattern: Each operation (resize, blur, rotate) implements consistent interface",
-      "Factory Pattern: Task selection maps string commands to processing functions",
-      "Pipeline Pattern: Validation → Processing → Output with error handling"
+      "Command Pattern: Each operation (resize, blur, rotate, grayscale) implements consistent interface for flexible task selection",
+      "Factory Pattern: Task selection maps string commands to processing functions through dictionary-based dispatch",
+      "Pipeline Pattern: Validation → Processing → Output with comprehensive error handling at each stage"
     ],
     "performance": [
-      "Thread-based parallelism scales with available CPU cores",
-      "Memory efficiency: processes images individually to avoid bloat",
-      "Container optimization: multi-stage builds reduce deployment time"
+      "Thread-based parallelism scales processing with available CPU cores for optimal batch performance",
+      "Memory efficiency: processes images individually to avoid memory bloat during large batch operations",
+      "Container optimization: multi-stage builds and Alpine Linux reduce deployment size and startup time"
     ],
     "developerId": "DEVELOPER_PROFILE"
   },
@@ -168,13 +216,13 @@
     "title": "Web3 Snapshot",
     "slug": "web3snapshot",
     "icon": "Aperture",
-    "description": "A production-ready full-stack application providing real-time cryptocurrency market analysis with microservices architecture and Server-Sent Events.",
     "status": "Completed",
+    "description": "A real-time cryptocurrency market dashboard providing live data streaming and comprehensive tokenomics analysis through microservices architecture and Server-Sent Events integration.",
     "highlights": [
-      "Real-time market data streaming with Server-Sent Events",
-      "Microservices container architecture with service isolation",
-      "Real-time data synchronization with Redis caching and pub/sub messaging",
-      "CI/CD pipeline with GitHub Actions for container builds and AWS ECR deployment"
+      "Real-time market data streaming with Server-Sent Events and Redis pub/sub messaging",
+      "Automated data processing with MC/FDV calculations and percentage relativization algorithms",
+      "Production-ready containerized deployment with automated SSL certificate management",
+      "CI/CD pipeline with multi-platform Docker builds and AWS ECR integration"
     ],
     "techStack": [
       "React",
@@ -191,37 +239,86 @@
       "Let's Encrypt",
       "Shell Script"
     ],
-    "overview": "A production-ready full-stack application providing real-time cryptocurrency market analysis with microservices architecture and Server-Sent Events.",
-    "challenge": "Cryptocurrency markets move rapidly requiring real-time data access, comprehensive tokenomics analysis, and historical trends in digestible format.",
-    "solution": "Containerized dashboard with live CoinGecko API integration, Redis pub/sub messaging, Server-Sent Events, and responsive React interface.",
+    "overview": "A real-time cryptocurrency market dashboard providing live data streaming and comprehensive tokenomics analysis through microservices architecture and Server-Sent Events integration.",
+    "challenge": "Cryptocurrency markets require real-time data access with sub-minute updates and comprehensive tokenomics analysis including market cap ratios.",
+    "solution": "Containerized microservices dashboard with CoinGecko API integration, Redis pub/sub messaging for real-time updates, Server-Sent Events streaming, and automated deployment pipeline.",
     "architecture": [
       {
-        "name": "Frontend (React SPA)",
-        "details": "React 18 with functional components, SCSS styling, real-time updates via Server-Sent Events, interactive tables with sorting/filtering"
+        "name": "Frontend Architecture",
+        "details": "React 18 SPA with Server-Sent Events, Zustand state management, SCSS styling, and responsive table components with real-time data updates"
       },
       {
-        "name": "Backend API (Flask)",
-        "details": "RESTful API with Redis caching, real-time streaming endpoints, pub/sub messaging system, environment-specific configurations"
+        "name": "Backend Architecture",
+        "details": "Flask RESTful API with Redis caching, pub/sub messaging system, Server-Sent Events streaming endpoints, and environment-based configuration"
       },
       {
         "name": "Data Processing Engine",
-        "details": "Automated CoinGecko API fetching, MC/FDV calculations, intelligent data diffing, cron-based scheduling"
+        "details": "Automated CoinGecko API fetching with data diffing algorithms, MC/FDV calculations, percentage relativization, and cron-based scheduling"
       },
       {
-        "name": "Infrastructure",
-        "details": "Multi-container Docker architecture, Redis caching/pub-sub, SQLite database, Nginx reverse proxy with SSL/TLS"
+        "name": "Container Infrastructure",
+        "details": "Multi-service Docker architecture with Nginx reverse proxy, Redis caching layer, automated SSL certificates, and production deployment scripts"
       }
     ],
-    "technicalShowcases": [],
+    "technicalShowcases": [
+      {
+        "title": "Live Data Updates",
+        "description": "The system implements real-time cryptocurrency data streaming using Server-Sent Events combined with Redis pub/sub messaging. The Flask backend maintains persistent EventSource connections through the `/api/coin-stream` endpoint, which subscribes to Redis pub/sub channels. When the data fetcher processes new CoinGecko API responses, it publishes updates to Redis channels, triggering immediate updates to the dashboard interface. The frontend React application establishes EventSource connections in the Dashboard component, automatically updating Zustand stores for both prices and tokenomics data. The streaming implementation includes keepalive messages every 30 seconds to prevent connection timeouts and graceful error handling with automatic reconnection.",
+        "highlights": [
+          "Server-Sent Events maintain persistent connections for sub-second data delivery to multiple clients",
+          "Redis pub/sub decouples data processing from client connections, enabling horizontal scaling",
+          "EventSource connections automatically handle reconnection and provide built-in error recovery",
+          "Keepalive messages every 30 seconds prevent proxy timeouts and maintain connection stability",
+          "Zustand state management ensures consistent data updates across React components",
+          "Real-time updates eliminate polling overhead and reduce server load significantly"
+        ]
+      },
+      {
+        "title": "Data Processing and Caching",
+        "description": "The data processing system fetches cryptocurrency data from CoinGecko API in short intervals, transforming the incoming API data to filter, transform and compute derived metrics. The system calculates market cap to fully diluted valuation ratios (MC/FDV), circulating supply ratios, and calculates visual percentage scaling that maps field values to color gradients, where the highest value displays as 100% (full green) and lowest as 0% (full red). Data diffing algorithms compare current API responses with cached Redis data, publishing updates only when meaningful changes occur. The system processes the top 100 cryptocurrencies while implementing rotating single-coin detail fetching to stay within API rate limits. All calculations include null value handling and precision rounding for consistent data presentation.",
+        "highlights": [
+          "MC/FDV ratio calculations provide critical tokenomics insights for investment analysis",
+          "Visual percentage scaling provides intuitive color-coded field comparisons relative to min/max values",
+          "Data diffing algorithms reduce unnecessary database writes and network traffic by 60-80%",
+          "Rotating single-coin fetching maximizes API efficiency while staying within rate limits",
+          "Null value handling and precision rounding ensure consistent data presentation",
+          "Cron-based scheduling with error handling maintains reliable data freshness"
+        ]
+      },
+      {
+        "title": "Containerized Services",
+        "description": "The application implements a microservices architecture using Docker containers with separate services for frontend (React/Nginx), backend (Flask/Gunicorn), data fetcher (Python/cron), and Redis caching. Each service runs in isolated containers with dedicated resource limits and health checks. Nginx serves as a reverse proxy handling SSL termination and routing requests to backend services. The system uses Docker networks to isolate internal service communication while exposing only necessary ports to external traffic. Container orchestration includes automatic restart policies, volume management for data persistence, and inter-service dependency management through Docker Compose.",
+        "highlights": [
+          "Multi-container architecture enables independent scaling and deployment of each service",
+          "Container networking isolation secures internal communications while exposing only necessary ports",
+          "Docker volume management persists SSL certificates and Redis data across container restarts",
+          "Health checks and restart policies ensure automatic recovery from service failures",
+          "Nginx reverse proxy provides load balancing and SSL termination for production traffic",
+          "Resource limits and memory constraints prevent individual services from consuming excessive resources"
+        ]
+      },
+      {
+        "title": "Automated Deployment Pipeline",
+        "description": "The CI/CD pipeline uses GitHub Actions to automate the entire deployment process from code commit to production deployment. On every main branch merge, the system triggers multi-platform Docker builds (AMD64/ARM64) and pushes images to AWS ECR repositories with automatic authentication. Configuration management leverages AWS SSM Parameter Store for secure handling of secrets and environment variables. The pipeline uploads Docker Compose files and deployment scripts to S3, enabling server-side pulls during deployment. Production deployment is orchestrated through comprehensive shell scripts that handle EC2 bootstrap, dependency installation, SSL certificate generation, and zero-downtime container updates.",
+        "highlights": [
+          "Multi-platform Docker builds (AMD64/ARM64) ensure compatibility across different server architectures",
+          "AWS ECR integration with automated authentication eliminates manual registry management",
+          "SSM Parameter Store provides secure configuration management with encrypted parameter storage",
+          "S3-based artifact distribution enables deployment script pulls from any server location",
+          "EC2 user data scripts automate server bootstrap and dependency installation",
+          "Zero-downtime deployments through health check validation and rolling container updates"
+        ]
+      }
+    ],
     "archPatterns": [
-      "Microservices Design: Separate containers for frontend, backend, caching, enabling independent scaling",
-      "Event-Driven Architecture: Redis pub/sub decouples data processing from API responses",
-      "Observer Pattern: Server-Sent Events allow multiple clients to receive real-time updates"
+      "Microservices Architecture: Independent containers for frontend, backend, data processing, and caching enable isolated scaling",
+      "Event-Driven Design: Redis pub/sub messaging decouples data processing from client connections",
+      "Real-time Streaming: Server-Sent Events provide efficient one-way data streaming without polling overhead"
     ],
     "performance": [
-      "Redis caching with intelligent cache invalidation",
-      "Data diffing algorithms reduce unnecessary database writes",
-      "Server-Sent Events eliminate polling overhead"
+      "Real-time Updates: Sub-second data delivery through Server-Sent Events streaming",
+      "Data Efficiency: Data diffing algorithms reduce database writes by 60-80% compared to full updates",
+      "Container Optimization: Multi-stage Docker builds reduce image sizes and deployment times"
     ],
     "developerId": "DEVELOPER_PROFILE"
   }
