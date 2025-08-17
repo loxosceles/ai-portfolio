@@ -25,7 +25,7 @@
       "CDK",
       "TailwindCSS"
     ],
-    "githubUrl": "https: //github.com/example",
+    "githubUrl": "https://github.com/example",
     "overview": "A modern, serverless web application that showcases a developer's professional profile with AI-powered personalization features using Next.js and AWS services.",
     "challenge": "Creating personalized portfolio experiences for recruiters while maintaining cost-effective serverless architecture and seamless user experience.",
     "solution": "Next.js frontend with AWS services backend, featuring AI-powered personalization, invisible authentication, and multi-region deployment strategy.",
@@ -143,7 +143,7 @@
       "IPython",
       "DevContainer"
     ],
-    "githubUrl": "https: //github.com/example",
+    "githubUrl": "https://github.com/example",
     "overview": "A containerized Python CLI tool for batch image processing with concurrent execution, EXIF metadata preservation, and production-ready deployment infrastructure.",
     "challenge": "Processing large image batches manually is time-consuming and lacks proper EXIF handling, concurrent processing capabilities, and containerized deployment options.",
     "solution": "Containerized CLI tool with ThreadPoolExecutor concurrency, EXIF metadata preservation, comprehensive testing suite, and complete development/deployment pipeline.",
@@ -259,7 +259,7 @@
       "Let's Encrypt",
       "Shell Script"
     ],
-    "githubUrl": "https: //github.com/example",
+    "githubUrl": "https://github.com/example",
     "overview": "A real-time cryptocurrency market dashboard providing live data streaming and comprehensive tokenomics analysis through microservices architecture and Server-Sent Events integration.",
     "challenge": "Cryptocurrency markets require real-time data access with sub-minute updates and comprehensive tokenomics analysis including market cap ratios.",
     "solution": "Containerized microservices dashboard with CoinGecko API integration, Redis pub/sub messaging for real-time updates, Server-Sent Events streaming, and automated deployment pipeline.",
