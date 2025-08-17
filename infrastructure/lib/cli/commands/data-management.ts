@@ -100,6 +100,54 @@ function validateProject(project: Partial<IProject>): boolean {
     throw new Error('Project techStack must be an array');
   }
 
+  // Validate architecture structure
+  if (project.architecture && Array.isArray(project.architecture)) {
+    for (const archItem of project.architecture) {
+      if (typeof archItem !== 'object' || archItem === null) {
+        throw new Error('Architecture items must be objects');
+      }
+
+      if (!archItem.name || typeof archItem.name !== 'string' || archItem.name.trim() === '') {
+        throw new Error('Architecture item name is required and must be a non-empty string');
+      }
+
+      if (
+        !archItem.details ||
+        typeof archItem.details !== 'string' ||
+        archItem.details.trim() === ''
+      ) {
+        throw new Error('Architecture item details is required and must be a non-empty string');
+      }
+    }
+  }
+
+  // Validate technicalShowcases structure
+  if (project.technicalShowcases && Array.isArray(project.technicalShowcases)) {
+    for (const showcase of project.technicalShowcases) {
+      if (typeof showcase !== 'object' || showcase === null) {
+        throw new Error('Technical showcase items must be objects');
+      }
+
+      if (!showcase.title || typeof showcase.title !== 'string' || showcase.title.trim() === '') {
+        throw new Error('Technical showcase title is required and must be a non-empty string');
+      }
+
+      if (
+        !showcase.description ||
+        typeof showcase.description !== 'string' ||
+        showcase.description.trim() === ''
+      ) {
+        throw new Error(
+          'Technical showcase description is required and must be a non-empty string'
+        );
+      }
+
+      if (!Array.isArray(showcase.highlights)) {
+        throw new Error('Technical showcase highlights must be an array');
+      }
+    }
+  }
+
   if (!project.developerId) {
     throw new Error('Project developerId is required');
   }
