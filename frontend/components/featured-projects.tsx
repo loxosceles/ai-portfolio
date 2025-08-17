@@ -47,7 +47,7 @@ function FeaturedProjects({ id, developer, onNavigate }: FeaturedProjectsProps) 
               <div className="grid grid-rows-[auto_min-content_1fr]">
                 <p className="text-secondary mb-6">{project.description}</p>
                 <div className="h-full overflow-y-auto mb-2">
-                  <div className="flex flex-wrap gap-2 mt-auto">
+                  <div className="flex flex-wrap gap-2 mt-auto mb-4">
                     {project.techStack?.map((tech, techIndex) => (
                       <span key={techIndex} className="px-2 py-1 tech-tag rounded text-xs">
                         {tech}
