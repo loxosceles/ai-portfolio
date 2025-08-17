@@ -21,17 +21,17 @@
       {
         "id": "skill-2",
         "name": "Backend",
-        "skills": ["Node.js", "Express", "Python", "Django"]
+        "skills": ["Node.js", "Serverless", "FastAPI", "Flask"]
       },
       {
         "id": "skill-3",
         "name": "Database",
-        "skills": ["PostgreSQL", "MongoDB", "Redis", "Memcached"]
+        "skills": ["PostgreSQL", "MongoDB", "DynamoDB", "Redis"]
       },
       {
         "id": "skill-4",
         "name": "DevOps",
-        "skills": ["Docker", "Kubernetes", "AWS", "CI/CD"]
+        "skills": ["Docker", "Linux Shell", "AWS", "CI/CD"]
       }
     ]
   }
