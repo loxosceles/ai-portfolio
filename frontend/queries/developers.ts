@@ -21,17 +21,37 @@ export const GET_DEVELOPER_WITH_PROJECTS = gql`
       projects {
         id
         title
+        slug
         description
         status
         highlights
-        tech
+        techStack
         githubUrl
         liveUrl
         imageUrl
+        icon
         startDate
         endDate
         featured
         order
+        overview
+        challenge
+        solution
+        architecture {
+          name
+          details
+        }
+        technicalShowcases {
+          title
+          description
+          highlights
+        }
+        archPatterns
+        performance
+        repositoryAndDevelopment {
+          plannedFeatures
+          vision
+        }
       }
     }
   }

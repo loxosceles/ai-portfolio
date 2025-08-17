@@ -3,10 +3,11 @@ export type DeveloperType = {
   name: string;
   title: string;
   bio?: string;
-  email?: string;
+  email: string;
   website?: string;
-  github?: string;
-  linkedin?: string;
+  github: string;
+  linkedin: string;
+  telegram?: string;
   location?: string;
   yearsOfExperience?: number;
   skillSets?: SkillSetType[];
@@ -20,20 +21,46 @@ type SkillSetType = {
   skills: string[];
 };
 
+export type ArchitectureItem = {
+  name: string;
+  details: string;
+};
+
+export type TechnicalShowcase = {
+  title: string;
+  description: string;
+  highlights: string[];
+};
+
+export type RepositoryAndDevelopment = {
+  plannedFeatures: string[];
+  vision: string;
+};
+
 export type ProjectType = {
   id: string;
   title: string;
+  slug: string;
   description: string;
   status: string;
   highlights?: string[];
-  tech?: string[];
+  techStack?: string[];
   githubUrl?: string;
   liveUrl?: string;
   imageUrl?: string;
+  icon?: string;
   startDate?: string;
   endDate?: string;
   featured?: boolean;
   order?: number;
+  overview?: string;
+  challenge?: string;
+  solution?: string;
+  architecture?: ArchitectureItem[];
+  technicalShowcases?: TechnicalShowcase[];
+  archPatterns?: string[];
+  performance?: string[];
+  repositoryAndDevelopment?: RepositoryAndDevelopment;
   developer: DeveloperType;
   developerId: string;
 };
@@ -69,10 +96,11 @@ export type UpdateDeveloperInputType = {
 
 export type CreateProjectInputType = {
   title: string;
+  slug: string;
   description: string;
   status: string;
   highlights?: string[];
-  tech?: string[];
+  techStack?: string[];
   githubUrl?: string;
   liveUrl?: string;
   imageUrl?: string;
@@ -86,10 +114,11 @@ export type CreateProjectInputType = {
 export type UpdateProjectInputType = {
   id: string;
   title?: string;
+  slug?: string;
   description?: string;
   status?: string;
   highlights?: string[];
-  tech?: string[];
+  techStack?: string[];
   githubUrl?: string;
   liveUrl?: string;
   imageUrl?: string;

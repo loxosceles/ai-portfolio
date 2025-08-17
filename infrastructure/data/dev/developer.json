@@ -6,8 +6,9 @@
     "bio": "Experienced full-stack developer with a passion for clean code",
     "email": "john.doe@example.com",
     "website": "https://johndoe.dev",
-    "github": "johndoe",
-    "linkedin": "johndoe-dev",
+    "github": "https://github.com/vercel",
+    "linkedin": "https://linkedin.com/company/vercel",
+    "telegram": "https://t.me/vercel",
     "location": "San Francisco, CA",
     "yearsOfExperience": 8,
     "isActive": true,
@@ -20,17 +21,17 @@
       {
         "id": "skill-2",
         "name": "Backend",
-        "skills": ["Node.js", "Express", "Python", "Django"]
+        "skills": ["Node.js", "Serverless", "FastAPI", "Flask"]
       },
       {
         "id": "skill-3",
         "name": "Database",
-        "skills": ["PostgreSQL", "MongoDB", "Redis", "Memcached"]
+        "skills": ["PostgreSQL", "MongoDB", "DynamoDB", "Redis"]
       },
       {
         "id": "skill-4",
         "name": "DevOps",
-        "skills": ["Docker", "Kubernetes", "AWS", "CI/CD"]
+        "skills": ["Docker", "Linux Shell", "AWS", "CI/CD"]
       }
     ]
   }

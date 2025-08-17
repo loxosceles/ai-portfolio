@@ -4,33 +4,100 @@ import React, { useEffect, useState } from 'react';
 import HeroSection from '@/components/hero-section';
 import FeaturedProjects from '@/components/featured-projects';
 import SkillsSection from '@/components/skills-section';
+import ContactSection from '@/components/contact-section';
 import Footer from '@/components/footer';
-import Header from '@/components/header';
 import { setDevelopmentCookies } from '@/utils/dev-cookies';
-import MainContent from '@/components/main-content';
-import AuthDebug from '@/components/auth-debug';
 import { GET_DEVELOPER_WITH_PROJECTS } from '@/queries/developers';
 import { useQuery } from '@apollo/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cookieAuth } from '@/lib/auth/cookie-auth';
-import { isLocalEnvironment, getEnvironment } from '@/lib/auth/auth-utils';
+import { isLocalEnvironment } from '@/lib/auth/auth-utils';
+import ProjectDetailSection from '@/components/project-detail-section';
+import FloatingNavigation from '@/components/floating-navigation';
+import AutoHideHeader from '@/components/auto-hide-header';
+import TransitionManager from '@/components/transition-manager';
+import { ProjectType } from '@/shared/types';
+
+// Helper function to generate section list dynamically
+const generateSectionList = (projects: ProjectType[] = []): string[] => {
+  const baseSections = ['hero', 'featured', 'skills'];
+  const projectSections =
+    projects.length > 0
+      ? projects.map((p) => p.slug)
+      : ['ai-portfolio', 'image-processor', 'web3snapshot'];
+  return [...baseSections, ...projectSections, 'contact'];
+};
 
 const Portfolio = () => {
   const [isChecking, setIsChecking] = useState(true);
+  const [targetSection, setTargetSection] = useState('hero');
+  const [scrollSection, setScrollSection] = useState('hero');
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [projects, setProjects] = useState<ProjectType[]>([]);
   const { getQueryContext } = useAuth();
 
   const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
     context: getQueryContext('public'),
-    onCompleted: (data: { getDeveloper: { name: string } }) => {
-      if (isLocalEnvironment()) {
-        // eslint-disable-next-line no-console
-        console.log('Developer data:', data);
-      }
+    onCompleted: (data: { getDeveloper: { projects?: ProjectType[] } }) => {
+      setProjects(data.getDeveloper?.projects || []);
     },
     onError: (error: Error) => {
       console.error('Query error:', error);
     }
   });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isNavigating) return;
+
+      // Special case: if we're near the top, always show hero
+      if (window.scrollY < 100) {
+        setScrollSection('hero');
+        return;
+      }
+
+      // Check if at bottom of page
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 10) {
+        setScrollSection('contact');
+        return;
+      }
+
+      const sections = generateSectionList(projects);
+      const viewportCenter = window.innerHeight / 2;
+      let closestSection = 'hero';
+      let closestDistance = Infinity;
+
+      for (const sectionId of sections) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const sectionCenter = rect.top + rect.height / 2;
+          const distance = Math.abs(sectionCenter - viewportCenter);
+
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestSection = sectionId;
+          }
+        }
+      }
+
+      setScrollSection(closestSection);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isNavigating, projects]);
+
+  const handleNavigation = (sectionId: string) => {
+    setIsNavigating(true);
+    setTargetSection(sectionId);
+    setTimeout(() => {
+      setScrollSection(sectionId);
+      setIsNavigating(false);
+    }, 1000);
+  };
+
+  const activeSection = isNavigating ? targetSection : scrollSection;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -59,40 +126,70 @@ const Portfolio = () => {
   const developer = data?.getDeveloper || {};
 
   return (
-    <div className="min-h-screen gradient-bg">
-      {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />}
-      {/* Header */}
-      <header className="fixed top-0 w-full bg-surface-medium bg-opacity-80 backdrop-blur-sm border-b border-subtle z-50">
-        <Header developer={developer} />
-      </header>
+    <>
+      <FloatingNavigation
+        projects={developer.projects || []}
+        activeSection={activeSection}
+        onActiveSectionChange={handleNavigation}
+      />
+      <AutoHideHeader
+        developer={developer}
+        projects={developer.projects || []}
+        activeSection={activeSection}
+        onActiveSectionChange={handleNavigation}
+      />
+      <div className="min-h-screen gradient-bg pt-20 overscroll-none md:px-20">
+        {/* {(isLocalEnvironment() || getEnvironment() === 'dev') && <AuthDebug />} */}
 
-      {/* Hero Section */}
-      <section className="pt-24 pb-16 px-6">
-        <HeroSection developer={developer} />
-      </section>
+        <TransitionManager targetSection={targetSection}>
+          <HeroSection id="hero" developer={developer} />
+          <FeaturedProjects id="featured" developer={developer} onNavigate={handleNavigation} />
+          <SkillsSection id="skills" developer={developer} />
+          {(projects.length > 0
+            ? projects
+            : [
+                {
+                  id: 'ai-portfolio',
+                  title: 'AI Portfolio',
+                  slug: 'ai-portfolio',
+                  description: 'Serverless web application with AI-powered personalization',
+                  status: 'active',
+                  developer: developer,
+                  developerId: developer.id || 'default-dev'
+                } as ProjectType,
+                {
+                  id: 'image-processor',
+                  title: 'Image Processor CLI',
+                  slug: 'image-processor',
+                  description: 'Production-ready Python application for batch image processing',
+                  status: 'active',
+                  developer: developer,
+                  developerId: developer.id || 'default-dev'
+                } as ProjectType,
+                {
+                  id: 'web3snapshot',
+                  title: 'Web3 Snapshot Dashboard',
+                  slug: 'web3snapshot',
+                  description: 'Real-time cryptocurrency market analysis application',
+                  status: 'active',
+                  developer: developer,
+                  developerId: developer.id || 'default-dev'
+                } as ProjectType
+              ]
+          ).map((project, index) => (
+            <ProjectDetailSection
+              key={project.id}
+              id={project.slug}
+              project={project}
+              backgroundIndex={index}
+            />
+          ))}
+          <ContactSection id="contact" developer={developer} />
+        </TransitionManager>
 
-      {/* Projects Section */}
-      <section className="py-16 px-6 bg-glass-light">
-        <div className="container mx-auto">
-          <FeaturedProjects developer={developer} />
-        </div>
-      </section>
-
-      {/* Skills Section */}
-      <section className="py-16 px-6">
-        <SkillsSection developer={developer} />
-      </section>
-
-      {/* Contact Section */}
-      <section className="py-16 px-6 bg-glass-light">
-        <MainContent developer={developer} />
-      </section>
-
-      {/* Footer */}
-      <footer className="py-8 px-6 border-t border-subtle">
         <Footer developer={developer} />
-      </footer>
-    </div>
+      </div>
+    </>
   );
 };
 

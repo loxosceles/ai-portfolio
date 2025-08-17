@@ -17,19 +17,45 @@ type Developer @aws_iam @aws_cognito_user_pools @aws_api_key {
 type Project @aws_iam @aws_cognito_user_pools @aws_api_key {
   id: ID!
   title: String!
+  slug: String!
   description: String!
   status: String!
   highlights: [String]
-  tech: [String]
+  techStack: [String]
   githubUrl: String
   liveUrl: String
   imageUrl: String
+  icon: String
   startDate: AWSDateTime
   endDate: AWSDateTime
   featured: Boolean
   order: Int
+  overview: String
+  challenge: String
+  solution: String
+  architecture: [ArchitectureItem]
+  technicalShowcases: [TechnicalShowcase]
+  archPatterns: [String]
+  performance: [String]
+  repositoryAndDevelopment: RepositoryAndDevelopment
   developer: Developer! @belongsTo(fields: ["developerId"])
   developerId: ID!
+}
+
+type ArchitectureItem @aws_iam @aws_cognito_user_pools @aws_api_key {
+  name: String!
+  details: String!
+}
+
+type TechnicalShowcase @aws_iam @aws_cognito_user_pools @aws_api_key {
+  title: String!
+  description: String!
+  highlights: [String]!
+}
+
+type RepositoryAndDevelopment @aws_iam @aws_cognito_user_pools @aws_api_key {
+  plannedFeatures: [String]!
+  vision: String!
 }
 
 type SkillSet @aws_iam @aws_cognito_user_pools @aws_api_key {
@@ -86,13 +112,15 @@ input UpdateDeveloperInput {
 
 input CreateProjectInput {
   title: String!
+  slug: String!
   description: String!
   status: String!
   highlights: [String]
-  tech: [String]
+  techStack: [String]
   githubUrl: String
   liveUrl: String
   imageUrl: String
+  icon: String
   startDate: AWSDateTime
   endDate: AWSDateTime
   featured: Boolean
@@ -103,13 +131,15 @@ input CreateProjectInput {
 input UpdateProjectInput {
   id: ID!
   title: String
+  slug: String
   description: String
   status: String
   highlights: [String]
-  tech: [String]
+  techStack: [String]
   githubUrl: String
   liveUrl: String
   imageUrl: String
+  icon: String
   startDate: AWSDateTime
   endDate: AWSDateTime
   featured: Boolean
