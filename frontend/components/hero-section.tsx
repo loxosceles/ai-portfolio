@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
-import ProjectPreview from '@/components/project-preview';
 import { MessageCircle } from 'lucide-react';
 import { GitHubIcon } from '@/components/icons';
 import { DeveloperType } from '@/shared/types';
@@ -52,9 +51,6 @@ function HeroSection({ id, developer }: HeroSectionProps) {
         </div>
         {/* AI Question Modal */}
         {showAIQuestion && <AIQuestion onClose={() => setShowAIQuestion(false)} />}
-
-        {/* AI System Preview */}
-        <ProjectPreview />
       </div>
     </section>
   );

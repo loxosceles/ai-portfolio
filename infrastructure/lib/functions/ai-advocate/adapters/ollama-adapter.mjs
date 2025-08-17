@@ -9,7 +9,7 @@ export class OllamaAdapter extends ModelAdapter {
       prompt: prompt,
       model: config.model || 'llama2',
       options: {
-        temperature: config.temperature || 0.7,
+        temperature: config.temperature || 0.3,
         top_p: config.topP || 0.9,
         max_tokens: config.maxTokens || 300
       }

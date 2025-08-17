@@ -17,6 +17,15 @@ export interface IProject {
   status: ProjectStatus;
   highlights: string[];
   techStack: string[];
+  architecture?: Array<{
+    name: string;
+    details: string;
+  }>;
+  technicalShowcases?: Array<{
+    title: string;
+    description: string;
+    highlights: string[];
+  }>;
   imageUrl?: string;
   icon?: string;
   developerId: string;

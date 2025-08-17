@@ -123,7 +123,7 @@ const payload = adapter.formatPrompt(
   },
   {
     maxTokens: 300,
-    temperature: 0.7,
+    temperature: 0.3,
     topP: 0.9
   }
 );

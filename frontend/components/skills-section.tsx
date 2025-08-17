@@ -10,7 +10,7 @@ function SkillsSection({ id, developer }: SkillsSectionProps) {
 
   return (
     <section id={id} className="py-16 px-6">
-      <div className="container mx-auto">
+      <div className="container mx-auto max-w-7xl">
         <h2 className="text-4xl font-bold text-primary text-center mb-12">Technical Skills</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {skillSets?.map((skillSet) => (
