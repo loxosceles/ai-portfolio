@@ -12,10 +12,55 @@ interface IAIQuestionProps {
 }
 
 export default function AIQuestion({ onClose }: IAIQuestionProps) {
+  const { isAuthenticated, environment } = useAuth();
+
+  // If not authenticated, show friendly message
+  if (!isAuthenticated) {
+    return (
+      <div
+        className="fixed inset-0 flex items-center justify-center z-[9999]"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(3px)' }}
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <div className="w-full max-w-md mx-4 p-6 bg-surface-medium rounded-lg shadow-2xl animate-fadeIn border border-brand-accent border-opacity-30">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-brand-accent">AI Feature for Recruiters</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-brand-accent focus:outline-none transition-colors"
+              aria-label="Close modal"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="text-primary space-y-4 text-left">
+            <p>
+              This AI-powered Q&A feature is available for recruiters with personalized access
+              links.
+            </p>
+            <p>
+              If you're curious to try it out, please use the contact information at the bottom of
+              the page to reach out. You'll be provided with a personalized link shortly.
+            </p>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={onClose}
+              className="btn-primary py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-brand-accent"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const [question, setQuestion] = useState('');
   // Check for local interception first
   const interceptor = useLocalRequestInterceptor();
-  const { environment } = useAuth();
   const isLocal = environment === 'local';
 
   // Always call both hooks but only use the appropriate one
