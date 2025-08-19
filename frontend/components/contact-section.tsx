@@ -3,6 +3,14 @@ import Link from 'next/link';
 import { TelegramIcon, LinkedInIcon } from '@/components/icons';
 import { DeveloperType } from '@/shared/types';
 
+const isValidLinkedInUrl = (url: string): boolean => {
+  return url.startsWith('https://linkedin.com/') || url.startsWith('https://www.linkedin.com/');
+};
+
+const isValidTelegramUrl = (url: string): boolean => {
+  return url.startsWith('https://t.me/');
+};
+
 interface ContactSectionProps {
   id?: string;
   developer: DeveloperType;
@@ -31,7 +39,7 @@ function ContactSection({ id, developer }: ContactSectionProps) {
               <span>Send Email</span>
             </a>
           )}
-          {linkedin && (
+          {linkedin && isValidLinkedInUrl(linkedin) && (
             <Link
               href={linkedin}
               target="_blank"
@@ -42,7 +50,7 @@ function ContactSection({ id, developer }: ContactSectionProps) {
               <span>LinkedIn</span>
             </Link>
           )}
-          {telegram && (
+          {telegram && isValidTelegramUrl(telegram) && (
             <Link
               href={telegram}
               target="_blank"
