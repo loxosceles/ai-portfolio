@@ -7,6 +7,7 @@ type Developer @aws_iam @aws_cognito_user_pools @aws_api_key {
   website: String
   github: String
   linkedin: String
+  telegram: String
   location: String
   yearsOfExperience: Int
   skillSets: [SkillSet]
@@ -104,6 +105,7 @@ input UpdateDeveloperInput {
   website: String
   github: String
   linkedin: String
+  telegram: String
   location: String
   yearsOfExperience: Int
   skills: [String]

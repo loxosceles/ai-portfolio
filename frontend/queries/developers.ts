@@ -8,6 +8,7 @@ export const GET_DEVELOPER_WITH_PROJECTS = gql`
       title
       github
       linkedin
+      telegram
       website
       bio
       email
