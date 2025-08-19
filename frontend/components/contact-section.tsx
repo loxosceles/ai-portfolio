@@ -22,31 +22,37 @@ function ContactSection({ id, developer }: ContactSectionProps) {
           className="flex flex-col sm:flex-row
           justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6"
         >
-          <a
-            href={`mailto:${email}`}
-            className="flex items-center justify-center space-x-2 btn-primary px-6 py-3 rounded-lg w-[160px] whitespace-nowrap"
-          >
-            <Mail className="h-5 w-5" />
-            <span>Send Email</span>
-          </a>
-          <Link
-            href={linkedin.startsWith('http') ? linkedin : `https://linkedin.com/${linkedin}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center space-x-2 btn-primary px-6 py-3 rounded-lg w-[160px] whitespace-nowrap"
-          >
-            <LinkedInIcon className="h-5 w-5" />
-            <span>LinkedIn</span>
-          </Link>
-          <Link
-            href={telegram?.startsWith('http') ? telegram : `https://t.me/${telegram}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center space-x-2 btn-primary px-6 py-3 rounded-lg w-[160px] whitespace-nowrap"
-          >
-            <TelegramIcon className="h-5 w-5" />
-            <span>Telegram</span>
-          </Link>
+          {email && (
+            <a
+              href={`mailto:${email}`}
+              className="flex items-center justify-center space-x-2 btn-primary px-6 py-3 rounded-lg w-[160px] whitespace-nowrap"
+            >
+              <Mail className="h-5 w-5" />
+              <span>Send Email</span>
+            </a>
+          )}
+          {linkedin && (
+            <Link
+              href={linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center space-x-2 btn-primary px-6 py-3 rounded-lg w-[160px] whitespace-nowrap"
+            >
+              <LinkedInIcon className="h-5 w-5" />
+              <span>LinkedIn</span>
+            </Link>
+          )}
+          {telegram && (
+            <Link
+              href={telegram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center space-x-2 btn-primary px-6 py-3 rounded-lg w-[160px] whitespace-nowrap"
+            >
+              <TelegramIcon className="h-5 w-5" />
+              <span>Telegram</span>
+            </Link>
+          )}
         </div>
       </div>
     </section>
