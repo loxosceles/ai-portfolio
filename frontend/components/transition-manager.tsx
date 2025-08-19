@@ -34,23 +34,10 @@ export default function TransitionManager({ targetSection, children }: Transitio
       }
     };
 
-    const handleClick = (e: MouseEvent) => {
-      // Check if click is on an external link (target="_blank")
-      const clickedElement = e.target as HTMLElement;
-      const linkElement = clickedElement.closest('a');
-      const isExternalLink = linkElement && linkElement.getAttribute('target') === '_blank';
-
-      if (globalTransitionPhase !== 'normal' && !isExternalLink) {
-        setGlobalTransitionPhase('normal');
-      }
-    };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('click', handleClick, { passive: true });
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('click', handleClick);
     };
   }, [globalTransitionPhase]);
 
