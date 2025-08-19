@@ -50,7 +50,7 @@ export default function ProjectDetailSection({
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-primary mb-4 flex items-center justify-center">
             <span className="mr-3 text-status-warning">
-              <ProjectIcon project={project} className="h-8 w-8" />
+              <ProjectIcon project={project} className="h-10 w-10" />
             </span>
             {project.title}
           </h2>

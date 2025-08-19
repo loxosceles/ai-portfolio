@@ -10,7 +10,10 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: "Magnus Henkel's Developer Portfolio",
-  description: 'A showcase of my projects, skills, and experience as a developer.'
+  description: 'A showcase of my projects, skills, and experience as a developer.',
+  icons: {
+    icon: '/favicon.svg'
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
