@@ -1,13 +1,24 @@
-import * as LucideIcons from 'lucide-react';
-import { LucideIcon } from 'lucide-react';
+import { ParenthesesInitialsIcon, ImagesIcon, ApertureIcon } from '@/components/icons';
+import { ComponentType } from 'react';
 
-const isValidLucideIcon = (icon: unknown): icon is LucideIcon => {
-  return typeof icon === 'function';
+interface IconProps {
+  className?: string;
+}
+
+type IconComponent = ComponentType<IconProps>;
+
+const iconMap: Record<string, IconComponent> = {
+  ParenthesesInitials: ParenthesesInitialsIcon,
+  KeyboardCircle: ParenthesesInitialsIcon, // Fallback for old data
+  Bot: ParenthesesInitialsIcon, // Fallback for old data
+  Images: ImagesIcon,
+  Aperture: ApertureIcon
 };
 
-export const useProjectIcon = (iconName?: string): LucideIcon | null => {
-  if (!iconName) return null;
-
-  const icon = LucideIcons[iconName as keyof typeof LucideIcons];
-  return isValidLucideIcon(icon) ? icon : null;
+export const useProjectIcon = (iconName?: string): IconComponent | null => {
+  if (!iconName) {
+    return null;
+  }
+  const icon = iconMap[iconName];
+  return icon || null;
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Terminal, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { DeveloperType, ProjectType } from '@/shared/types';
+import { ParenthesesInitialsIcon } from './icons';
 
 interface HeaderProps {
   developer: DeveloperType;
@@ -41,7 +42,7 @@ function Header({ projects = [], activeSection, onActiveSectionChange }: HeaderP
     <nav className="container mx-auto px-6 py-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <Terminal className="h-8 w-8 text-brand-accent" />
+          <ParenthesesInitialsIcon className="h-8 w-8 text-brand-accent" />
         </div>
         <div className="hidden md:flex space-x-8">
           <button

@@ -3,7 +3,7 @@
     "id": "proj-1",
     "title": "AI-Powered Portfolio",
     "slug": "ai-portfolio",
-    "icon": "Bot",
+    "icon": "ParenthesesInitials",
     "description": "A modern, serverless web application that showcases a developer's professional profile with AI-powered personalization features using Next.js and AWS services.",
     "status": "Active",
     "highlights": [
