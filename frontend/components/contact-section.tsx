@@ -24,16 +24,16 @@ function ContactSection({ id, developer }: ContactSectionProps) {
         >
           <a
             href={`mailto:${email}`}
-            className="flex items-center space-x-2 btn-primary px-6 py-3 rounded-lg"
+            className="flex items-center justify-center space-x-2 btn-primary px-6 py-3 rounded-lg w-[160px] whitespace-nowrap"
           >
             <Mail className="h-5 w-5" />
-            <span>{email}</span>
+            <span>Send Email</span>
           </a>
           <Link
             href={linkedin.startsWith('http') ? linkedin : `https://linkedin.com/${linkedin}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-2 btn-primary px-6 py-3 rounded-lg"
+            className="flex items-center justify-center space-x-2 btn-primary px-6 py-3 rounded-lg w-[160px] whitespace-nowrap"
           >
             <LinkedInIcon className="h-5 w-5" />
             <span>LinkedIn</span>
@@ -42,7 +42,7 @@ function ContactSection({ id, developer }: ContactSectionProps) {
             href={telegram?.startsWith('http') ? telegram : `https://t.me/${telegram}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-2 btn-primary px-6 py-3 rounded-lg"
+            className="flex items-center justify-center space-x-2 btn-primary px-6 py-3 rounded-lg w-[160px] whitespace-nowrap"
           >
             <TelegramIcon className="h-5 w-5" />
             <span>Telegram</span>
