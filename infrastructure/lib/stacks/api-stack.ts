@@ -231,10 +231,17 @@ export class ApiStack extends cdk.Stack {
     developerTable.grantWriteData(dataLoaderLambda);
     projectsTable.grantWriteData(dataLoaderLambda);
 
+    // Create log group for data loader provider
+    const dataLoaderLogGroup = new logs.LogGroup(this, 'DataLoaderProviderLogGroup', {
+      logGroupName: `/aws/lambda/data-loader-provider-${this.stage}`,
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: cdk.RemovalPolicy.DESTROY
+    });
+
     // Create a custom resource to trigger the Lambda during deployment
     const dataLoaderProvider = new cr.Provider(this, 'DataLoaderProvider', {
       onEventHandler: dataLoaderLambda,
-      logRetention: logs.RetentionDays.ONE_WEEK
+      logGroup: dataLoaderLogGroup
     });
 
     // Create the custom resource

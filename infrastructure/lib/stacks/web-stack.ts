@@ -6,6 +6,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 import { addStackOutputs } from './stack-helpers';
 import * as path from 'path';
@@ -120,6 +121,13 @@ export class WebStack extends cdk.Stack {
       })
     );
 
+    // Create log group for visitor context function
+    const visitorContextLogGroup = new logs.LogGroup(this, 'VisitorContextLogGroup', {
+      logGroupName: `/aws/lambda/visitor-context-${this.stage}`,
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: cdk.RemovalPolicy.DESTROY
+    });
+
     // Create the Lambda@Edge function using environment-specific directory
     const visitorContextFunction = new cloudfront.experimental.EdgeFunction(
       this,
@@ -136,7 +144,7 @@ export class WebStack extends cdk.Stack {
         timeout: cdk.Duration.seconds(5),
         memorySize: 128,
         description: `Adds visitor context headers for ${this.stage} environment`,
-        logRetention: cdk.aws_logs.RetentionDays.ONE_WEEK
+        logGroup: visitorContextLogGroup
       }
     );
 
