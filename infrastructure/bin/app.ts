@@ -9,7 +9,39 @@ import { PipelineStack } from '../lib/stacks/pipeline-stack';
 import { EnvironmentManager } from '../lib/core/env-manager';
 import { stackManagerConfig } from '../configs/stack-config';
 
-// Environment manager handles loading environment variables
+// Centralized table name management
+interface TableConfig {
+  name: string;
+  constructId: string;
+}
+
+interface TableNames {
+  visitorLinks: TableConfig;
+  recruiterProfiles: TableConfig;
+  developers: TableConfig;
+  projects: TableConfig;
+}
+
+function generateTableNames(stage: string): TableNames {
+  return {
+    visitorLinks: {
+      name: `PortfolioVisitorLinks-${stage}`,
+      constructId: 'PortfolioVisitorLinksTable'
+    },
+    recruiterProfiles: {
+      name: `PortfolioRecruiterProfiles-${stage}`,
+      constructId: 'PortfolioRecruiterProfilesTable'
+    },
+    developers: {
+      name: `PortfolioDevelopers-${stage}`,
+      constructId: 'PortfolioDevelopersTable'
+    },
+    projects: {
+      name: `PortfolioProjects-${stage}`,
+      constructId: 'PortfolioProjectsTable'
+    }
+  };
+}
 
 const app = new cdk.App();
 
@@ -22,34 +54,47 @@ const env = {
 // Get environment manager
 const envManager = new EnvironmentManager(stackManagerConfig);
 
+// Generate table names once
+const tableNames = generateTableNames(envManager.getStage());
+
 // Create shared infrastructure
 const sharedStack = new SharedStack(app, `PortfolioSharedStack-${envManager.getStage()}`, {
   env,
   stackEnv: envManager.getStackEnv('shared')
 });
 
-// Create combined website stack in us-east-1 first to get the CloudFront domain
-new WebStack(app, `PortfolioWebStack-${envManager.getStage()}`, {
+// Create combined website stack with explicit table names
+const webStack = new WebStack(app, `PortfolioWebStack-${envManager.getStage()}`, {
   env: {
     account: env.account,
     region: 'us-east-1' // Lambda@Edge must be in us-east-1
   },
-  stackEnv: envManager.getStackEnv('web')
+  stackEnv: envManager.getStackEnv('web'),
+  tableNames: {
+    visitorLinks: tableNames.visitorLinks
+  }
 });
 
-// Create API stack
+// Create API stack with explicit table names
 const apiStack = new ApiStack(app, `PortfolioApiStack-${envManager.getStage()}`, {
   env,
   userPool: sharedStack.userPool,
-  stackEnv: envManager.getStackEnv('api')
+  stackEnv: envManager.getStackEnv('api'),
+  tableNames: {
+    developers: tableNames.developers,
+    projects: tableNames.projects
+  }
 });
 
-// Create AI Advocate stack
+// Create AI Advocate stack with explicit table names
 const aiAdvocateStack = new AIAdvocateStack(app, `AIAdvocateStack-${envManager.getStage()}`, {
   env,
   developerTable: apiStack.developerTable,
   projectsTable: apiStack.projectsTable,
-  stackEnv: envManager.getStackEnv('aiAdvocate')
+  stackEnv: envManager.getStackEnv('aiAdvocate'),
+  tableNames: {
+    recruiterProfiles: tableNames.recruiterProfiles
+  }
 });
 
 // Create pipeline stacks (separate from application deployment)
