@@ -35,6 +35,10 @@ export interface ITestStackEnv extends IStackEnv {
   prodVar?: string;
 }
 
+export interface ILinkGeneratorStackEnv extends IStackEnv {
+  // No additional environment variables needed
+}
+
 /**
  * Type mapping for stack environment inference
  */
@@ -45,4 +49,5 @@ export interface StackEnvMap {
   shared: ISharedStackEnv;
   pipeline: IPipelineStackEnv;
   testStack: ITestStackEnv;
+  linkGenerator: ILinkGeneratorStackEnv;
 }

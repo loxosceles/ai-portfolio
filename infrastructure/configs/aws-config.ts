@@ -68,18 +68,20 @@ export const SERVICE_REGIONS = {
 } as const;
 
 // Stack configuration constants
-export const STACK_TYPES = ['web', 'api', 'shared'] as const;
+export const STACK_TYPES = ['web', 'api', 'shared', 'linkGenerator'] as const;
 
 export const STACK_PREFIXES = {
   web: 'PortfolioWebStack',
   api: 'PortfolioApiStack',
-  shared: 'PortfolioSharedStack'
+  shared: 'PortfolioSharedStack',
+  linkGenerator: 'PortfolioLinkGeneratorStack'
 } as const;
 
 export const STACK_REGIONS = {
   web: 'us-east-1',
   api: 'eu-central-1',
-  shared: 'eu-central-1'
+  shared: 'eu-central-1',
+  linkGenerator: 'eu-central-1'
 } as const;
 
 // AWS Manager Configuration
