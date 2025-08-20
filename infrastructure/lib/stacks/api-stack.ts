@@ -12,9 +12,18 @@ import * as path from 'path';
 import { addStackOutputs } from './stack-helpers';
 import { IApiStackEnv } from '../../types';
 
+interface TableConfig {
+  name: string;
+  constructId: string;
+}
+
 interface IApiStackProps extends cdk.StackProps {
   userPool: cognito.IUserPool;
   stackEnv: IApiStackEnv;
+  tableNames: {
+    developers: TableConfig;
+    projects: TableConfig;
+  };
 }
 
 export class ApiStack extends cdk.Stack {
@@ -25,13 +34,14 @@ export class ApiStack extends cdk.Stack {
   private readonly projectsTableName: string;
   private readonly dataBucketName: string;
   private readonly awsRegionDefault: string;
+  private readonly tableConfigs: { developers: TableConfig; projects: TableConfig };
 
   public readonly developerTable: dynamodb.ITable;
   public readonly projectsTable: dynamodb.ITable;
 
   constructor(scope: Construct, id: string, props: IApiStackProps) {
     super(scope, id, props);
-    const { userPool, stackEnv } = props;
+    const { userPool, stackEnv, tableNames } = props;
     this.stackEnv = stackEnv;
     this.stage = this.stackEnv.stage;
 
@@ -40,10 +50,11 @@ export class ApiStack extends cdk.Stack {
     }
 
     const { dataBucketName, awsRegionDefault } = this.stackEnv;
-    this.developerTableName = `PortfolioDevelopers-${this.stage}`;
-    this.projectsTableName = `PortfolioProjects-${this.stage}`;
+    this.developerTableName = tableNames.developers.name;
+    this.projectsTableName = tableNames.projects.name;
     this.dataBucketName = dataBucketName;
     this.awsRegionDefault = awsRegionDefault;
+    this.tableConfigs = tableNames;
 
     // Create AppSync API
     this.api = this.createAppSyncApi(userPool);
@@ -55,7 +66,7 @@ export class ApiStack extends cdk.Stack {
     this.projectsTable = tables.projectsTable;
 
     // Create AppSync DataSources
-    const dataSources = this.createDataSources(this.developerTable, this.projectsTable);
+    const dataSources = this.createDataSources();
 
     // Add resolvers using construct
     new APIResolverConstruct(this, 'APIResolvers', {
@@ -65,7 +76,7 @@ export class ApiStack extends cdk.Stack {
     });
 
     // Create data loader to populate DynamoDB tables from S3
-    this.createDataLoader(this.developerTable, this.projectsTable);
+    this.createDataLoader();
 
     // CloudFormation exports for cross-stack dependencies
     // NOTE: These exports are required for AIAdvocateStack to reference the GraphQL API
@@ -158,19 +169,23 @@ export class ApiStack extends cdk.Stack {
       // Reference existing production tables
       const developerTable = dynamodb.Table.fromTableName(
         this,
-        'DeveloperTable',
+        this.tableConfigs.developers.constructId,
         this.developerTableName
       );
 
-      const projectsTable = dynamodb.Table.fromTableAttributes(this, 'ProjectsTable', {
-        tableArn: `arn:aws:dynamodb:${this.region}:${this.account}:table/${this.projectsTableName}`,
-        globalIndexes: ['byDeveloperId']
-      });
+      const projectsTable = dynamodb.Table.fromTableAttributes(
+        this,
+        this.tableConfigs.projects.constructId,
+        {
+          tableArn: `arn:aws:dynamodb:${this.region}:${this.account}:table/${this.projectsTableName}`,
+          globalIndexes: ['byDeveloperId']
+        }
+      );
 
       return { developerTable, projectsTable };
     } else {
       // Create new tables for dev with full configuration
-      const developerTable = new dynamodb.Table(this, 'DeveloperTable', {
+      const developerTable = new dynamodb.Table(this, this.tableConfigs.developers.constructId, {
         tableName: this.developerTableName,
         partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
         billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -178,7 +193,7 @@ export class ApiStack extends cdk.Stack {
         encryption: dynamodb.TableEncryption.AWS_MANAGED
       });
 
-      const projectsTable = new dynamodb.Table(this, 'ProjectsTable', {
+      const projectsTable = new dynamodb.Table(this, this.tableConfigs.projects.constructId, {
         tableName: this.projectsTableName,
         partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
         billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -196,9 +211,9 @@ export class ApiStack extends cdk.Stack {
     }
   }
 
-  private createDataSources(developerTable: dynamodb.ITable, projectsTable: dynamodb.ITable) {
-    const developerDS = this.api.addDynamoDbDataSource('DeveloperDataSource', developerTable);
-    const projectsDS = this.api.addDynamoDbDataSource('ProjectsDataSource', projectsTable);
+  private createDataSources() {
+    const developerDS = this.api.addDynamoDbDataSource('DeveloperDataSource', this.developerTable);
+    const projectsDS = this.api.addDynamoDbDataSource('ProjectsDataSource', this.projectsTable);
 
     return { developerDS, projectsDS };
   }
@@ -207,7 +222,7 @@ export class ApiStack extends cdk.Stack {
    * Creates a Lambda function that loads data from S3 to DynamoDB tables.
    * This is triggered during CloudFormation deployment via a custom resource.
    */
-  private createDataLoader(developerTable: dynamodb.ITable, projectsTable: dynamodb.ITable) {
+  private createDataLoader() {
     // Reference the existing S3 bucket
     const dataBucket = s3.Bucket.fromBucketName(this, 'DataBucket', this.dataBucketName);
 
@@ -228,8 +243,8 @@ export class ApiStack extends cdk.Stack {
 
     // Grant permissions to the Lambda
     dataBucket.grantRead(dataLoaderLambda);
-    developerTable.grantWriteData(dataLoaderLambda);
-    projectsTable.grantWriteData(dataLoaderLambda);
+    this.developerTable.grantWriteData(dataLoaderLambda);
+    this.projectsTable.grantWriteData(dataLoaderLambda);
 
     // Create log group for data loader provider
     const dataLoaderLogGroup = new logs.LogGroup(this, 'DataLoaderProviderLogGroup', {

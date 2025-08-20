@@ -12,8 +12,16 @@ import { addStackOutputs } from './stack-helpers';
 import * as path from 'path';
 import { IWebStackEnv } from '../../types';
 
+interface TableConfig {
+  name: string;
+  constructId: string;
+}
+
 interface IWebStackProps extends cdk.StackProps {
   stackEnv: IWebStackEnv;
+  tableNames: {
+    visitorLinks: TableConfig;
+  };
 }
 /**
  * Combined stack for website hosting, content delivery, and visitor context
@@ -24,13 +32,16 @@ export class WebStack extends cdk.Stack {
   public readonly distribution: cloudfront.Distribution;
   private readonly stage: string;
   private readonly stackEnv: IWebStackEnv;
+  private readonly visitorTableConfig: TableConfig;
 
   constructor(scope: Construct, id: string, props: IWebStackProps) {
     super(scope, id, props);
-    this.stackEnv = props.stackEnv;
+    const { stackEnv, tableNames } = props;
+    this.stackEnv = stackEnv;
     this.stage = this.stackEnv.stage;
+    this.visitorTableConfig = tableNames.visitorLinks;
 
-    const visitorTableName = `PortfolioVisitorLinks-${this.stage}`;
+    const visitorTableName = this.visitorTableConfig.name;
 
     // Get production-specific environment variables from stackEnv
     const prodDomainName = this.stackEnv.prodDomainName;
@@ -39,7 +50,7 @@ export class WebStack extends cdk.Stack {
     const isProd = this.stage === 'prod';
 
     // Create DynamoDB table for visitor context
-    this.createVisitorTable(isProd, visitorTableName);
+    this.createVisitorTable(isProd);
 
     // // Create S3 bucket for hosting
     this.websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {
@@ -293,14 +304,18 @@ export class WebStack extends cdk.Stack {
     ]);
   }
 
-  private createVisitorTable(isProd: boolean, visitorTableName: string): dynamodb.ITable {
+  private createVisitorTable(isProd: boolean): dynamodb.ITable {
     if (isProd) {
       // Reference existing production table
-      return dynamodb.Table.fromTableName(this, 'VisitorLinkTable', visitorTableName);
+      return dynamodb.Table.fromTableName(
+        this,
+        this.visitorTableConfig.constructId,
+        this.visitorTableConfig.name
+      );
     } else {
       // Create new table for dev
-      return new dynamodb.Table(this, 'VisitorLinkTable', {
-        tableName: visitorTableName,
+      return new dynamodb.Table(this, this.visitorTableConfig.constructId, {
+        tableName: this.visitorTableConfig.name,
         partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
         timeToLiveAttribute: 'ttl',
         billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
