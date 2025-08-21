@@ -49,8 +49,8 @@ export class WebStack extends cdk.Stack {
 
     const isProd = this.stage === 'prod';
 
-    // Create DynamoDB table for visitor context
-    this.createVisitorTable(isProd);
+    // Create VisitorLinks table (moved back from LinkGeneratorStack)
+    const visitorTable = this.createVisitorLinksTable(isProd);
 
     // // Create S3 bucket for hosting
     this.websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {
@@ -304,7 +304,7 @@ export class WebStack extends cdk.Stack {
     ]);
   }
 
-  private createVisitorTable(isProd: boolean): dynamodb.ITable {
+  private createVisitorLinksTable(isProd: boolean): dynamodb.ITable {
     if (isProd) {
       // Reference existing production table
       return dynamodb.Table.fromTableName(

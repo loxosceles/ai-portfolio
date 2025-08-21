@@ -21,6 +21,8 @@ interface IAIAdvocateStackProps extends cdk.StackProps {
   stackEnv: IAIAdvocateStackEnv;
   tableNames: {
     recruiterProfiles: TableConfig;
+    developers: TableConfig;
+    projects: TableConfig;
   };
 }
 
@@ -78,7 +80,7 @@ export class AIAdvocateStack extends cdk.Stack {
     }
 
     // Create AI Advocate Lambda function
-    this.aiAdvocateLambda = this.createAIAdvocateLambda(bedrockModelId);
+    this.aiAdvocateLambda = this.createAIAdvocateLambda(bedrockModelId, tableNames);
 
     // Grant DynamoDB permissions
     this.grantDynamoDBPermissions(developerTable, projectsTable);
@@ -106,9 +108,12 @@ export class AIAdvocateStack extends cdk.Stack {
     ]);
   }
 
-  private createAIAdvocateLambda(bedrockModelId: string): lambda.Function {
-    const developerTableName = `PortfolioDevelopers-${this.stage}`;
-    const projectsTableName = `PortfolioProjects-${this.stage}`;
+  private createAIAdvocateLambda(
+    bedrockModelId: string,
+    tableNames: { developers: TableConfig; projects: TableConfig }
+  ): lambda.Function {
+    const developerTableName = tableNames.developers.name;
+    const projectsTableName = tableNames.projects.name;
 
     return new lambda.Function(this, 'AIAdvocateFunction', {
       functionName: `ai-advocate-${this.stage}`,
