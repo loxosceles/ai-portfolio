@@ -36,7 +36,8 @@ export interface ITestStackEnv extends IStackEnv {
 }
 
 export interface ILinkGeneratorStackEnv extends IStackEnv {
-  // No additional environment variables needed
+  awsRegionDistrib: string;
+  awsRegionDefault: string;
 }
 
 /**

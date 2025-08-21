@@ -26,6 +26,11 @@ export const STACK_CONFIGS = {
     base: ['AWS_ADMIN_ARN'],
     prod: ['COGNITO_USER_POOL_ID'],
     optional: ['COGNITO_USER_POOL_ID']
+  },
+  linkGenerator: {
+    base: ['AWS_REGION_DISTRIB', 'AWS_REGION_DEFAULT'],
+    prod: [],
+    optional: []
   }
 };
 
