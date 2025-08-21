@@ -28,7 +28,7 @@ async function getConfig(request) {
 
   // Fetch edge-specific config from us-east-1
   const edgeConfigCommand = new GetParametersCommand({
-    Names: ['/portfolio/dev/stack/VISITOR_TABLE_NAME'],
+    Names: ['/portfolio/dev/VISITOR_TABLE_NAME'],
     WithDecryption: true
   });
 
@@ -42,7 +42,7 @@ async function getConfig(request) {
   config = {
     clientId: allParameters.find((p) => p.Name.endsWith('COGNITO_CLIENT_ID')).Value,
     userPoolId: allParameters.find((p) => p.Name.endsWith('COGNITO_USER_POOL_ID')).Value,
-    tableName: `${allParameters.find((p) => p.Name.endsWith('VISITOR_TABLE_NAME')).Value}-dev`
+    tableName: allParameters.find((p) => p.Name.endsWith('VISITOR_TABLE_NAME')).Value
   };
 
   return config;
