@@ -5,6 +5,7 @@ import { WebStack } from '../lib/stacks/web-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { SharedStack } from '../lib/stacks/shared-stack';
 import { AIAdvocateStack } from '../lib/stacks/ai-advocate-stack';
+import { LinkGeneratorStack } from '../lib/stacks/link-generator-stack';
 import { PipelineStack } from '../lib/stacks/pipeline-stack';
 import { EnvironmentManager } from '../lib/core/env-manager';
 import { stackManagerConfig } from '../configs/stack-config';
@@ -75,6 +76,22 @@ const webStack = new WebStack(app, `PortfolioWebStack-${envManager.getStage()}`,
   }
 });
 
+// Create LinkGenerator stack with explicit table names
+const linkGeneratorStack = new LinkGeneratorStack(
+  app,
+  `LinkGeneratorStack-${envManager.getStage()}`,
+  {
+    env,
+    userPool: sharedStack.userPool,
+    userPoolClient: sharedStack.userPoolClient,
+    stackEnv: envManager.getStackEnv('linkGenerator'),
+    tableNames: {
+      visitorLinks: tableNames.visitorLinks,
+      recruiterProfiles: tableNames.recruiterProfiles
+    }
+  }
+);
+
 // Create API stack with explicit table names
 const apiStack = new ApiStack(app, `PortfolioApiStack-${envManager.getStage()}`, {
   env,
@@ -93,7 +110,9 @@ const aiAdvocateStack = new AIAdvocateStack(app, `AIAdvocateStack-${envManager.g
   projectsTable: apiStack.projectsTable,
   stackEnv: envManager.getStackEnv('aiAdvocate'),
   tableNames: {
-    recruiterProfiles: tableNames.recruiterProfiles
+    recruiterProfiles: tableNames.recruiterProfiles,
+    developers: tableNames.developers,
+    projects: tableNames.projects
   }
 });
 
@@ -129,5 +148,7 @@ if (!skipPipeline) {
 // Add dependencies
 apiStack.addDependency(sharedStack);
 aiAdvocateStack.addDependency(apiStack);
+linkGeneratorStack.addDependency(aiAdvocateStack);
+webStack.addDependency(linkGeneratorStack);
 
 app.synth();
