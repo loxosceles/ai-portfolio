@@ -144,7 +144,8 @@ function createItemHTML(type, item, index) {
       <p><strong>Link ID:</strong> ${item.linkId || 'No link ID'}</p>
       <div class="link-section">
         <div class="link-status">
-          ${item.linkExpiry ? `Expires: ${new Date(item.linkExpiry).toLocaleDateString()}` : 'No active link'}
+          ${item.linkUrl ? `<a href="${item.linkUrl}" target="_blank">${item.linkUrl}</a>` : 'No active link'}
+          ${item.linkExpiry ? `<br>Expires: ${new Date(item.linkExpiry).toLocaleDateString()}` : ''}
         </div>
         <button data-action="generate-link" data-index="${index}" class="generate-link-btn">
           Generate Link
