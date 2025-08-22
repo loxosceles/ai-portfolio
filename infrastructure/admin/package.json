@@ -1,0 +1,16 @@
+{
+  "name": "portfolio-admin",
+  "version": "1.0.0",
+  "description": "Portfolio Data Management Admin Interface",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}
