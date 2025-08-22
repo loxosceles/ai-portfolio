@@ -39,6 +39,7 @@
     "sync-service-params-dry-run:prod": "ENVIRONMENT=prod ts-node lib/cli/bin/sync-service-params.ts --dry-run --cleanup --verbose",
     "sync-service-params-cleanup:dev": "ENVIRONMENT=dev ts-node lib/cli/bin/sync-service-params.ts --cleanup --verbose",
     "sync-service-params-cleanup:prod": "ENVIRONMENT=prod ts-node lib/cli/bin/sync-service-params.ts --cleanup --verbose",
+    "admin": "cd admin && node server.js",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
