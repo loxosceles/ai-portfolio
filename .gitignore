@@ -51,3 +51,7 @@ docs/planning/
 
 # Admin interface runtime state
 infrastructure/data/.admin-state.json
+
+# npm lockfiles (we use pnpm)
+package-lock.json
+**/package-lock.json
