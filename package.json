@@ -28,6 +28,7 @@
     "test": "pnpm --filter='..' run test",
     "test:frontend": "pnpm --filter=frontend run test",
     "test:infra": "pnpm --filter=infrastructure run test",
+    "test:admin": "pnpm test:infra --testPathPattern=admin",
     "lint": "pnpm --filter='..' run lint",
     "lint:frontend": "pnpm --filter=frontend run lint",
     "lint:infra": "pnpm --filter=infrastructure run lint",
