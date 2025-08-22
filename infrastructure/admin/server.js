@@ -196,15 +196,52 @@ app.post('/api/recruiters/create/:env', async (req, res) => {
 app.post('/api/links/generate/:recruiterId', async (req, res) => {
   try {
     const { recruiterId } = req.params;
-    // Mock link generation - replace with actual Lambda call
-    const mockResult = {
-      success: true,
-      url: `https://d2u34o1q6b8a3t.cloudfront.net/?visitor=${recruiterId}`,
-      expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      generatedAt: new Date().toISOString()
-    };
+    const { env } = req.body;
 
-    res.json(mockResult);
+    // Get current environment if not provided
+    const currentEnv = env || 'dev';
+
+    // Invoke LinkGenerator Lambda
+    const lambdaClient = new LambdaClient({
+      region: ADMIN_CONFIG.regions.dynamodb // eu-central-1
+    });
+
+    console.log(`Invoking Lambda: link-generator-${currentEnv} with recruiterId: ${recruiterId}`);
+
+    const command = new InvokeCommand({
+      FunctionName: `link-generator-${currentEnv}`,
+      Payload: JSON.stringify({
+        recruiterId,
+        createRecruiterProfile: false // Don't create profile, use existing recruiter data
+      })
+    });
+
+    const response = await lambdaClient.send(command);
+    const lambdaResult = JSON.parse(new TextDecoder().decode(response.Payload));
+
+    console.log('Lambda response:', JSON.stringify(lambdaResult, null, 2));
+
+    if (lambdaResult.statusCode === 200) {
+      const body = JSON.parse(lambdaResult.body);
+
+      console.log('Lambda body:', JSON.stringify(body, null, 2));
+
+      // Map Lambda response to admin board format
+      const adminResult = {
+        success: true,
+        url: body.link,
+        linkId: body.linkId,
+        expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days
+        generatedAt: new Date().toISOString()
+      };
+
+      res.json(adminResult);
+    } else {
+      const errorBody = JSON.parse(lambdaResult.body);
+      console.error('Link generation error:', error);
+      console.error('Lambda error response:', errorBody);
+      throw new Error(errorBody.error || 'Lambda execution failed');
+    }
   } catch (error) {
     res.status(500).json({
       success: false,
