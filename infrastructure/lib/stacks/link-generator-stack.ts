@@ -60,7 +60,7 @@ export class LinkGeneratorStack extends cdk.Stack {
     );
 
     // Grant IAM permissions
-    this.grantPermissions(userPool, visitorLinksTable, recruiterProfilesTable);
+    this.grantPermissions(userPool);
 
     // Add stack outputs following existing pattern
     addStackOutputs(this, this.stage, [
@@ -107,11 +107,7 @@ export class LinkGeneratorStack extends cdk.Stack {
     });
   }
 
-  private grantPermissions(
-    userPool: cognito.IUserPool,
-    visitorLinksTable: dynamodb.ITable,
-    recruiterProfilesTable: dynamodb.ITable
-  ): void {
+  private grantPermissions(userPool: cognito.IUserPool): void {
     // Grant DynamoDB permissions with explicit IAM policies
     this.linkGeneratorLambda.addToRolePolicy(
       new iam.PolicyStatement({
