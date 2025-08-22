@@ -30,6 +30,12 @@ const ADMIN_CONFIG = {
     ssmTemplate: '/portfolio/{stage}/{paramName}',
     dataDir: '../data/{stage}',
     stateFile: '../data/.admin-state.json'
+  },
+
+  // Cognito configuration
+  cognito: {
+    userPoolParam: 'COGNITO_USER_POOL_ID',
+    region: 'eu-central-1'
   }
 };
 
