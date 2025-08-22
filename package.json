@@ -23,7 +23,6 @@
     "sync-service-params-cleanup:dev": "pnpm --filter=infrastructure run sync-service-params-cleanup:dev",
     "sync-service-params-cleanup:prod": "pnpm --filter=infrastructure run sync-service-params-cleanup:prod",
     "admin:start": "pnpm --filter=infrastructure run admin:start",
-    "admin:dev": "pnpm --filter=infrastructure run admin:dev",
     "dev": "pnpm --filter=frontend run dev",
     "build": "pnpm --filter=frontend run build",
     "test": "pnpm --filter='..' run test",
