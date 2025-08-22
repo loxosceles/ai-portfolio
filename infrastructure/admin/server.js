@@ -1,128 +1,146 @@
-const express = require('express');
-const fs = require('fs').promises;
-const path = require('path');
-const { exec } = require('child_process');
-const util = require('util');
+import express from 'express';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import { fileURLToPath } from 'url';
 
-const execAsync = util.promisify(exec);
+import ADMIN_CONFIG from './lib/config.js';
+import AWSOperations from './lib/aws-operations.js';
+
+const execAsync = promisify(exec);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-const DATA_PATH = '../data';
+const awsOps = new AWSOperations(ADMIN_CONFIG);
 
-// Template storage for clean JSON structure
-let dataTemplates = {
-  dev: { developer: null, projects: null, recruiters: null },
-  prod: { developer: null, projects: null, recruiters: null }
+// Simple state tracking
+let syncState = {
+  dev: { isDirty: false, lastSync: null },
+  prod: { isDirty: false, lastSync: null }
 };
 
-// Load templates on startup
-async function loadTemplates() {
-  for (const env of ['dev', 'prod']) {
-    for (const type of ['developer', 'projects', 'recruiters']) {
-      try {
-        const filePath = path.join(__dirname, DATA_PATH, env, `${type}.json`);
-        const data = await fs.readFile(filePath, 'utf-8');
-        dataTemplates[env][type] = JSON.parse(data);
-      } catch (error) {
-        dataTemplates[env][type] = type === 'developer' ? {} : [];
-      }
-    }
+// Load state on startup
+async function loadSyncState() {
+  try {
+    const stateFile = path.resolve(__dirname, ADMIN_CONFIG.paths.stateFile);
+    const data = await fs.readFile(stateFile, 'utf-8');
+    syncState = JSON.parse(data);
+  } catch {
+    // Use default state if file doesn't exist
   }
 }
 
-// Load data from templates
+async function saveSyncState() {
+  const stateFile = path.resolve(__dirname, ADMIN_CONFIG.paths.stateFile);
+  await fs.writeFile(stateFile, JSON.stringify(syncState, null, 2));
+}
+
+// Get sync status
+app.get('/api/sync-status/:env', (req, res) => {
+  const { env } = req.params;
+  res.json(syncState[env] || { isDirty: false, lastSync: null });
+});
+
+// DDB-direct data loading
 app.get('/api/data/:env/:type', async (req, res) => {
   try {
     const { env, type } = req.params;
 
-    // Return deep copy of template to prevent mutation
-    const template = dataTemplates[env][type];
-    res.json(JSON.parse(JSON.stringify(template)));
+    if (!ADMIN_CONFIG.dataTypes[type]) {
+      return res.status(400).json({ error: `Unknown data type: ${type}` });
+    }
+
+    const items = await awsOps.getAllItems(env, type);
+
+    // Handle developer as single object vs array
+    if (ADMIN_CONFIG.dataTypes[type].isSingle) {
+      res.json(items.length > 0 ? items[0] : {});
+    } else {
+      res.json(items);
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Save data to JSON files using clean templates
+// DDB-direct data saving with dirty state marking
 app.post('/api/data/:env/:type', async (req, res) => {
   try {
     const { env, type } = req.params;
+    const data = req.body;
 
-    // PRODUCTION WRITE PROTECTION
-    if (env === 'prod') {
-      return res.status(403).json({
-        success: false,
-        error: 'Production data is write-protected. Use dev environment for testing.'
-      });
+    if (!ADMIN_CONFIG.dataTypes[type]) {
+      return res.status(400).json({ error: `Unknown data type: ${type}` });
     }
 
-    // Update template with new data
-    dataTemplates[env][type] = req.body;
+    // Ensure required fields are present
+    if (type === 'developer' && (!data.id || data.id === '')) {
+      return res.status(400).json({ error: 'Developer ID is required' });
+    }
 
-    // Write clean JSON to file
-    const dataDir = path.join(__dirname, DATA_PATH, env);
-    const filePath = path.join(dataDir, `${type}.json`);
+    if (type === 'projects' && Array.isArray(data)) {
+      for (const item of data) {
+        if (!item.id || item.id === '') {
+          return res.status(400).json({ error: 'Project ID is required for all projects' });
+        }
+      }
+    }
 
-    await fs.mkdir(dataDir, { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(req.body, null, 2) + '\n');
+    if (type === 'recruiters' && Array.isArray(data)) {
+      for (const item of data) {
+        if (!item.linkId || item.linkId === '') {
+          return res.status(400).json({ error: 'Link ID is required for all recruiters' });
+        }
+      }
+    }
 
-    res.json({ success: true, message: `${type} data saved` });
+    // Save to DynamoDB
+    await awsOps.saveItems(env, type, data);
+
+    // Mark as dirty
+    syncState[env].isDirty = true;
+    await saveSyncState();
+
+    res.json({
+      success: true,
+      message: `${type} saved to DynamoDB`,
+      syncStatus: { isDirty: true }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Execute real CLI commands
-app.post('/api/cli/:command', async (req, res) => {
-  const { command } = req.params;
-  const { env } = req.body;
-
-  // PRODUCTION WRITE PROTECTION
-  if (env === 'prod' && ['upload', 'sync'].includes(command)) {
-    return res.status(403).json({
-      success: false,
-      error: 'Production operations are restricted. Use dev environment for testing.'
-    });
-  }
-
+// Export and upload (clears dirty state)
+app.post('/api/export-upload/:env', async (req, res) => {
   try {
-    if (command === 'upload') {
-      const { stdout } = await execAsync(`pnpm upload-static-data:${env}`, {
-        cwd: path.join(__dirname, '..')
-      });
+    const { env } = req.params;
 
-      res.json({
-        success: true,
-        output: stdout || 'Upload completed successfully',
-        details: `Executed: pnpm upload-static-data:${env}`
-      });
-    } else if (command === 'sync') {
-      // Run both upload and DynamoDB sync sequentially
-      const upload = await execAsync(`pnpm upload-static-data:${env}`, {
-        cwd: path.join(__dirname, '..')
-      });
+    // 1. Export DDB to JSON files
+    const exportResults = await awsOps.exportToFiles(env);
 
-      const sync = await execAsync(`pnpm populate-static-data-ddb:${env}`, {
-        cwd: path.join(__dirname, '..')
-      });
-
-      res.json({
-        success: true,
-        output: `Upload: ${upload.stdout}\n\nSync: ${sync.stdout}`,
-        details: `Executed: upload + populate DynamoDB for ${env}`
-      });
-    } else {
-      return res.status(400).json({ success: false, error: 'Invalid command' });
-    }
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      details: `Failed: ${command} for ${env}`
+    // 2. Upload to S3 using existing CLI
+    await execAsync(`pnpm upload-static-data:${env}`, {
+      cwd: path.join(__dirname, '..')
     });
+
+    // 3. Clear dirty state
+    syncState[env].isDirty = false;
+    syncState[env].lastSync = new Date().toISOString();
+    await saveSyncState();
+
+    res.json({
+      success: true,
+      message: 'Export and upload completed',
+      exportResults: exportResults,
+      syncStatus: { isDirty: false, lastSync: syncState[env].lastSync }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -130,8 +148,6 @@ app.post('/api/cli/:command', async (req, res) => {
 app.post('/api/links/generate/:recruiterId', async (req, res) => {
   try {
     const { recruiterId } = req.params;
-    const { env, recruiter } = req.body;
-
     // Mock link generation - replace with actual Lambda call
     const mockResult = {
       success: true,
@@ -151,18 +167,17 @@ app.post('/api/links/generate/:recruiterId', async (req, res) => {
 
 const PORT = 3001;
 
-// Initialize templates and start server
-loadTemplates()
+// Initialize state and start server
+loadSyncState()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`🚀 Enhanced Admin Interface: http://localhost:${PORT}`);
+      console.log(`🚀 DDB-Direct Admin Interface: http://localhost:${PORT}`);
+      console.log(`📊 Direct DynamoDB operations with sync status tracking`);
       console.log(`📁 Managing: developer, projects, recruiters`);
       console.log(`🔗 Link generation: Individual per recruiter`);
-      console.log(`🛡️  Production data is write-protected`);
-      console.log(`📋 Templates loaded for dev and prod environments`);
     });
   })
   .catch((error) => {
-    console.error('Failed to load templates:', error);
+    console.error('Failed to initialize admin interface:', error);
     process.exit(1);
   });

@@ -23,7 +23,7 @@ const IGNORE_PATTERNS = [
   '**/__bak__*/**',
   '**/__bak__*',
   '**/frontend/out/**',
-  '**/infrastructure/admin/**'
+
 ];
 
 const SHARED_RULES = {
@@ -117,6 +117,49 @@ export default [
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
       'import/no-unresolved': 'error'
+    }
+  },
+
+  // Admin server config
+  {
+    files: ['infrastructure/admin/server.js', 'infrastructure/admin/lib/**/*.js'],
+    ignores: IGNORE_PATTERNS,
+    ...js.configs.recommended,
+    languageOptions: {
+      globals: {
+        ...globals.node
+      },
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module'
+      }
+    },
+    rules: {
+      ...SHARED_RULES,
+      'no-console': 'off', // Allow console in admin interface
+      'no-unused-vars': 'warn'
+    }
+  },
+
+  // Admin frontend config (browser JavaScript)
+  {
+    files: ['infrastructure/admin/public/**/*.js'],
+    ignores: IGNORE_PATTERNS,
+    ...js.configs.recommended,
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        fetch: true
+      },
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'script' // Frontend uses script, not module
+      }
+    },
+    rules: {
+      'eol-last': ['error', 'always'],
+      'no-console': 'off', // Allow console in admin interface
+      'no-unused-vars': 'off' // Frontend functions may be called from HTML
     }
   },
 
