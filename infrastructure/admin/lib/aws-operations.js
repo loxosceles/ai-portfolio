@@ -6,6 +6,12 @@ import {
   DeleteCommand
 } from '@aws-sdk/lib-dynamodb';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
+import {
+  CognitoIdentityProviderClient,
+  AdminCreateUserCommand,
+  AdminSetUserPasswordCommand
+} from '@aws-sdk/client-cognito-identity-provider';
+import generator from 'generate-password';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
