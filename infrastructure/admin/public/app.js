@@ -196,6 +196,36 @@ function addRecruiter() {
   editItem('recruiters', appState.data.recruiters.length - 1);
 }
 
+// Create recruiter with Cognito user
+async function createRecruiterWithUser(recruiterData) {
+  try {
+    showStatus(`Creating recruiter and Cognito user...`, 'loading');
+
+    const response = await fetch(`/api/recruiters/create/${appState.currentEnv}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(recruiterData)
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      // Update sync status
+      appState.syncStatus = result.syncStatus;
+      updateSyncStatusUI();
+
+      showStatus('Recruiter and Cognito user created successfully', 'success');
+
+      // Reload recruiters data
+      await loadData('recruiters');
+    } else {
+      throw new Error(result.error);
+    }
+  } catch (error) {
+    showStatus(`Recruiter creation failed: ${error.message}`, 'error');
+  }
+}
+
 function editItem(type, index) {
   const item = appState.data[type][index];
   let formHTML = '';
@@ -397,6 +427,17 @@ function saveItem() {
       .filter((s) => s);
     if (!recruiter.createdAt) {
       recruiter.createdAt = new Date().toISOString();
+    }
+
+    // Check if this is a new recruiter (no existing Cognito user)
+    const isNewRecruiter = !recruiter.cognitoUserCreated;
+
+    if (isNewRecruiter) {
+      // Create recruiter with Cognito user
+      recruiter.cognitoUserCreated = true;
+      closeModal();
+      createRecruiterWithUser(recruiter);
+      return;
     }
   }
 
