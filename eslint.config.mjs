@@ -22,7 +22,8 @@ const IGNORE_PATTERNS = [
   '**/.eslintrc.js',
   '**/__bak__*/**',
   '**/__bak__*',
-  '**/frontend/out/** '
+  '**/frontend/out/**',
+  '**/infrastructure/admin/**'
 ];
 
 const SHARED_RULES = {
