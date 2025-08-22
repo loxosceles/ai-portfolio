@@ -156,6 +156,27 @@ function validateProject(project: Partial<IProject>): boolean {
 }
 
 /**
+ * Validate a recruiter profile
+ * @param recruiter - Recruiter profile to validate
+ * @returns True if valid, throws an error if invalid
+ */
+function validateRecruiter(recruiter: any): boolean {
+  if (!recruiter.linkId) {
+    throw new Error('Recruiter linkId is required');
+  }
+
+  if (!recruiter.recruiterName) {
+    throw new Error('Recruiter name is required');
+  }
+
+  if (!recruiter.companyName) {
+    throw new Error('Company name is required');
+  }
+
+  return true;
+}
+
+/**
  * Validate static data
  * @param data - Static data to validate
  * @returns True if valid, throws an error if invalid
@@ -169,12 +190,23 @@ function validateStaticData(data: IDataCollection<IDataItem>): boolean {
     throw new Error('Projects must be an array');
   }
 
+  // Recruiters are optional but if present must be an array
+  if (data.recruiters && !Array.isArray(data.recruiters)) {
+    throw new Error('Recruiters must be an array');
+  }
+
   for (const developer of data.developers) {
     validateDeveloper(developer);
   }
 
   for (const project of data.projects) {
     validateProject(project);
+  }
+
+  if (data.recruiters) {
+    for (const recruiter of data.recruiters) {
+      validateRecruiter(recruiter);
+    }
   }
 
   return true;
@@ -415,6 +447,10 @@ export async function handlePopulateDynamoDB(
       buildSSMPath(stage, 'PROJECTS_TABLE_NAME'),
       validatedRegion
     );
+    const recruiterTableName = await awsManager.getParameter(
+      buildSSMPath(stage, 'RECRUITER_PROFILES_TABLE_NAME'),
+      validatedRegion
+    );
 
     if (!developerTableName || !projectsTableName) {
       return {
@@ -429,6 +465,15 @@ export async function handlePopulateDynamoDB(
     // Populate tables separately
     await awsManager.batchWriteToDynamoDB(developerTableName, data.developers, validatedRegion);
     await awsManager.batchWriteToDynamoDB(projectsTableName, data.projects, validatedRegion);
+
+    // Populate recruiter table if data exists and table is available
+    if (data.recruiters && data.recruiters.length > 0 && recruiterTableName) {
+      await awsManager.batchWriteToDynamoDB(recruiterTableName, data.recruiters, validatedRegion);
+      BaseManager.logVerbose(
+        verbose,
+        `✅ Populated ${recruiterTableName} with ${data.recruiters.length} items`
+      );
+    }
 
     BaseManager.logVerbose(
       verbose,
