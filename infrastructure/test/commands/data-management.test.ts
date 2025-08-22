@@ -41,6 +41,12 @@ jest.mock('fs/promises', () => ({
             title: 'Software Engineer',
             bio: 'Test bio',
             email: 'test@example.com',
+            website: 'https://test.dev',
+            github: 'https://github.com/test',
+            linkedin: 'https://linkedin.com/in/test',
+            location: 'Test City',
+            yearsOfExperience: 5,
+            isActive: true,
             skillSets: [{ id: 'skill1', name: 'Frontend', skills: ['React'] }]
           }
         ])
@@ -51,16 +57,43 @@ jest.mock('fs/promises', () => ({
           {
             id: 'proj1',
             title: 'Test Project',
+            slug: 'test-project',
+            icon: 'TestIcon',
             description: 'Test description',
             status: 'Active',
             highlights: ['Feature 1'],
             techStack: ['React'],
+            githubUrl: 'https://github.com/test/project',
+            overview: 'Test overview',
+            challenge: 'Test challenge',
+            solution: 'Test solution',
+            architecture: [
+              {
+                name: 'Test Architecture',
+                details: 'Test architecture details'
+              }
+            ],
+            technicalShowcases: [
+              {
+                title: 'Test Showcase',
+                description: 'Test showcase description',
+                highlights: ['Test highlight']
+              }
+            ],
+            archPatterns: ['Test pattern'],
+            performance: ['Test performance'],
+            repositoryAndDevelopment: {
+              plannedFeatures: ['Test feature'],
+              vision: 'Test vision'
+            },
             developerId: 'dev1'
           }
         ])
       );
+    } else if (filePath.toString().includes('recruiters.json')) {
+      return Promise.resolve('[]');
     }
-    return Promise.resolve('{}');
+    return Promise.resolve('[]');
   }),
   mkdir: jest.fn().mockResolvedValue(undefined),
   writeFile: jest.fn().mockResolvedValue(undefined)
@@ -96,6 +129,12 @@ describe('Data Management Command Tests', () => {
               title: 'Software Engineer',
               bio: 'Test bio',
               email: 'test@example.com',
+              website: 'https://test.dev',
+              github: 'https://github.com/test',
+              linkedin: 'https://linkedin.com/in/test',
+              location: 'Test City',
+              yearsOfExperience: 5,
+              isActive: true,
               skillSets: [{ id: 'skill1', name: 'Frontend', skills: ['React'] }]
             }
           ]);
@@ -104,13 +143,40 @@ describe('Data Management Command Tests', () => {
             {
               id: 'proj1',
               title: 'Test Project',
+              slug: 'test-project',
+              icon: 'TestIcon',
               description: 'Test description',
               status: 'Active',
               highlights: ['Feature 1'],
               techStack: ['React'],
+              githubUrl: 'https://github.com/test/project',
+              overview: 'Test overview',
+              challenge: 'Test challenge',
+              solution: 'Test solution',
+              architecture: [
+                {
+                  name: 'Test Architecture',
+                  details: 'Test architecture details'
+                }
+              ],
+              technicalShowcases: [
+                {
+                  title: 'Test Showcase',
+                  description: 'Test showcase description',
+                  highlights: ['Test highlight']
+                }
+              ],
+              archPatterns: ['Test pattern'],
+              performance: ['Test performance'],
+              repositoryAndDevelopment: {
+                plannedFeatures: ['Test feature'],
+                vision: 'Test vision'
+              },
               developerId: 'dev1'
             }
           ]);
+        } else if (key.includes('recruiters.json')) {
+          return Promise.resolve([]);
         }
         return Promise.resolve([]);
       });
@@ -126,6 +192,8 @@ describe('Data Management Command Tests', () => {
           return Promise.resolve('test-developers');
         } else if (paramName.includes('PROJECTS_TABLE_NAME')) {
           return Promise.resolve('test-projects');
+        } else if (paramName.includes('RECRUITER_PROFILES_TABLE_NAME')) {
+          return Promise.resolve('test-recruiters');
         }
         return Promise.reject(new Error(`Parameter ${paramName} not found`));
       });

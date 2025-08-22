@@ -160,7 +160,7 @@ function validateProject(project: Partial<IProject>): boolean {
  * @param recruiter - Recruiter profile to validate
  * @returns True if valid, throws an error if invalid
  */
-function validateRecruiter(recruiter: any): boolean {
+function validateRecruiter(recruiter: Record<string, unknown>): boolean {
   if (!recruiter.linkId) {
     throw new Error('Recruiter linkId is required');
   }
