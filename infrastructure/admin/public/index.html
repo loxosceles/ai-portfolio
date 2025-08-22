@@ -12,7 +12,7 @@
             <h1>Portfolio Admin</h1>
             <div class="env-selector">
                 <label for="environment">Environment:</label>
-                <select id="environment" onchange="switchEnvironment()">
+                <select id="environment">
                     <option value="dev">Development</option>
                     <option value="prod">Production</option>
                 </select>
@@ -22,13 +22,13 @@
 
         <!-- Tab Navigation -->
         <nav class="tabs">
-            <button class="tab-button active" data-tab="developer" onclick="switchTab('developer')">
+            <button class="tab-button active" data-tab="developer">
                 Developer
             </button>
-            <button class="tab-button" data-tab="projects" onclick="switchTab('projects')">
+            <button class="tab-button" data-tab="projects">
                 Projects
             </button>
-            <button class="tab-button" data-tab="recruiters" onclick="switchTab('recruiters')">
+            <button class="tab-button" data-tab="recruiters">
                 Recruiters
             </button>
         </nav>
@@ -44,7 +44,7 @@
         <div id="projects" class="tab-content">
             <div class="tab-header">
                 <h2>Projects</h2>
-                <button onclick="addProject()" class="add-btn">Add Project</button>
+                <button id="add-project-btn" class="add-btn">Add Project</button>
             </div>
             <div id="projects-list" class="data-list"></div>
         </div>
@@ -52,16 +52,22 @@
         <div id="recruiters" class="tab-content">
             <div class="tab-header">
                 <h2>Recruiters</h2>
-                <button onclick="addRecruiter()" class="add-btn">Add Recruiter</button>
+                <button id="add-recruiter-btn" class="add-btn">Add Recruiter</button>
             </div>
             <div id="recruiters-list" class="data-list"></div>
         </div>
 
-        <!-- Action Bar -->
+        <!-- Action Bar with Sync Status -->
         <div class="action-bar">
-            <button onclick="saveAllData()" class="save-btn">Save All Changes</button>
-            <button onclick="uploadToS3()" class="upload-btn">Upload to S3</button>
-            <button onclick="syncToDDB()" class="sync-btn">Sync to DynamoDB</button>
+            <div class="sync-section">
+                <div id="sync-indicator" class="sync-status">Loading...</div>
+                <button id="export-upload-btn" disabled>
+                    Export & Upload to S3
+                </button>
+            </div>
+            <div class="data-actions">
+                <button id="save-all-btn" class="save-btn">Save All Changes</button>
+            </div>
         </div>
 
         <div id="status" class="status"></div>
@@ -70,12 +76,12 @@
     <!-- Modal for Editing -->
     <div id="modal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
+            <span class="close">&times;</span>
             <h3 id="modal-title"></h3>
             <div id="modal-body"></div>
             <div class="modal-actions">
-                <button onclick="saveItem()" class="save-btn">Save</button>
-                <button onclick="closeModal()" class="cancel-btn">Cancel</button>
+                <button id="modal-save-btn" class="save-btn">Update</button>
+                <button id="modal-cancel-btn" class="cancel-btn">Cancel</button>
             </div>
         </div>
     </div>

@@ -6,14 +6,9 @@ let appState = {
     recruiters: []
   },
   currentEnv: 'dev',
-  currentTab: 'developer'
+  currentTab: 'developer',
+  syncStatus: { isDirty: false, lastSync: null }
 };
-
-// Initialize app
-document.addEventListener('DOMContentLoaded', () => {
-  switchTab('developer');
-  loadAllData();
-});
 
 // Environment switching
 function switchEnvironment() {
@@ -21,6 +16,7 @@ function switchEnvironment() {
   appState.currentEnv = envSelect.value;
   updateEnvBadge();
   loadAllData();
+  loadSyncStatus();
   showStatus(`Switched to ${appState.currentEnv.toUpperCase()} environment`, 'success');
 }
 
@@ -118,7 +114,7 @@ function renderDeveloper(container) {
     <p><strong>Email:</strong> ${developer.email || 'No email'}</p>
     <p><strong>Bio:</strong> ${developer.bio || 'No bio'}</p>
     <div class="item-actions">
-      <button onclick="editDeveloper()" class="edit-btn">Edit</button>
+      <button data-action="edit-developer" class="edit-btn">Edit</button>
     </div>
   `;
   container.appendChild(itemDiv);
@@ -135,8 +131,8 @@ function createItemHTML(type, item, index) {
       <p><strong>Description:</strong> ${item.description || 'No description'}</p>
       <p><strong>Tech Stack:</strong> ${item.techStack?.join(', ') || 'None'}</p>
       <div class="item-actions">
-        <button onclick="editItem('${type}', ${index})" class="edit-btn">Edit</button>
-        <button onclick="deleteItem('${type}', ${index})" class="delete-btn">Delete</button>
+        <button data-action="edit" data-type="${type}" data-index="${index}" class="edit-btn">Edit</button>
+        <button data-action="delete" data-type="${type}" data-index="${index}" class="delete-btn">Delete</button>
       </div>
     `;
   } else if (type === 'recruiters') {
@@ -150,13 +146,13 @@ function createItemHTML(type, item, index) {
         <div class="link-status">
           ${item.linkExpiry ? `Expires: ${new Date(item.linkExpiry).toLocaleDateString()}` : 'No active link'}
         </div>
-        <button onclick="generateLinkForRecruiter(${index})" class="generate-link-btn">
+        <button data-action="generate-link" data-index="${index}" class="generate-link-btn">
           Generate Link
         </button>
       </div>
       <div class="item-actions">
-        <button onclick="editItem('${type}', ${index})" class="edit-btn">Edit</button>
-        <button onclick="deleteItem('${type}', ${index})" class="delete-btn">Delete</button>
+        <button data-action="edit" data-type="${type}" data-index="${index}" class="edit-btn">Edit</button>
+        <button data-action="delete" data-type="${type}" data-index="${index}" class="delete-btn">Delete</button>
       </div>
     `;
   }
@@ -407,26 +403,43 @@ function saveItem() {
   closeModal();
 
   const itemTypeName = editingType ? editingType.slice(0, -1) : 'item';
-  showStatus(`Saved ${itemTypeName}`, 'success');
+  showStatus(`${itemTypeName} updated. Use 'Save All Changes' to save to database.`, 'success');
 }
 
 // Save operations
 async function saveAllData() {
-  if (appState.currentEnv === 'prod') {
-    showStatus('Production data is write-protected', 'error');
-    return;
-  }
-
-  showStatus('Saving all data...', 'loading');
+  showStatus('Saving all data to DynamoDB...', 'loading');
 
   try {
     for (const [type, data] of Object.entries(appState.data)) {
-      const saveData = type === 'developer' ? [data] : data;
+      // Validate required fields before saving
+      if (type === 'developer' && (!data.id || data.id === '')) {
+        showStatus('Developer ID is required', 'error');
+        return;
+      }
+
+      if (type === 'projects') {
+        for (const project of data) {
+          if (!project.id || project.id === '') {
+            showStatus('All projects must have an ID', 'error');
+            return;
+          }
+        }
+      }
+
+      if (type === 'recruiters') {
+        for (const recruiter of data) {
+          if (!recruiter.linkId || recruiter.linkId === '') {
+            showStatus('All recruiters must have a Link ID', 'error');
+            return;
+          }
+        }
+      }
 
       const response = await fetch(`/api/data/${appState.currentEnv}/${type}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(saveData)
+        body: JSON.stringify(data)
       });
 
       const result = await response.json();
@@ -434,45 +447,69 @@ async function saveAllData() {
         throw new Error(result.error);
       }
     }
-    showStatus('All data saved successfully', 'success');
+
+    // Mark as dirty after successful save
+    appState.syncStatus.isDirty = true;
+    updateSyncStatusUI();
+
+    showStatus('All data saved to DynamoDB successfully', 'success');
   } catch (error) {
     showStatus(`Save failed: ${error.message}`, 'error');
   }
 }
 
-// CLI integration
-async function uploadToS3() {
-  await executeCommand('upload', 'Uploading to S3...');
-}
-
-async function syncToDDB() {
-  await executeCommand('sync', 'Syncing to DynamoDB...');
-}
-
-async function executeCommand(command, message) {
-  if (appState.currentEnv === 'prod' && ['upload', 'sync'].includes(command)) {
-    showStatus('Production operations are restricted', 'error');
-    return;
+// Load sync status
+async function loadSyncStatus() {
+  try {
+    const response = await fetch(`/api/sync-status/${appState.currentEnv}`);
+    appState.syncStatus = await response.json();
+    updateSyncStatusUI();
+  } catch (error) {
+    console.error('Failed to load sync status:', error);
   }
+}
 
-  showStatus(message, 'loading');
+// Update sync status UI
+function updateSyncStatusUI() {
+  const indicator = document.getElementById('sync-indicator');
+  const button = document.getElementById('export-upload-btn');
+
+  if (appState.syncStatus.isDirty) {
+    indicator.innerHTML = '⚠️ Changes not backed up to S3';
+    indicator.className = 'sync-status dirty';
+    button.disabled = false;
+    button.textContent = 'Export & Upload to S3';
+  } else {
+    const lastSync = appState.syncStatus.lastSync
+      ? new Date(appState.syncStatus.lastSync).toLocaleString()
+      : 'Never';
+    indicator.innerHTML = `✅ Synced to S3 (${lastSync})`;
+    indicator.className = 'sync-status clean';
+    button.disabled = true;
+    button.textContent = 'Up to date';
+  }
+}
+
+// Export and upload integration
+async function exportAndUpload() {
+  showStatus('Exporting DDB data and uploading to S3...', 'loading');
 
   try {
-    const response = await fetch(`/api/cli/${command}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ env: appState.currentEnv })
+    const response = await fetch(`/api/export-upload/${appState.currentEnv}`, {
+      method: 'POST'
     });
 
     const result = await response.json();
 
     if (result.success) {
-      showStatus(result.output, 'success');
+      appState.syncStatus = result.syncStatus;
+      updateSyncStatusUI();
+      showStatus('Export and upload completed successfully', 'success');
     } else {
       throw new Error(result.error);
     }
   } catch (error) {
-    showStatus(`${command} failed: ${error.message}`, 'error');
+    showStatus(`Export failed: ${error.message}`, 'error');
   }
 }
 
@@ -493,6 +530,55 @@ function showStatus(message, type) {
 function showError(message) {
   showStatus(message, 'error');
 }
+
+// Event delegation for dynamically generated buttons
+document.addEventListener('click', (e) => {
+  const action = e.target.dataset.action;
+  const type = e.target.dataset.type;
+  const index = parseInt(e.target.dataset.index);
+
+  if (action === 'generate-link') {
+    generateLinkForRecruiter(index);
+  } else if (action === 'edit') {
+    editItem(type, index);
+  } else if (action === 'delete') {
+    deleteItem(type, index);
+  } else if (action === 'edit-developer') {
+    editDeveloper();
+  }
+});
+
+// Initialize event listeners for static elements
+document.addEventListener('DOMContentLoaded', () => {
+  // Environment selector
+  document.getElementById('environment').addEventListener('change', switchEnvironment);
+
+  // Tab buttons
+  document.querySelectorAll('.tab-button').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const tabName = e.target.dataset.tab;
+      switchTab(tabName);
+    });
+  });
+
+  // Add buttons
+  document.getElementById('add-project-btn').addEventListener('click', addProject);
+  document.getElementById('add-recruiter-btn').addEventListener('click', addRecruiter);
+
+  // Action buttons
+  document.getElementById('export-upload-btn').addEventListener('click', exportAndUpload);
+  document.getElementById('save-all-btn').addEventListener('click', saveAllData);
+
+  // Modal buttons
+  document.querySelector('.close').addEventListener('click', closeModal);
+  document.getElementById('modal-save-btn').addEventListener('click', saveItem);
+  document.getElementById('modal-cancel-btn').addEventListener('click', closeModal);
+
+  // Initialize app
+  switchTab('developer');
+  loadAllData();
+  loadSyncStatus();
+});
 
 // Close modal when clicking outside
 window.onclick = function (event) {
