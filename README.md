@@ -91,5 +91,6 @@ Key documentation sections:
 
 - [Architecture & Implementation](docs/README.md#architecture)
 - [Deployment & Operations](docs/README.md#guides)
+- [Admin Board](docs/admin-board/admin-board.md) - Localhost data management interface
 - [Reference](docs/README.md#reference)
 - [Contributing](docs/README.md#contributing)

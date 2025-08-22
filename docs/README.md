@@ -60,6 +60,7 @@ Welcome to the AI Portfolio documentation. This guide will help you understand, 
 
 - [Deployment Guide](guides/deployment.md) - Step-by-step deployment instructions
 - [Local Development](guides/local-development.md) - Setting up your development environment
+- [Admin Board](admin-board/admin-board.md) - Localhost data management interface
 - [Troubleshooting](guides/troubleshooting.md) - Solutions for common issues
 - [Security Guide](guides/security.md) - Security considerations and implementation
 
