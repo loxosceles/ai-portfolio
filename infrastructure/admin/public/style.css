@@ -1,0 +1,354 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: white;
+    min-height: 100vh;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+header h1 {
+    color: #2c3e50;
+    font-size: 2em;
+}
+
+.env-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.env-selector select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.env-badge {
+    background: #3498db;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.env-badge.prod {
+    background: #e74c3c;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 30px;
+}
+
+.tab-button {
+    padding: 12px 24px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    color: #666;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+    color: #333;
+    background: #f8f9fa;
+}
+
+.tab-button.active {
+    color: #3498db;
+    border-bottom-color: #3498db;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.tab-header h2 {
+    color: #2c3e50;
+}
+
+/* Buttons */
+.add-btn, .save-btn, .upload-btn, .sync-btn, .generate-link-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.add-btn {
+    background: #27ae60;
+    color: white;
+}
+
+.add-btn:hover {
+    background: #229954;
+}
+
+.save-btn {
+    background: #3498db;
+    color: white;
+}
+
+.upload-btn {
+    background: #f39c12;
+    color: white;
+}
+
+.sync-btn {
+    background: #9b59b6;
+    color: white;
+}
+
+.generate-link-btn {
+    background: #e74c3c;
+    color: white;
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+/* Data Items */
+.data-list {
+    display: grid;
+    gap: 15px;
+}
+
+.data-item {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 20px;
+}
+
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.item-header h4 {
+    color: #2c3e50;
+}
+
+.item-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.edit-btn, .delete-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.edit-btn {
+    background: #3498db;
+    color: white;
+}
+
+.delete-btn {
+    background: #e74c3c;
+    color: white;
+}
+
+/* Link Section */
+.link-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0;
+    padding: 10px;
+    background: #fff;
+    border-radius: 4px;
+}
+
+.link-status {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Action Bar */
+.action-bar {
+    margin-top: 40px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* Status */
+.status {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.status.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status.loading {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 6px;
+    width: 80%;
+    max-width: 600px;
+    position: relative;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.modal-actions {
+    margin-top: 20px;
+    text-align: right;
+}
+
+.cancel-btn {
+    background: #95a5a6;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-group input, .form-group textarea, .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.form-group textarea {
+    height: 80px;
+    resize: vertical;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .tabs {
+        flex-direction: column;
+    }
+    
+    .tab-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .action-bar {
+        flex-direction: column;
+    }
+}

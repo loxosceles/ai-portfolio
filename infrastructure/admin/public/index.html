@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Portfolio Admin</h1>
+            <div class="env-selector">
+                <label for="environment">Environment:</label>
+                <select id="environment" onchange="switchEnvironment()">
+                    <option value="dev">Development</option>
+                    <option value="prod">Production</option>
+                </select>
+                <span class="env-badge" id="env-badge">DEV</span>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <nav class="tabs">
+            <button class="tab-button active" data-tab="developer" onclick="switchTab('developer')">
+                Developer
+            </button>
+            <button class="tab-button" data-tab="projects" onclick="switchTab('projects')">
+                Projects
+            </button>
+            <button class="tab-button" data-tab="recruiters" onclick="switchTab('recruiters')">
+                Recruiters
+            </button>
+        </nav>
+
+        <!-- Tab Contents -->
+        <div id="developer" class="tab-content active">
+            <div class="tab-header">
+                <h2>Developer Profile</h2>
+            </div>
+            <div id="developer-list" class="data-list"></div>
+        </div>
+
+        <div id="projects" class="tab-content">
+            <div class="tab-header">
+                <h2>Projects</h2>
+                <button onclick="addProject()" class="add-btn">Add Project</button>
+            </div>
+            <div id="projects-list" class="data-list"></div>
+        </div>
+
+        <div id="recruiters" class="tab-content">
+            <div class="tab-header">
+                <h2>Recruiters</h2>
+                <button onclick="addRecruiter()" class="add-btn">Add Recruiter</button>
+            </div>
+            <div id="recruiters-list" class="data-list"></div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <button onclick="saveAllData()" class="save-btn">Save All Changes</button>
+            <button onclick="uploadToS3()" class="upload-btn">Upload to S3</button>
+            <button onclick="syncToDDB()" class="sync-btn">Sync to DynamoDB</button>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <!-- Modal for Editing -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3 id="modal-title"></h3>
+            <div id="modal-body"></div>
+            <div class="modal-actions">
+                <button onclick="saveItem()" class="save-btn">Save</button>
+                <button onclick="closeModal()" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
