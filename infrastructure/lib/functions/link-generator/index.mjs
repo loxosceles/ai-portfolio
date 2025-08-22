@@ -2,9 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import generator from 'generate-password';
 import {
   CognitoIdentityProviderClient,
-  AdminCreateUserCommand,
-  AdminSetUserPasswordCommand,
-  AdminInitiateAuthCommand
+  AdminGetUserCommand
 } from '@aws-sdk/client-cognito-identity-provider';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
@@ -103,11 +101,43 @@ async function createDynamoDBEntry(tableName, linkId, password, region, stage) {
   }
 }
 
-async function createCognitoUser(userPoolId, clientId, linkId, region) {
+async function checkCognitoUserExists(userPoolId, linkId, region) {
   try {
     const client = new CognitoIdentityProviderClient({ region });
-
     const username = `${linkId}@visitor.temporary.com`;
+    
+    const command = new AdminGetUserCommand({
+      UserPoolId: userPoolId,
+      Username: username
+    });
+    
+    await client.send(command);
+    return true; // User exists
+  } catch (error) {
+    if (error.name === 'UserNotFoundException') {
+      return false; // User doesn't exist
+    }
+    throw error; // Other error
+  }
+}
+
+async function createLink(providedLinkId = null) {
+  try {
+    const config = validateEnvironment();
+    const linkId = providedLinkId || uuidv4();
+
+    // Validate that Cognito user exists before creating link
+    const userExists = await checkCognitoUserExists(
+      config.cognitoUserPoolId,
+      linkId,
+      config.cognitoRegion
+    );
+
+    if (!userExists) {
+      throw new Error(`Cognito user for linkId '${linkId}' does not exist. Create recruiter first.`);
+    }
+
+    // Generate password for VisitorLinks entry
     const password = generator.generate({
       length: 16,
       numbers: true,
@@ -118,69 +148,10 @@ async function createCognitoUser(userPoolId, clientId, linkId, region) {
       exclude: '"`\'\\${}[]()!?><|&;*'
     });
 
-    const createCommand = new AdminCreateUserCommand({
-      UserPoolId: userPoolId,
-      Username: username,
-      MessageAction: 'SUPPRESS',
-      UserAttributes: [
-        { Name: 'email', Value: username },
-        { Name: 'email_verified', Value: 'true' }
-      ]
-    });
-
-    await client.send(createCommand);
-
-    const setPasswordCommand = new AdminSetUserPasswordCommand({
-      UserPoolId: userPoolId,
-      Username: username,
-      Password: password,
-      Permanent: true
-    });
-
-    await client.send(setPasswordCommand);
-
-    const authCommand = new AdminInitiateAuthCommand({
-      UserPoolId: userPoolId,
-      ClientId: clientId,
-      AuthFlow: 'ADMIN_USER_PASSWORD_AUTH',
-      AuthParameters: {
-        USERNAME: username,
-        PASSWORD: password
-      }
-    });
-
-    const authResponse = await client.send(authCommand);
-
-    return {
-      username,
-      password,
-      tokens: authResponse.AuthenticationResult
-    };
-  } catch (error) {
-    console.error('Detailed error:', {
-      message: error.message,
-      code: error.code
-    });
-    throw error;
-  }
-}
-
-async function createLink() {
-  try {
-    const config = validateEnvironment();
-    const linkId = uuidv4();
-
-    const credentials = await createCognitoUser(
-      config.cognitoUserPoolId,
-      config.cognitoClientId,
-      linkId,
-      config.cognitoRegion
-    );
-
     await createDynamoDBEntry(
       config.visitorTableName,
       linkId,
-      credentials.password,
+      password,
       config.awsRegionDistrib,
       config.stage
     );
@@ -199,10 +170,7 @@ async function createLink() {
     return {
       success: true,
       linkId,
-      link: linkUrl,
-      username: credentials.username,
-      password: credentials.password,
-      tokens: credentials.tokens
+      link: linkUrl
     };
   } catch (error) {
     console.error('Error creating link:', error.message);
@@ -265,7 +233,9 @@ export const handler = async (event) => {
   console.log('Link Generator Lambda invoked:', JSON.stringify(event, null, 2));
   
   try {
-    const result = await createLink();
+    // Use provided recruiterId as linkId if available
+    const providedLinkId = event.recruiterId || null;
+    const result = await createLink(providedLinkId);
     
     if (result.success) {
       const createProfiles = event.createRecruiterProfile || false;
@@ -279,7 +249,6 @@ export const handler = async (event) => {
           success: true,
           linkId: result.linkId,
           link: result.link,
-          username: result.username,
           message: 'Link created successfully'
         })
       };

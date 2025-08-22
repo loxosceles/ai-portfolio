@@ -129,11 +129,7 @@ export class LinkGeneratorStack extends cdk.Stack {
     // Grant Cognito permissions
     this.linkGeneratorLambda.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: [
-          'cognito-idp:AdminCreateUser',
-          'cognito-idp:AdminSetUserPassword',
-          'cognito-idp:AdminInitiateAuth'
-        ],
+        actions: ['cognito-idp:AdminGetUser'],
         resources: [userPool.userPoolArn]
       })
     );
