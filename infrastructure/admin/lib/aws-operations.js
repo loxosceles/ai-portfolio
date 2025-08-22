@@ -106,6 +106,75 @@ class AWSOperations {
 
     return results;
   }
+
+  async getSSMParameter(env, paramName) {
+    try {
+      const command = new GetParameterCommand({
+        Name: `/portfolio/${env}/${paramName}`
+      });
+
+      const response = await this.ssmClient.send(command);
+      return response.Parameter.Value;
+    } catch (error) {
+      console.error(`Error getting SSM parameter ${paramName}:`, error);
+      throw new Error(`Failed to get SSM parameter: ${error.message}`);
+    }
+  }
+
+  async createCognitoUser(env, linkId, cognitoConfig) {
+    try {
+      // Get Cognito configuration from provided config
+      const userPoolId = await this.getSSMParameter(env, cognitoConfig.userPoolParam);
+      const region = cognitoConfig.region || this.config.regions.dynamodb;
+
+      const client = new CognitoIdentityProviderClient({ region });
+      const username = `${linkId}@visitor.temporary.com`;
+      const password = generator.generate({
+        length: 16,
+        numbers: true,
+        symbols: true,
+        uppercase: true,
+        lowercase: true,
+        strict: true,
+        exclude: '"\`\'\\${}[]()!?><|&;*'
+      });
+
+      // Create user
+      const createCommand = new AdminCreateUserCommand({
+        UserPoolId: userPoolId,
+        Username: username,
+        MessageAction: 'SUPPRESS',
+        UserAttributes: [
+          { Name: 'email', Value: username },
+          { Name: 'email_verified', Value: 'true' }
+        ]
+      });
+
+      await client.send(createCommand);
+
+      // Set permanent password
+      const setPasswordCommand = new AdminSetUserPasswordCommand({
+        UserPoolId: userPoolId,
+        Username: username,
+        Password: password,
+        Permanent: true
+      });
+
+      await client.send(setPasswordCommand);
+
+      return {
+        success: true,
+        username,
+        password
+      };
+    } catch (error) {
+      console.error('Error creating Cognito user:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
 }
 
 export default AWSOperations;
