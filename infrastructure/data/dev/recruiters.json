@@ -1,0 +1,12 @@
+[
+  {
+    "linkId": "jane-smith-strange-corps-234",
+    "recruiterName": "Jane Smith",
+    "companyName": "TechCorp",
+    "open_position": "Senior Developer",
+    "context": "Remote-first company",
+    "skills": ["AWS", "React", "Java", "C", "C++"],
+    "active": true,
+    "createdAt": "2025-08-21T20:07:54.142Z"
+  }
+]
