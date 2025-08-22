@@ -1,5 +1,15 @@
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get project root (same pattern as CLI configs)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(__dirname, '../..');
+
 // Admin configuration following CLI patterns from configs/aws-config.ts
 const ADMIN_CONFIG = {
+  // Project root (same as CLI)
+  projectRoot,
+
   // Regions configuration (reuse CLI pattern)
   regions: {
     dynamodb: 'eu-central-1',
@@ -28,8 +38,8 @@ const ADMIN_CONFIG = {
   // Path templates (reuse CLI template patterns)
   paths: {
     ssmTemplate: '/portfolio/{stage}/{paramName}',
-    dataDir: '../data/{stage}',
-    stateFile: '../data/.admin-state.json'
+    dataTemplate: 'data/{stage}',
+    stateFile: 'data/.admin-state.json'
   },
 
   // Cognito configuration

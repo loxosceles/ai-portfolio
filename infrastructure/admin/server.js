@@ -27,7 +27,7 @@ let syncState = {
 // Load state on startup
 async function loadSyncState() {
   try {
-    const stateFile = path.resolve(__dirname, ADMIN_CONFIG.paths.stateFile);
+    const stateFile = path.resolve(ADMIN_CONFIG.projectRoot, ADMIN_CONFIG.paths.stateFile);
     const data = await fs.readFile(stateFile, 'utf-8');
     syncState = JSON.parse(data);
   } catch {
@@ -36,7 +36,9 @@ async function loadSyncState() {
 }
 
 async function saveSyncState() {
-  const stateFile = path.resolve(__dirname, ADMIN_CONFIG.paths.stateFile);
+  const stateFile = path.resolve(ADMIN_CONFIG.projectRoot, ADMIN_CONFIG.paths.stateFile);
+  // Ensure directory exists
+  await fs.mkdir(path.dirname(stateFile), { recursive: true });
   await fs.writeFile(stateFile, JSON.stringify(syncState, null, 2));
 }
 

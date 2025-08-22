@@ -86,8 +86,9 @@ class AWSOperations {
   }
 
   async exportToFiles(stage) {
-    const dataDir = this.config.paths.dataDir.replace('{stage}', stage);
-    await fs.mkdir(path.resolve(__dirname, dataDir), { recursive: true });
+    const dataPath = this.config.paths.dataTemplate.replace('{stage}', stage);
+    const dataDir = path.resolve(this.config.projectRoot, dataPath);
+    await fs.mkdir(dataDir, { recursive: true });
 
     const results = {};
 
@@ -101,8 +102,10 @@ class AWSOperations {
         exportData = items;
       }
 
-      const filePath = path.resolve(__dirname, dataDir, typeConfig.file);
-      await fs.writeFile(filePath, JSON.stringify(exportData, null, 2) + '\n');
+      const filePath = path.resolve(dataDir, typeConfig.file);
+      // Sort object keys for consistent git diffs
+      const sortedData = this.sortObjectKeys(exportData);
+      await fs.writeFile(filePath, JSON.stringify(sortedData, null, 2) + '\n');
 
       results[type] = {
         items: typeConfig.isSingle ? (items.length > 0 ? 1 : 0) : items.length,
@@ -111,6 +114,22 @@ class AWSOperations {
     }
 
     return results;
+  }
+
+  // Sort object keys recursively for consistent JSON output
+  sortObjectKeys(obj) {
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.sortObjectKeys(item));
+    } else if (obj !== null && typeof obj === 'object') {
+      const sorted = {};
+      Object.keys(obj)
+        .sort()
+        .forEach((key) => {
+          sorted[key] = this.sortObjectKeys(obj[key]);
+        });
+      return sorted;
+    }
+    return obj;
   }
 
   async getSSMParameter(env, paramName) {
