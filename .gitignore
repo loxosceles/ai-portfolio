@@ -48,3 +48,6 @@ ai-portfolio.code-workspace
 
 # Planning docs
 docs/planning/
+
+# Admin interface runtime state
+infrastructure/data/.admin-state.json
