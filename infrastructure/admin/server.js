@@ -4,6 +4,7 @@ import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { fileURLToPath } from 'url';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
 import ADMIN_CONFIG from './lib/config.js';
 import AWSOperations from './lib/aws-operations.js';
@@ -141,6 +142,53 @@ app.post('/api/export-upload/:env', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Create recruiter with Cognito user
+app.post('/api/recruiters/create/:env', async (req, res) => {
+  try {
+    const { env } = req.params;
+    const recruiterData = req.body;
+
+    // Validate required fields
+    if (!recruiterData.linkId || recruiterData.linkId === '') {
+      return res.status(400).json({ error: 'Link ID is required' });
+    }
+
+    // 1. Create Cognito user
+    const cognitoResult = await awsOps.createCognitoUser(
+      env,
+      recruiterData.linkId,
+      ADMIN_CONFIG.cognito
+    );
+    if (!cognitoResult.success) {
+      return res.status(500).json({
+        error: `Failed to create Cognito user: ${cognitoResult.error}`
+      });
+    }
+
+    // 2. Save recruiter to DynamoDB
+    await awsOps.saveItems(env, 'recruiters', [recruiterData]);
+
+    // 3. Mark as dirty
+    syncState[env].isDirty = true;
+    await saveSyncState();
+
+    res.json({
+      success: true,
+      message: 'Recruiter and Cognito user created successfully',
+      cognitoUser: {
+        username: cognitoResult.username
+      },
+      syncStatus: { isDirty: true }
+    });
+  } catch (error) {
+    console.error('Recruiter creation error:', error);
+    res.status(500).json({
+      success: false,
+      error: `Recruiter creation failed: ${error.message}`
+    });
   }
 });
 
