@@ -56,8 +56,16 @@ export const DATA_CONFIG = {
     projects: 'projects.json',
     recruiters: 'recruiters.json'
   },
-  s3PathTemplate: '{stage}/{fileName}',
-  localPathTemplate: 'infrastructure/data/{stage}'
+  schemaFiles: {
+    developers: 'developer-schema.json',
+    projects: 'projects-schema.json',
+    recruiters: 'recruiters-schema.json'
+  },
+  s3PathTemplate: 'data/{fileName}',
+  schemaPathTemplate: 'schemas/{schemaFile}',
+  localPathTemplate: 'infrastructure/data/{stage}',
+  localDataPathTemplate: 'infrastructure/data/{stage}/data',
+  localSchemaPathTemplate: 'infrastructure/data/{stage}/schemas'
 };
 
 // Service region mapping
