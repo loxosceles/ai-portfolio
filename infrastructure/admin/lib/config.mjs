@@ -1,9 +1,7 @@
-import * as path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'path';
 
-// Get project root (same pattern as CLI configs)
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(__dirname, '../..');
+// Get project root using ESM URL approach
+const projectRoot = new URL('../..', import.meta.url).pathname;
 
 // Admin configuration following CLI patterns from configs/aws-config.ts
 const ADMIN_CONFIG = {
@@ -20,16 +18,19 @@ const ADMIN_CONFIG = {
   dataTypes: {
     developer: {
       file: 'developer.json',
+      schemaFile: 'developer-schema.json',
       ssmParam: 'DEVELOPER_TABLE_NAME',
       isSingle: true
     },
     projects: {
       file: 'projects.json',
+      schemaFile: 'projects-schema.json',
       ssmParam: 'PROJECTS_TABLE_NAME',
       isSingle: false
     },
     recruiters: {
       file: 'recruiters.json',
+      schemaFile: 'recruiters-schema.json',
       ssmParam: 'RECRUITER_PROFILES_TABLE_NAME',
       isSingle: false
     }
@@ -38,7 +39,8 @@ const ADMIN_CONFIG = {
   // Path templates (reuse CLI template patterns)
   paths: {
     ssmTemplate: '/portfolio/{stage}/{paramName}',
-    dataTemplate: 'data/{stage}',
+    dataTemplate: 'data',
+    schemaTemplate: 'schemas/{schemaFile}',
     stateFile: 'data/.admin-state.json'
   },
 

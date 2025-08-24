@@ -6,8 +6,9 @@ import { promisify } from 'util';
 import { fileURLToPath } from 'url';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
-import ADMIN_CONFIG from './lib/config.js';
-import AWSOperations from './lib/aws-operations.js';
+import ADMIN_CONFIG from './lib/config.mjs';
+import AWSOperations from './lib/aws-operations.mjs';
+import { validateData } from './lib/validation.mjs';
 
 const execAsync = promisify(exec);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -80,25 +81,23 @@ app.post('/api/data/:env/:type', async (req, res) => {
       return res.status(400).json({ error: `Unknown data type: ${type}` });
     }
 
-    // Ensure required fields are present
-    if (type === 'developer' && (!data.id || data.id === '')) {
-      return res.status(400).json({ error: 'Developer ID is required' });
-    }
-
-    if (type === 'projects' && Array.isArray(data)) {
-      for (const item of data) {
-        if (!item.id || item.id === '') {
-          return res.status(400).json({ error: 'Project ID is required for all projects' });
-        }
+    // Validate data against schema
+    try {
+      const bucketName = await awsOps.getSSMParameter(env, 'DATA_BUCKET_NAME');
+      const validationResult = await validateData(type, data, bucketName, ADMIN_CONFIG.regions.dynamodb);
+      
+      if (!validationResult.valid) {
+        return res.status(400).json({ 
+          error: 'Validation failed', 
+          details: validationResult.errors 
+        });
       }
-    }
-
-    if (type === 'recruiters' && Array.isArray(data)) {
-      for (const item of data) {
-        if (!item.linkId || item.linkId === '') {
-          return res.status(400).json({ error: 'Link ID is required for all recruiters' });
-        }
-      }
+    } catch (validationError) {
+      console.error('Validation error:', validationError);
+      return res.status(500).json({ 
+        error: 'Validation system error', 
+        message: validationError.message 
+      });
     }
 
     // Save to DynamoDB
@@ -254,17 +253,23 @@ app.post('/api/links/generate/:recruiterId', async (req, res) => {
 
 const PORT = 3001;
 
-// Initialize state and start server
-loadSyncState()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`🚀 DDB-Direct Admin Interface: http://localhost:${PORT}`);
-      console.log(`📊 Direct DynamoDB operations with sync status tracking`);
-      console.log(`📁 Managing: developer, projects, recruiters`);
-      console.log(`🔗 Link generation: Individual per recruiter`);
+// Export the app for testing
+export default app;
+
+// Only start server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  // Initialize state and start server
+  loadSyncState()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`🚀 DDB-Direct Admin Interface: http://localhost:${PORT}`);
+        console.log(`📊 Direct DynamoDB operations with sync status tracking`);
+        console.log(`📁 Managing: developer, projects, recruiters`);
+        console.log(`🔗 Link generation: Individual per recruiter`);
+      });
+    })
+    .catch((error) => {
+      console.error('Failed to initialize admin interface:', error);
+      process.exit(1);
     });
-  })
-  .catch((error) => {
-    console.error('Failed to initialize admin interface:', error);
-    process.exit(1);
-  });
+}
