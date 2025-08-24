@@ -10,206 +10,49 @@ import { IDataItem, IDataCollection } from '../../../types/data';
 import { IProject } from '../../../types/data/project';
 import { IDeveloper } from '../../../types/data';
 import { buildSSMPath } from '../../../utils/ssm';
+import { validateData } from '../validation';
 
 // Create manager instances
 const envManager = new EnvironmentManager(envManagerConfig);
 const awsManager = new AWSManager(awsManagerConfig);
 
 /**
- * Advanced validation functions for data integrity
+ * Validate data using JSON schemas stored locally and in S3.
+ *
+ * Data validation is handled through JSON schemas that are uploaded/downloaded
+ * alongside data files. Local development uses local schema files while CI/CD
+ * pipelines use S3 schema files. This approach centralizes validation rules
+ * and eliminates hardcoded validation logic.
+ *
+ * @param data - Data to validate
+ * @param stage - Environment stage (dev/prod)
+ * @returns Promise<void> - Throws error if validation fails
  */
+async function validateDataWithSchemas(
+  data: IDataCollection<IDataItem>,
+  stage: string
+): Promise<void> {
+  const validationErrors: string[] = [];
 
-/**
- * Validate a developer profile
- * @param developer - Developer profile to validate
- * @returns True if valid, throws an error if invalid
- */
-function validateDeveloper(developer: Partial<IDeveloper>): boolean {
-  if (!developer.id) {
-    throw new Error('Developer ID is required');
-  }
-
-  if (!developer.name) {
-    throw new Error('Developer name is required');
-  }
-
-  if (!developer.title) {
-    throw new Error('Developer title is required');
-  }
-
-  if (!developer.bio) {
-    throw new Error('Developer bio is required');
-  }
-
-  if (!developer.email) {
-    throw new Error('Developer email is required');
-  }
-
-  if (!Array.isArray(developer.skillSets)) {
-    throw new Error('Developer skillSets must be an array');
-  }
-
-  for (const skillSet of developer.skillSets) {
-    if (!skillSet.id) {
-      throw new Error('SkillSet ID is required');
+  // Validate each data type
+  for (const [dataType, items] of Object.entries(data)) {
+    if (!items || (Array.isArray(items) && items.length === 0)) {
+      continue; // Skip empty data
     }
 
-    if (!skillSet.name) {
-      throw new Error('SkillSet name is required');
-    }
+    // For developers, validate the first item as single object (array contains one developer)
+    const dataToValidate = dataType === 'developers' && Array.isArray(items) ? items[0] : items;
 
-    if (!Array.isArray(skillSet.skills)) {
-      throw new Error('SkillSet skills must be an array');
+    const result = await validateData(dataType, dataToValidate, stage);
+    if (!result.valid) {
+      const errorMessages = result.errors.map((err) => `${dataType}.${err.field}: ${err.message}`);
+      validationErrors.push(...errorMessages);
     }
   }
 
-  return true;
-}
-
-/**
- * Validate a project
- * @param project - Project to validate
- * @returns True if valid, throws an error if invalid
- */
-function validateProject(project: Partial<IProject>): boolean {
-  if (!project.id) {
-    throw new Error('Project ID is required');
+  if (validationErrors.length > 0) {
+    throw new Error(`Data validation failed:\n${validationErrors.join('\n')}`);
   }
-
-  if (!project.title) {
-    throw new Error('Project title is required');
-  }
-
-  if (!project.description) {
-    throw new Error('Project description is required');
-  }
-
-  if (!project.status) {
-    throw new Error('Project status is required');
-  }
-
-  if (!['Active', 'Completed', 'Planned'].includes(project.status)) {
-    throw new Error('Project status must be Active, Completed, or Planned');
-  }
-
-  if (!Array.isArray(project.highlights)) {
-    throw new Error('Project highlights must be an array');
-  }
-
-  if (!Array.isArray(project.techStack)) {
-    throw new Error('Project techStack must be an array');
-  }
-
-  // Validate architecture structure
-  if (project.architecture && Array.isArray(project.architecture)) {
-    for (const archItem of project.architecture) {
-      if (typeof archItem !== 'object' || archItem === null) {
-        throw new Error('Architecture items must be objects');
-      }
-
-      if (!archItem.name || typeof archItem.name !== 'string' || archItem.name.trim() === '') {
-        throw new Error('Architecture item name is required and must be a non-empty string');
-      }
-
-      if (
-        !archItem.details ||
-        typeof archItem.details !== 'string' ||
-        archItem.details.trim() === ''
-      ) {
-        throw new Error('Architecture item details is required and must be a non-empty string');
-      }
-    }
-  }
-
-  // Validate technicalShowcases structure
-  if (project.technicalShowcases && Array.isArray(project.technicalShowcases)) {
-    for (const showcase of project.technicalShowcases) {
-      if (typeof showcase !== 'object' || showcase === null) {
-        throw new Error('Technical showcase items must be objects');
-      }
-
-      if (!showcase.title || typeof showcase.title !== 'string' || showcase.title.trim() === '') {
-        throw new Error('Technical showcase title is required and must be a non-empty string');
-      }
-
-      if (
-        !showcase.description ||
-        typeof showcase.description !== 'string' ||
-        showcase.description.trim() === ''
-      ) {
-        throw new Error(
-          'Technical showcase description is required and must be a non-empty string'
-        );
-      }
-
-      if (!Array.isArray(showcase.highlights)) {
-        throw new Error('Technical showcase highlights must be an array');
-      }
-    }
-  }
-
-  if (!project.developerId) {
-    throw new Error('Project developerId is required');
-  }
-
-  return true;
-}
-
-/**
- * Validate a recruiter profile
- * @param recruiter - Recruiter profile to validate
- * @returns True if valid, throws an error if invalid
- */
-function validateRecruiter(recruiter: Record<string, unknown>): boolean {
-  if (!recruiter.linkId) {
-    throw new Error('Recruiter linkId is required');
-  }
-
-  if (!recruiter.recruiterName) {
-    throw new Error('Recruiter name is required');
-  }
-
-  if (!recruiter.companyName) {
-    throw new Error('Company name is required');
-  }
-
-  return true;
-}
-
-/**
- * Validate static data
- * @param data - Static data to validate
- * @returns True if valid, throws an error if invalid
- */
-function validateStaticData(data: IDataCollection<IDataItem>): boolean {
-  if (!data.developers || !Array.isArray(data.developers)) {
-    throw new Error('Developers must be an array');
-  }
-
-  if (!data.projects || !Array.isArray(data.projects)) {
-    throw new Error('Projects must be an array');
-  }
-
-  // Recruiters are optional but if present must be an array
-  if (data.recruiters && !Array.isArray(data.recruiters)) {
-    throw new Error('Recruiters must be an array');
-  }
-
-  for (const developer of data.developers) {
-    validateDeveloper(developer);
-  }
-
-  for (const project of data.projects) {
-    validateProject(project);
-  }
-
-  if (data.recruiters) {
-    for (const recruiter of data.recruiters) {
-      validateRecruiter(recruiter);
-    }
-  }
-
-  return true;
 }
 
 /**
@@ -237,8 +80,8 @@ export async function handleUploadData(
     BaseManager.logVerbose(verbose, `Loading local data for ${stage} stage...`);
 
     // Load local data
-    const localPath = DATA_CONFIG.localPathTemplate.replace('{stage}', stage);
-    const dataDir = path.resolve(awsManagerConfig.projectRoot, localPath);
+    const localDataPath = DATA_CONFIG.localDataPathTemplate.replace('{stage}', stage);
+    const dataDir = path.resolve(awsManagerConfig.projectRoot, localDataPath);
     const data: IDataCollection<IDataItem> = {};
 
     try {
@@ -255,9 +98,29 @@ export async function handleUploadData(
       };
     }
 
-    // Perform advanced validation before upload
+    // Load local schemas
+    const localSchemaPath = DATA_CONFIG.localSchemaPathTemplate.replace('{stage}', stage);
+    const schemaDir = path.resolve(awsManagerConfig.projectRoot, localSchemaPath);
+    const schemas: Record<string, unknown> = {};
+
     try {
-      validateStaticData(data);
+      for (const [key, fileName] of Object.entries(DATA_CONFIG.schemaFiles)) {
+        const filePath = path.join(schemaDir, fileName);
+        const content = await fs.readFile(filePath, 'utf-8');
+        schemas[key] = JSON.parse(content);
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to load schema files: ${error instanceof Error ? error.message : String(error)}`,
+        error: error instanceof Error ? error : new Error(String(error))
+      };
+    }
+
+    // Validate data using schemas before upload
+    try {
+      await validateDataWithSchemas(data, stage);
+      BaseManager.logVerbose(verbose, `✅ Data validation passed`);
     } catch (error) {
       return {
         success: false,
@@ -281,16 +144,29 @@ export async function handleUploadData(
           error: new Error(`Unknown data collection: ${key}`)
         };
       }
-      const s3Key = DATA_CONFIG.s3PathTemplate
-        .replace('{stage}', stage)
-        .replace('{fileName}', fileName);
+      const s3Key = DATA_CONFIG.s3PathTemplate.replace('{fileName}', fileName);
       await awsManager.uploadJsonToS3(bucketName, s3Key, items, validatedRegion);
     }
-    BaseManager.logVerbose(verbose, `✅ Uploaded data to s3://${bucketName}/${stage}/`);
+    BaseManager.logVerbose(verbose, `✅ Uploaded data to s3://${bucketName}/data/`);
+
+    // Upload schemas to S3
+    for (const [key, schema] of Object.entries(schemas)) {
+      const fileName = DATA_CONFIG.schemaFiles[key as keyof typeof DATA_CONFIG.schemaFiles];
+      if (!fileName) {
+        return {
+          success: false,
+          message: `Unknown schema collection: ${key}`,
+          error: new Error(`Unknown schema collection: ${key}`)
+        };
+      }
+      const s3Key = DATA_CONFIG.schemaPathTemplate.replace('{schemaFile}', fileName);
+      await awsManager.uploadJsonToS3(bucketName, s3Key, schema, validatedRegion);
+    }
+    BaseManager.logVerbose(verbose, `✅ Uploaded schemas to s3://${bucketName}/schemas/`);
 
     return {
       success: true,
-      message: '✅ Data upload completed successfully'
+      message: '✅ Data and schema upload completed successfully'
     };
   } catch (error) {
     return {
@@ -331,9 +207,7 @@ export async function handleDownloadData(
     // Download data from S3
     const data: IDataCollection<IDataItem> = {};
     for (const [key, fileName] of Object.entries(DATA_CONFIG.dataFiles)) {
-      const s3Key = DATA_CONFIG.s3PathTemplate
-        .replace('{stage}', stage)
-        .replace('{fileName}', fileName);
+      const s3Key = DATA_CONFIG.s3PathTemplate.replace('{fileName}', fileName);
       data[key] = await awsManager.downloadJsonFromS3<IDataItem[]>(
         bucketName,
         s3Key,
@@ -341,20 +215,35 @@ export async function handleDownloadData(
       );
     }
 
-    // Perform advanced validation after download
+    // Download schemas from S3
+    const schemas: Record<string, unknown> = {};
+    for (const [key, fileName] of Object.entries(DATA_CONFIG.schemaFiles)) {
+      const s3Key = DATA_CONFIG.schemaPathTemplate.replace('{schemaFile}', fileName);
+      schemas[key] = await awsManager.downloadJsonFromS3<unknown>(
+        bucketName,
+        s3Key,
+        validatedRegion
+      );
+    }
+
+    // Validate downloaded data using schemas
     try {
-      validateStaticData(data);
+      await validateDataWithSchemas(data, stage);
+      BaseManager.logVerbose(verbose, `✅ Downloaded data validation passed`);
     } catch (error) {
       return {
         success: false,
-        message: `Data validation failed: ${error instanceof Error ? error.message : String(error)}`,
+        message: `Downloaded data validation failed: ${error instanceof Error ? error.message : String(error)}`,
         error: error instanceof Error ? error : new Error(String(error))
       };
     }
 
     // Save to local files if output directory is specified
     if (output) {
-      await fs.mkdir(output, { recursive: true });
+      await fs.mkdir(path.join(output, 'data'), { recursive: true });
+      await fs.mkdir(path.join(output, 'schemas'), { recursive: true });
+
+      // Save data files
       for (const [key, items] of Object.entries(data)) {
         const fileName = DATA_CONFIG.dataFiles[key as keyof typeof DATA_CONFIG.dataFiles];
         if (!fileName) {
@@ -364,9 +253,23 @@ export async function handleDownloadData(
             error: new Error(`Unknown data collection: ${key}`)
           };
         }
-        await fs.writeFile(path.join(output, fileName), JSON.stringify(items, null, 2));
+        await fs.writeFile(path.join(output, 'data', fileName), JSON.stringify(items, null, 2));
       }
-      BaseManager.logVerbose(verbose, `✅ Data saved to ${output}`);
+
+      // Save schema files
+      for (const [key, schema] of Object.entries(schemas)) {
+        const fileName = DATA_CONFIG.schemaFiles[key as keyof typeof DATA_CONFIG.schemaFiles];
+        if (!fileName) {
+          return {
+            success: false,
+            message: `Unknown schema collection: ${key}`,
+            error: new Error(`Unknown schema collection: ${key}`)
+          };
+        }
+        await fs.writeFile(path.join(output, 'schemas', fileName), JSON.stringify(schema, null, 2));
+      }
+
+      BaseManager.logVerbose(verbose, `✅ Data and schemas saved to ${output}`);
     } else {
       // Output data to console if no output directory specified (for file redirection)
       process.stdout.write(`Developers: ${JSON.stringify(data.developers, null, 2)}\n`);
@@ -375,7 +278,7 @@ export async function handleDownloadData(
 
     return {
       success: true,
-      message: '✅ Data download completed successfully',
+      message: '✅ Data and schema download completed successfully',
       data
     };
   } catch (error) {
@@ -417,9 +320,7 @@ export async function handlePopulateDynamoDB(
     // Download data from S3
     const data: IDataCollection<IDataItem> = {};
     for (const [key, fileName] of Object.entries(DATA_CONFIG.dataFiles)) {
-      const s3Key = DATA_CONFIG.s3PathTemplate
-        .replace('{stage}', stage)
-        .replace('{fileName}', fileName);
+      const s3Key = DATA_CONFIG.s3PathTemplate.replace('{fileName}', fileName);
       data[key] = await awsManager.downloadJsonFromS3<IDataItem[]>(
         bucketName,
         s3Key,
@@ -427,9 +328,10 @@ export async function handlePopulateDynamoDB(
       );
     }
 
-    // Validate data
+    // Validate data before populating DynamoDB
     try {
-      validateStaticData(data);
+      await validateDataWithSchemas(data, stage);
+      BaseManager.logVerbose(verbose, `✅ Data validation passed before DynamoDB population`);
     } catch (error) {
       return {
         success: false,
