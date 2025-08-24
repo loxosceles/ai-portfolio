@@ -1,0 +1,58 @@
+{
+  "type": "array",
+  "minItems": 0,
+  "items": {
+    "type": "object",
+    "properties": {
+      "linkId": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Unique link identifier for the recruiter"
+      },
+      "recruiterName": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Recruiter's full name"
+      },
+      "companyName": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Company name"
+      },
+      "context": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Recruitment context or job description"
+      },
+      "active": {
+        "type": "boolean",
+        "description": "Whether the recruiter link is active"
+      },
+      "linkExpiry": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the recruiter link expires"
+      },
+      "linkUrl": {
+        "type": "string",
+        "format": "uri",
+        "description": "Full URL for the recruiter link"
+      },
+      "open_position": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Open position title"
+      },
+      "skills": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Required skills for the position"
+      }
+    },
+    "required": ["linkId", "recruiterName", "companyName"],
+    "additionalProperties": false
+  }
+}

@@ -35,6 +35,11 @@ export interface ITestStackEnv extends IStackEnv {
   prodVar?: string;
 }
 
+export interface ILinkGeneratorStackEnv extends IStackEnv {
+  awsRegionDistrib: string;
+  awsRegionDefault: string;
+}
+
 /**
  * Type mapping for stack environment inference
  */
@@ -45,4 +50,5 @@ export interface StackEnvMap {
   shared: ISharedStackEnv;
   pipeline: IPipelineStackEnv;
   testStack: ITestStackEnv;
+  linkGenerator: ILinkGeneratorStackEnv;
 }

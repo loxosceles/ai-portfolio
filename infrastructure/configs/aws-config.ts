@@ -53,10 +53,19 @@ export const PARAMETER_SCHEMA: Record<Stage, Record<string, string[]>> = {
 export const DATA_CONFIG = {
   dataFiles: {
     developers: 'developer.json',
-    projects: 'projects.json'
+    projects: 'projects.json',
+    recruiters: 'recruiters.json'
   },
-  s3PathTemplate: '{stage}/{fileName}',
-  localPathTemplate: 'infrastructure/data/{stage}'
+  schemaFiles: {
+    developers: 'developer-schema.json',
+    projects: 'projects-schema.json',
+    recruiters: 'recruiters-schema.json'
+  },
+  s3PathTemplate: 'data/{fileName}',
+  schemaPathTemplate: 'schemas/{schemaFile}',
+  localPathTemplate: 'infrastructure/data/{stage}',
+  localDataPathTemplate: 'infrastructure/data/{stage}/data',
+  localSchemaPathTemplate: 'infrastructure/data/{stage}/schemas'
 };
 
 // Service region mapping
@@ -68,18 +77,22 @@ export const SERVICE_REGIONS = {
 } as const;
 
 // Stack configuration constants
-export const STACK_TYPES = ['web', 'api', 'shared'] as const;
+export const STACK_TYPES = ['web', 'api', 'shared', 'linkGenerator', 'aiAdvocate'] as const;
 
 export const STACK_PREFIXES = {
   web: 'PortfolioWebStack',
   api: 'PortfolioApiStack',
-  shared: 'PortfolioSharedStack'
+  shared: 'PortfolioSharedStack',
+  linkGenerator: 'PortfolioLinkGeneratorStack',
+  aiAdvocate: 'AIAdvocateStack'
 } as const;
 
 export const STACK_REGIONS = {
   web: 'us-east-1',
   api: 'eu-central-1',
-  shared: 'eu-central-1'
+  shared: 'eu-central-1',
+  linkGenerator: 'eu-central-1',
+  aiAdvocate: 'eu-central-1'
 } as const;
 
 // AWS Manager Configuration

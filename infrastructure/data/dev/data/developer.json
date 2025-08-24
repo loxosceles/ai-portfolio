@@ -1,17 +1,13 @@
 [
   {
-    "id": "DEVELOPER_PROFILE",
-    "name": "John Doe",
-    "title": "Senior Full Stack Developer",
     "bio": "Experienced full-stack developer with a passion for clean code",
     "email": "john.doe@example.com",
-    "website": "https://johndoe.dev",
     "github": "https://github.com/vercel",
-    "linkedin": "https://linkedin.com/company/vercel",
-    "telegram": "https://t.me/vercel",
-    "location": "San Francisco, CA",
-    "yearsOfExperience": 8,
+    "id": "DEVELOPER_PROFILE",
     "isActive": true,
+    "linkedin": "https://linkedin.com/company/vercel",
+    "location": "San Francisco, CA",
+    "name": "John Doe",
     "skillSets": [
       {
         "id": "skill-1",
@@ -33,6 +29,10 @@
         "name": "DevOps",
         "skills": ["Docker", "Linux Shell", "AWS", "CI/CD"]
       }
-    ]
+    ],
+    "telegram": "https://t.me/vercel",
+    "title": "Senior Full Stack Developer",
+    "website": "https://johndoe.dev",
+    "yearsOfExperience": 8
   }
 ]
