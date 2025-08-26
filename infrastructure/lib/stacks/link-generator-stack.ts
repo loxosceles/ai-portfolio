@@ -99,8 +99,9 @@ export class LinkGeneratorStack extends cdk.Stack {
         AWS_REGION_DISTRIB: this.stackEnv.awsRegionDistrib,
         AWS_REGION_DEFAULT: this.stackEnv.awsRegionDefault
         // NOTE: CLOUDFRONT_DOMAIN is NOT included as environment variable
-        // This would create a circular dependency: LinkGeneratorStack -> WebStack -> LinkGeneratorStack
-        // Instead, the Lambda retrieves it from SSM at runtime: /portfolio/{stage}/CLOUDFRONT_DOMAIN
+        // Including CLOUDFRONT_DOMAIN here would create a circular dependency, because LinkGeneratorStack needs the CloudFront domain output from WebStack.
+        // To avoid this, the Lambda retrieves the CloudFront domain from SSM at runtime: /portfolio/{stage}/CLOUDFRONT_DOMAIN.
+        // This allows WebStack to be deployed first, and LinkGeneratorStack to consume its output via SSM, avoiding direct stack dependencies.
       },
       timeout: cdk.Duration.seconds(30),
       memorySize: 512
