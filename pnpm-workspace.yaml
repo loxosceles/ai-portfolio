@@ -1,6 +1,7 @@
 packages:
   - frontend
   - infrastructure
+  - infrastructure/admin
 
 ignoredBuiltDependencies:
   - esbuild
