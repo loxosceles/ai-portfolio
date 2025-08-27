@@ -55,7 +55,7 @@ describe('Admin API Endpoints', () => {
   });
 
   describe('GET /api/data/:env/:type', () => {
-    test('should return developer data as single object', async () => {
+    test('should return developer data as array', async () => {
       ddbMock.on(ScanCommand).resolvesOnce({
         Items: [{ id: 'dev1', name: 'Test Developer' }]
       });
@@ -70,7 +70,8 @@ describe('Admin API Endpoints', () => {
       }
       
       expect(response.status).toBe(200);
-      expect(response.body).toEqual({ id: 'dev1', name: 'Test Developer' });
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toEqual([{ id: 'dev1', name: 'Test Developer' }]);
     });
 
     test('should return projects data as array', async () => {

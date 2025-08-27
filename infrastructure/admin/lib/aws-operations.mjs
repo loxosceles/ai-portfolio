@@ -11,12 +11,27 @@ import {
   AdminCreateUserCommand,
   AdminSetUserPasswordCommand
 } from '@aws-sdk/client-cognito-identity-provider';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+import { nanoid } from 'nanoid';
 import generator from 'generate-password';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Password exclusion characters to avoid issues with various systems
+// - Quotes (", ', `) can interfere with JSON parsing and shell commands
+// - Backslash (\) can cause escaping issues
+// - Dollar sign ($) can interfere with shell variable expansion
+// - Angle brackets (<, >) can interfere with shell redirection
+// - Pipe (|) and ampersand (&) can interfere with shell operations
+// - Semicolon (;) can interfere with command separation
+// - Asterisk (*) can interfere with shell globbing
+// - Exclamation (!) can interfere with shell history expansion
+// - Question mark (?) can interfere with shell globbing
+// Note: Parentheses and brackets are excluded for consistency but could be reconsidered
+const PASSWORD_EXCLUDE_CHARS = '"\`\'\\${}[]()!?><|&;*';
 
 class AWSOperations {
   constructor(config) {
@@ -34,45 +49,43 @@ class AWSOperations {
     if (this.tableNames && this.tableNames._stage === stage) return this.tableNames;
 
     const tableNames = {};
-    for (const [type, typeConfig] of Object.entries(this.config.dataTypes)) {
+    for (const [tableName, tableConfig] of Object.entries(this.config.tables)) {
       const paramPath = this.config.paths.ssmTemplate
         .replace('{stage}', stage)
-        .replace('{paramName}', typeConfig.ssmParam);
+        .replace('{paramName}', tableConfig.ssmParam);
 
       const result = await this.ssmClient.send(new GetParameterCommand({ Name: paramPath }));
-      tableNames[type] = result.Parameter.Value;
+      tableNames[tableName] = result.Parameter.Value;
     }
 
     this.tableNames = { ...tableNames, _stage: stage };
     return tableNames;
   }
 
-  async getAllItems(stage, type) {
+  async getAllItems(stage, tableName) {
     const tableNames = await this.getTableNames(stage);
     const result = await this.ddbClient.send(
       new ScanCommand({
-        TableName: tableNames[type]
+        TableName: tableNames[tableName]
       })
     );
     return result.Items || [];
   }
 
-  async saveItems(stage, type, data) {
+  async saveItems(stage, tableName, data) {
     const tableNames = await this.getTableNames(stage);
-    const tableName = tableNames[type];
+    const tableNameResolved = tableNames[tableName];
 
-    if (this.config.dataTypes[type].isSingle) {
-      await this.ddbClient.send(new PutCommand({ TableName: tableName, Item: data }));
-    } else {
+    if (Array.isArray(data)) {
       // Replace all items for arrays
-      const existing = await this.getAllItems(stage, type);
+      const existing = await this.getAllItems(stage, tableName);
 
       // Delete existing
       for (const item of existing) {
-        const key = type === 'recruiters' ? { linkId: item.linkId } : { id: item.id };
+        const key = tableName === 'recruiters' ? { linkId: item.linkId } : { id: item.id };
         await this.ddbClient.send(
           new DeleteCommand({
-            TableName: tableName,
+            TableName: tableNameResolved,
             Key: key
           })
         );
@@ -80,8 +93,10 @@ class AWSOperations {
 
       // Insert new
       for (const item of data) {
-        await this.ddbClient.send(new PutCommand({ TableName: tableName, Item: item }));
+        await this.ddbClient.send(new PutCommand({ TableName: tableNameResolved, Item: item }));
       }
+    } else {
+      await this.ddbClient.send(new PutCommand({ TableName: tableNameResolved, Item: data }));
     }
   }
 
@@ -92,24 +107,19 @@ class AWSOperations {
 
     const results = {};
 
-    for (const [type, typeConfig] of Object.entries(this.config.dataTypes)) {
-      const items = await this.getAllItems(stage, type);
+    for (const [tableName, tableConfig] of Object.entries(this.config.tables)) {
+      const items = await this.getAllItems(stage, tableName);
 
-      let exportData;
-      if (typeConfig.isSingle) {
-        exportData = items.length > 0 ? [items[0]] : [{}];
-      } else {
-        exportData = items;
-      }
+      const exportData = items;
 
-      const filePath = path.resolve(dataDir, typeConfig.file);
+      const filePath = path.resolve(dataDir, tableConfig.file);
       // Sort object keys for consistent git diffs
       const sortedData = this.sortObjectKeys(exportData);
       await fs.writeFile(filePath, JSON.stringify(sortedData, null, 2) + '\n');
 
-      results[type] = {
-        items: typeConfig.isSingle ? (items.length > 0 ? 1 : 0) : items.length,
-        file: typeConfig.file
+      results[tableName] = {
+        items: items.length,
+        file: tableConfig.file
       };
     }
 
@@ -146,14 +156,14 @@ class AWSOperations {
     }
   }
 
-  async createCognitoUser(env, linkId, cognitoConfig) {
+  async createCognitoUser(env, recruiterId, cognitoConfig) {
     try {
       // Get Cognito configuration from provided config
       const userPoolId = await this.getSSMParameter(env, cognitoConfig.userPoolParam);
       const region = cognitoConfig.region || this.config.regions.dynamodb;
 
       const client = new CognitoIdentityProviderClient({ region });
-      const username = `${linkId}@visitor.temporary.com`;
+      const username = `${recruiterId}@visitor.temporary.com`;
       const password = generator.generate({
         length: 16,
         numbers: true,
@@ -161,7 +171,7 @@ class AWSOperations {
         uppercase: true,
         lowercase: true,
         strict: true,
-        exclude: '"\`\'\\${}[]()!?><|&;*'
+        exclude: PASSWORD_EXCLUDE_CHARS
       });
 
       // Create user
@@ -190,10 +200,47 @@ class AWSOperations {
       return {
         success: true,
         username,
-        password
+        password,
+        recruiterId
       };
     } catch (error) {
       console.error('Error creating Cognito user:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  async generateInitialLink(env, recruiterId) {
+    try {
+      const lambdaClient = new LambdaClient({
+        region: this.config.regions.dynamodb
+      });
+
+      const command = new InvokeCommand({
+        FunctionName: `link-generator-${env}`,
+        Payload: JSON.stringify({
+          recruiterId
+        })
+      });
+
+      const response = await lambdaClient.send(command);
+      const result = JSON.parse(new TextDecoder().decode(response.Payload));
+
+      if (result.statusCode === 200) {
+        const body = JSON.parse(result.body);
+        return {
+          success: true,
+          linkId: body.linkId,
+          link: body.link
+        };
+      } else {
+        const errorBody = JSON.parse(result.body);
+        throw new Error(errorBody.error || 'Link generation failed');
+      }
+    } catch (error) {
+      console.error('Error generating initial link:', error);
       return {
         success: false,
         error: error.message

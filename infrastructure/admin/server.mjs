@@ -54,18 +54,13 @@ app.get('/api/data/:env/:type', async (req, res) => {
   try {
     const { env, type } = req.params;
 
-    if (!ADMIN_CONFIG.dataTypes[type]) {
+    if (!ADMIN_CONFIG.tables[type]) {
       return res.status(400).json({ error: `Unknown data type: ${type}` });
     }
 
     const items = await awsOps.getAllItems(env, type);
 
-    // Handle developer as single object vs array
-    if (ADMIN_CONFIG.dataTypes[type].isSingle) {
-      res.json(items.length > 0 ? items[0] : {});
-    } else {
-      res.json(items);
-    }
+    res.json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -77,7 +72,7 @@ app.post('/api/data/:env/:type', async (req, res) => {
     const { env, type } = req.params;
     const data = req.body;
 
-    if (!ADMIN_CONFIG.dataTypes[type]) {
+    if (!ADMIN_CONFIG.tables[type]) {
       return res.status(400).json({ error: `Unknown data type: ${type}` });
     }
 

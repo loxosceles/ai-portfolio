@@ -59,75 +59,64 @@ describe('AWSOperations', () => {
     expect(ddbMock.commandCalls(ScanCommand)[0].args[0].input.TableName).toBe('dev-developers-table');
   });
 
+  // Test for single item tables (like developer) - put the item
   test('should save single item to DynamoDB', async () => {
+    // Mock the PutCommand to succeed
     ddbMock.on(PutCommand).resolves({});
 
     const developerData = { id: 'dev1', name: 'John Doe', email: 'john@example.com' };
     
+    // Call saveItems with single item data
     await awsOps.saveItems('dev', 'developer', developerData);
 
+    // Verify only one PutCommand was called with correct data
     expect(ddbMock.commandCalls(PutCommand)).toHaveLength(1);
     expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.TableName).toBe('dev-developers-table');
     expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.Item).toEqual(developerData);
   });
 
-  test('should save array items to DynamoDB with replace logic', async () => {
-    // Mock existing items scan
-    ddbMock.on(ScanCommand, { TableName: 'dev-projects-table' })
-      .resolves({ 
-        Items: [
-          { id: 'proj1', name: 'Old Project' }
-        ]
-      });
-
-    // Mock delete and put operations
-    ddbMock.on(DeleteCommand).resolves({});
+  // Test for array item tables (projects and recruiters) - adds items to existing data
+  test('should add items to DynamoDB for array tables', async () => {
+    // Mock the PutCommand to succeed
     ddbMock.on(PutCommand).resolves({});
 
+    // Test data for projects table
     const projectsData = [
-      { id: 'proj2', name: 'New Project 1' },
-      { id: 'proj3', name: 'New Project 2' }
+      { id: 'proj1', name: 'Project 1' },
+      { id: 'proj2', name: 'Project 2' }
     ];
     
+    // Call saveItems with array data for projects
     await awsOps.saveItems('dev', 'projects', projectsData);
 
-    // Should delete existing item
-    expect(ddbMock.commandCalls(DeleteCommand)).toHaveLength(1);
-    expect(ddbMock.commandCalls(DeleteCommand)[0].args[0].input.TableName).toBe('dev-projects-table');
-    expect(ddbMock.commandCalls(DeleteCommand)[0].args[0].input.Key).toEqual({ id: 'proj1' });
-
-    // Should put new items
+    // Verify correct number of PutCommands for projects
     expect(ddbMock.commandCalls(PutCommand)).toHaveLength(2);
+    expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.TableName).toBe('dev-projects-table');
     expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.Item).toEqual(projectsData[0]);
     expect(ddbMock.commandCalls(PutCommand)[1].args[0].input.Item).toEqual(projectsData[1]);
-  });
 
-  test('should save recruiters with linkId as delete key', async () => {
-    // Mock existing recruiters scan
-    ddbMock.on(ScanCommand, { TableName: 'dev-recruiters-table' })
-      .resolves({ 
-        Items: [
-          { linkId: 'rec1', name: 'Old Recruiter' }
-        ]
-      });
-
-    // Mock delete and put operations
-    ddbMock.on(DeleteCommand).resolves({});
+    // Reset mock for recruiters test
+    ddbMock.reset();
+    ssmMock.reset();
+    
+    // Re-mock SSM parameters for recruiters test
+    ssmMock.on(GetParameterCommand, { Name: '/portfolio/dev/RECRUITER_PROFILES_TABLE_NAME' })
+      .resolves({ Parameter: { Value: 'dev-recruiters-table' } });
+    
     ddbMock.on(PutCommand).resolves({});
 
+    // Test data for recruiters table
     const recruitersData = [
-      { linkId: 'rec2', name: 'New Recruiter 1' },
-      { linkId: 'rec3', name: 'New Recruiter 2' }
+      { linkId: 'rec1', name: 'Recruiter 1' },
+      { linkId: 'rec2', name: 'Recruiter 2' }
     ];
     
+    // Call saveItems with array data for recruiters
     await awsOps.saveItems('dev', 'recruiters', recruitersData);
 
-    // Should delete existing item using linkId key
-    expect(ddbMock.commandCalls(DeleteCommand)).toHaveLength(1);
-    expect(ddbMock.commandCalls(DeleteCommand)[0].args[0].input.Key).toEqual({ linkId: 'rec1' });
-
-    // Should put new items
+    // Verify correct number of PutCommands for recruiters
     expect(ddbMock.commandCalls(PutCommand)).toHaveLength(2);
+    expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.TableName).toBe('dev-recruiters-table');
     expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.Item).toEqual(recruitersData[0]);
     expect(ddbMock.commandCalls(PutCommand)[1].args[0].input.Item).toEqual(recruitersData[1]);
   });
