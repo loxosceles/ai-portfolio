@@ -14,25 +14,22 @@ const ADMIN_CONFIG = {
     ssm: 'eu-central-1'
   },
 
-  // Data types configuration (reuse DATA_CONFIG pattern)
-  dataTypes: {
+  // Table configuration
+  tables: {
     developer: {
       file: 'developer.json',
       schemaFile: 'developer-schema.json',
-      ssmParam: 'DEVELOPER_TABLE_NAME',
-      isSingle: true
+      ssmParam: 'DEVELOPER_TABLE_NAME'
     },
     projects: {
       file: 'projects.json',
       schemaFile: 'projects-schema.json',
-      ssmParam: 'PROJECTS_TABLE_NAME',
-      isSingle: false
+      ssmParam: 'PROJECTS_TABLE_NAME'
     },
     recruiters: {
       file: 'recruiters.json',
       schemaFile: 'recruiters-schema.json',
-      ssmParam: 'RECRUITER_PROFILES_TABLE_NAME',
-      isSingle: false
+      ssmParam: 'RECRUITER_PROFILES_TABLE_NAME'
     }
   },
 

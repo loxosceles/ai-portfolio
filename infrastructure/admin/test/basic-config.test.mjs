@@ -11,21 +11,21 @@ describe('Admin Configuration', () => {
     test('should load admin config structure', () => {
       expect(ADMIN_CONFIG).toBeDefined();
       expect(ADMIN_CONFIG.regions).toBeDefined();
-      expect(ADMIN_CONFIG.dataTypes).toBeDefined();
+      expect(ADMIN_CONFIG.tables).toBeDefined();
       expect(ADMIN_CONFIG.paths).toBeDefined();
     });
 
     test('should have all required data types', () => {
       const requiredTypes = ['developer', 'projects', 'recruiters'];
       requiredTypes.forEach(type => {
-        expect(ADMIN_CONFIG.dataTypes[type]).toBeDefined();
+        expect(ADMIN_CONFIG.tables[type]).toBeDefined();
       });
     });
   });
 
   describe('Validation configuration', () => {
     test('should have schema files configured', () => {
-      Object.values(ADMIN_CONFIG.dataTypes).forEach(dataType => {
+      Object.values(ADMIN_CONFIG.tables).forEach(dataType => {
         expect(dataType.file).toBeDefined();
         expect(typeof dataType.file).toBe('string');
       });
@@ -37,7 +37,7 @@ describe('Admin Configuration', () => {
     });
 
     test('should have SSM parameters configured', () => {
-      Object.values(ADMIN_CONFIG.dataTypes).forEach(dataType => {
+      Object.values(ADMIN_CONFIG.tables).forEach(dataType => {
         expect(dataType.ssmParam).toBeDefined();
         expect(typeof dataType.ssmParam).toBe('string');
       });

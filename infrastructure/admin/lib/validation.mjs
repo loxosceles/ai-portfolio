@@ -18,7 +18,7 @@ const validatorCache = new Map();
  * @returns {Promise<object>} JSON schema object
  */
 async function getSchemaFromLocal(dataType, stage) {
-  const dataTypeConfig = config.dataTypes[dataType];
+  const dataTypeConfig = config.tables[dataType];
   if (!dataTypeConfig?.schemaFile) {
     throw new Error(`No schema file configured for data type: ${dataType}`);
   }
