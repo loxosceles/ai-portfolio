@@ -1,12 +1,16 @@
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import generator from 'generate-password';
 import {
   CognitoIdentityProviderClient,
-  AdminGetUserCommand
+  AdminGetUserCommand,
+  AdminSetUserPasswordCommand
 } from '@aws-sdk/client-cognito-identity-provider';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
+
+// Password exclusion characters to avoid issues with various systems
+const PASSWORD_EXCLUDE_CHARS = '"`\'\\${}[]()!?><|&;*';
 
 /**
  * Calculate DynamoDB TTL timestamp
@@ -78,7 +82,7 @@ function validateEnvironment() {
   };
 }
 
-async function createDynamoDBEntry(tableName, linkId, password, region, stage) {
+async function createDynamoDBEntry(tableName, linkId, password, recruiterId, region, stage) {
   try {
     const client = new DynamoDBClient({ region });
     const docClient = DynamoDBDocumentClient.from(client);
@@ -88,6 +92,7 @@ async function createDynamoDBEntry(tableName, linkId, password, region, stage) {
       Item: {
         linkId,
         password,
+        recruiterId,
         created_at: new Date().toISOString(),
         ttl: calculateTTL(15)
       }
@@ -101,10 +106,10 @@ async function createDynamoDBEntry(tableName, linkId, password, region, stage) {
   }
 }
 
-async function checkCognitoUserExists(userPoolId, linkId, region) {
+async function checkCognitoUserExists(userPoolId, recruiterId, region) {
   try {
     const client = new CognitoIdentityProviderClient({ region });
-    const username = `${linkId}@visitor.temporary.com`;
+    const username = `${recruiterId}@visitor.temporary.com`;
     
     const command = new AdminGetUserCommand({
       UserPoolId: userPoolId,
@@ -121,23 +126,47 @@ async function checkCognitoUserExists(userPoolId, linkId, region) {
   }
 }
 
-async function createLink(providedLinkId = null) {
+async function updateCognitoUserPassword(userPoolId, recruiterId, newPassword, region) {
+  try {
+    const client = new CognitoIdentityProviderClient({ region });
+    const username = `${recruiterId}@visitor.temporary.com`;
+    
+    const command = new AdminSetUserPasswordCommand({
+      UserPoolId: userPoolId,
+      Username: username,
+      Password: newPassword,
+      Permanent: true
+    });
+    
+    await client.send(command);
+    return true;
+  } catch (error) {
+    console.error('Error updating Cognito user password:', error);
+    throw new Error(`Failed to update Cognito user password: ${error.message}`);
+  }
+}
+
+async function createLink(recruiterId) {
   try {
     const config = validateEnvironment();
-    const linkId = providedLinkId || uuidv4();
+    
+    if (!recruiterId) {
+      throw new Error('recruiterId is required');
+    }
 
-    // Validate that Cognito user exists before creating link
+    // Validate that Cognito user exists for this recruiter
     const userExists = await checkCognitoUserExists(
       config.cognitoUserPoolId,
-      linkId,
+      recruiterId,
       config.cognitoRegion
     );
 
     if (!userExists) {
-      throw new Error(`Cognito user for linkId '${linkId}' does not exist. Create recruiter first.`);
+      throw new Error(`Cognito user for recruiterId '${recruiterId}' does not exist. Create recruiter first.`);
     }
 
-    // Generate password for VisitorLinks entry
+    // Generate new short linkId and password
+    const linkId = nanoid(8); // Short professional ID
     const password = generator.generate({
       length: 16,
       numbers: true,
@@ -145,18 +174,28 @@ async function createLink(providedLinkId = null) {
       uppercase: true,
       lowercase: true,
       strict: true,
-      exclude: '"`\'\\${}[]()!?><|&;*'
+      exclude: PASSWORD_EXCLUDE_CHARS
     });
 
+    // Update Cognito user with new password (uniform logic)
+    await updateCognitoUserPassword(
+      config.cognitoUserPoolId,
+      recruiterId,
+      password,
+      config.cognitoRegion
+    );
+
+    // Store linkId → password + recruiterId mapping
     await createDynamoDBEntry(
       config.visitorTableName,
       linkId,
       password,
+      recruiterId,
       config.awsRegionDistrib,
       config.stage
     );
 
-    // Get CloudFront domain from SSM (us-east-1 region where WebStack deploys)
+    // Get CloudFront domain from SSM
     const domainUrl = await getCloudFrontDomain(config.awsRegionDistrib, config.stage);
     const cleanDomainUrl = domainUrl.replace(/\/+$/, '');
     let linkUrl;
@@ -170,7 +209,8 @@ async function createLink(providedLinkId = null) {
     return {
       success: true,
       linkId,
-      link: linkUrl
+      link: linkUrl,
+      recruiterId
     };
   } catch (error) {
     console.error('Error creating link:', error.message);
@@ -233,9 +273,19 @@ export const handler = async (event) => {
   console.log('Link Generator Lambda invoked:', JSON.stringify(event, null, 2));
   
   try {
-    // Use provided recruiterId as linkId if available
-    const providedLinkId = event.recruiterId || null;
-    const result = await createLink(providedLinkId);
+    const recruiterId = event.recruiterId;
+    
+    if (!recruiterId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          success: false,
+          error: 'recruiterId is required'
+        })
+      };
+    }
+
+    const result = await createLink(recruiterId);
     
     if (result.success) {
       const createProfiles = event.createRecruiterProfile || false;
@@ -249,6 +299,7 @@ export const handler = async (event) => {
           success: true,
           linkId: result.linkId,
           link: result.link,
+          recruiterId: result.recruiterId,
           message: 'Link created successfully'
         })
       };
