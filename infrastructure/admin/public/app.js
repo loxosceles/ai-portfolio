@@ -47,48 +47,48 @@ function switchTab(tabName) {
   loadData(tabName);
 }
 
-// Load all data types
+// Load all data tables
 async function loadAllData() {
-  for (const type of ['developer', 'projects', 'recruiters']) {
-    await loadData(type);
+  for (const table of ['developer', 'projects', 'recruiters']) {
+    await loadData(table);
   }
 }
 
-// Load specific data type
-async function loadData(type) {
+// Load specific data table
+async function loadData(table) {
   try {
-    const response = await fetch(`/api/data/${appState.currentEnv}/${type}`);
+    const response = await fetch(`/api/${appState.currentEnv}/${table}`);
     const data = await response.json();
 
-    if (type === 'developer') {
-      appState.data[type] = Array.isArray(data) && data.length > 0 ? data[0] : data;
+    if (table === 'developer') {
+      appState.data[table] = Array.isArray(data) && data.length > 0 ? data[0] : data;
     } else {
-      appState.data[type] = data;
+      appState.data[table] = data;
     }
 
-    renderData(type);
+    renderData(table);
   } catch (error) {
-    showError(`Failed to load ${type}: ${error.message}`);
+    showError(`Failed to load ${table}: ${error.message}`);
   }
 }
 
-// Render data based on type
-function renderData(type) {
-  const container = document.getElementById(`${type}-list`);
+// Render data based on table
+function renderData(table) {
+  const container = document.getElementById(`${table}-list`);
   container.innerHTML = '';
 
-  if (type === 'developer') {
+  if (table === 'developer') {
     renderDeveloper(container);
   } else {
-    if (appState.data[type].length === 0) {
-      container.innerHTML = `<div class="empty-state">No ${type} found. Click "Add ${type.slice(0, -1)}" to create one.</div>`;
+    if (appState.data[table].length === 0) {
+      container.innerHTML = `<div class="empty-state">No ${table} found. Click "Add ${table.slice(0, -1)}" to create one.</div>`;
       return;
     }
 
-    appState.data[type].forEach((item, index) => {
+    appState.data[table].forEach((item, index) => {
       const itemDiv = document.createElement('div');
       itemDiv.className = 'data-item';
-      itemDiv.innerHTML = createItemHTML(type, item, index);
+      itemDiv.innerHTML = createItemHTML(table, item, index);
       container.appendChild(itemDiv);
     });
   }
@@ -120,9 +120,9 @@ function renderDeveloper(container) {
   container.appendChild(itemDiv);
 }
 
-// Create HTML for different item types
-function createItemHTML(type, item, index) {
-  if (type === 'projects') {
+// Create HTML for different item tables
+function createItemHTML(table, item, index) {
+  if (table === 'projects') {
     return `
       <div class="item-header">
         <h4>${item.title || 'Unnamed Project'}</h4>
@@ -131,17 +131,20 @@ function createItemHTML(type, item, index) {
       <p><strong>Description:</strong> ${item.description || 'No description'}</p>
       <p><strong>Tech Stack:</strong> ${item.techStack?.join(', ') || 'None'}</p>
       <div class="item-actions">
-        <button data-action="edit" data-type="${type}" data-index="${index}" class="edit-btn">Edit</button>
-        <button data-action="delete" data-type="${type}" data-index="${index}" class="delete-btn">Delete</button>
+        <button data-action="edit" data-table="${table}" data-index="${index}" class="edit-btn">Edit</button>
+        <button data-action="delete" data-table="${table}" data-index="${index}" class="delete-btn">Delete</button>
       </div>
     `;
-  } else if (type === 'recruiters') {
+  } else if (table === 'recruiters') {
     return `
-      <div class="item-header">
+      <div class="item-header" style="${!item.active ? 'color: #999; opacity: 0.6;' : ''}">
         <h4>${item.recruiterName || 'Unnamed Recruiter'} - ${item.companyName || 'Unknown Company'}</h4>
+        <button data-action="toggle-active" data-index="${index}" class="toggle-active-btn ${item.active ? 'active' : 'inactive'}">
+          ${item.active ? 'Active' : 'Inactive'}
+        </button>
       </div>
-      <p><strong>Position:</strong> ${item.open_position || 'No position'}</p>
-      <p><strong>Link ID:</strong> ${item.linkId || 'No link ID'}</p>
+      <p style="${!item.active ? 'color: #999;' : ''}"><strong>Position:</strong> ${item.open_position || 'No position'}</p>
+      <p style="${!item.active ? 'color: #999;' : ''}"><strong>Link ID:</strong> ${item.linkId || 'No link ID'}</p>
       <div class="link-section">
         <div class="link-status">
           ${item.linkUrl ? `<a href="${item.linkUrl}" target="_blank">${item.linkUrl}</a>` : 'No active link'}
@@ -152,8 +155,8 @@ function createItemHTML(type, item, index) {
         </button>
       </div>
       <div class="item-actions">
-        <button data-action="edit" data-type="${type}" data-index="${index}" class="edit-btn">Edit</button>
-        <button data-action="delete" data-type="${type}" data-index="${index}" class="delete-btn">Delete</button>
+        <button data-action="edit" data-table="${table}" data-index="${index}" class="edit-btn" ${!item.active ? 'disabled' : ''}>Edit</button>
+        <button data-action="delete" data-table="${table}" data-index="${index}" class="delete-btn" ${item.active ? 'disabled' : ''}>Delete</button>
       </div>
     `;
   }
@@ -201,7 +204,7 @@ async function createRecruiterWithUser(recruiterData) {
   try {
     showStatus(`Creating recruiter and Cognito user...`, 'loading');
 
-    const response = await fetch(`/api/recruiters/create/${appState.currentEnv}`, {
+    const response = await fetch(`/api/${appState.currentEnv}/recruiters`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(recruiterData)
@@ -226,27 +229,112 @@ async function createRecruiterWithUser(recruiterData) {
   }
 }
 
-function editItem(type, index) {
-  const item = appState.data[type][index];
-  let formHTML = '';
+// Delete functions
+async function deleteProject(index) {
+  const project = appState.data.projects[index];
+  if (!confirm(`Delete "${project.title}"?`)) return;
 
-  if (type === 'projects') {
-    formHTML = createProjectForm(item);
-  } else if (type === 'recruiters') {
-    formHTML = createRecruiterForm(item);
+  try {
+    const response = await fetch(`/api/${appState.currentEnv}/projects/${project.id}`, {
+      method: 'DELETE'
+    });
+    const result = await response.json();
+
+    if (result.success) {
+      appState.data.projects.splice(index, 1);
+      renderData('projects');
+      updateSyncStatus(result.syncStatus);
+      showStatus(`Deleted ${project.title}`, 'success');
+    } else {
+      throw new Error(result.error);
+    }
+  } catch (error) {
+    showStatus(`Delete failed: ${error.message}`, 'error');
   }
-
-  showModal(`Edit ${type.slice(0, -1)}`, formHTML, type, index);
 }
 
-function deleteItem(type, index) {
-  const item = appState.data[type][index];
-  const name = item.name || item.title || item.recruiterName;
+async function deleteRecruiter(index) {
+  const recruiter = appState.data.recruiters[index];
+  if (!confirm(`Delete "${recruiter.recruiterName}"?`)) return;
 
-  if (confirm(`Delete "${name}"?`)) {
-    appState.data[type].splice(index, 1);
-    renderData(type);
-    showStatus(`Deleted ${name}`, 'success');
+  try {
+    const response = await fetch(`/api/${appState.currentEnv}/recruiters/${recruiter.linkId}`, {
+      method: 'DELETE'
+    });
+    const result = await response.json();
+
+    if (result.success) {
+      appState.data.recruiters.splice(index, 1);
+      renderData('recruiters');
+      updateSyncStatus(result.syncStatus);
+      showStatus(`Deleted ${recruiter.recruiterName}`, 'success');
+    } else {
+      throw new Error(result.error);
+    }
+  } catch (error) {
+    showStatus(`Delete failed: ${error.message}`, 'error');
+  }
+}
+
+// Edit functions
+function editProject(index) {
+  const project = appState.data.projects[index];
+  const formHTML = createProjectForm(project);
+  showModal('Edit Project', formHTML, 'projects', index);
+}
+
+function editRecruiter(index) {
+  const recruiter = appState.data.recruiters[index];
+  const formHTML = createRecruiterForm(recruiter);
+  showModal('Edit Recruiter', formHTML, 'recruiters', index);
+}
+
+// Toggle recruiter active status
+async function toggleRecruiterActive(index) {
+  const recruiter = appState.data.recruiters[index];
+  const newActiveState = !recruiter.active;
+
+  try {
+    if (newActiveState === false) {
+      // Deactivating - remove link first
+      showStatus('Removing link and deactivating recruiter...', 'loading');
+
+      const removeLinkResponse = await fetch(
+        `/api/${appState.currentEnv}/links/remove/${recruiter.linkId}`,
+        {
+          method: 'POST'
+        }
+      );
+
+      if (!removeLinkResponse.ok) {
+        const removeResult = await removeLinkResponse.json();
+        throw new Error(removeResult.error || 'Failed to remove link');
+      }
+    }
+
+    // Update recruiter active status
+    const response = await fetch(`/api/${appState.currentEnv}/recruiters/${recruiter.linkId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...recruiter, active: newActiveState })
+    });
+    const result = await response.json();
+
+    if (result.success) {
+      // Update local state - clear link data if deactivated
+      appState.data.recruiters[index] = {
+        ...recruiter,
+        active: newActiveState,
+        ...(newActiveState === false && { linkUrl: undefined, linkExpiry: undefined })
+      };
+      renderData('recruiters');
+      updateSyncStatus(result.syncStatus);
+      showStatus(`Recruiter ${newActiveState ? 'activated' : 'deactivated'}`, 'success');
+    } else {
+      throw new Error(result.error);
+    }
+  } catch (error) {
+    showStatus(`Toggle failed: ${error.message}`, 'error');
   }
 }
 
@@ -257,11 +345,10 @@ async function generateLinkForRecruiter(recruiterIndex) {
   showStatus(`Generating link for ${recruiter.recruiterName}...`, 'loading');
 
   try {
-    const response = await fetch(`/api/links/generate/${recruiter.linkId}`, {
+    const response = await fetch(`/api/${appState.currentEnv}/links/generate/${recruiter.linkId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        env: appState.currentEnv,
         recruiter: recruiter
       })
     });
@@ -305,6 +392,50 @@ function createDeveloperForm(item = {}) {
       <label>Bio:</label>
       <textarea id="form-bio" placeholder="Brief description...">${item.bio || ''}</textarea>
     </div>
+    <div id="skill-categories">
+      ${(item.skillSets || [])
+        .map(
+          (skillSet, index) => `
+        <div class="skill-category-group">
+          <div class="category-header">
+            <h4>Category ${index + 1}</h4>
+            <button type="button" onclick="removeSkillCategory(${index})" class="remove-btn">Remove</button>
+          </div>
+          <div class="form-group">
+            <label>Name:</label>
+            <input type="text" id="form-category-${index}" value="${skillSet.name}" placeholder="Frontend">
+          </div>
+          <div class="form-group">
+            <label>Skills (comma-separated):</label>
+            <input type="text" id="form-skills-${index}" value="${skillSet.skills.join(', ')}" placeholder="React, JavaScript">
+          </div>
+        </div>
+      `
+        )
+        .join('')}
+      ${
+        (item.skillSets || []).length === 0
+          ? `
+        <div class="skill-category-group">
+          <div class="category-header">
+            <h4>Category 1</h4>
+          </div>
+          <div class="form-group">
+            <label>Name:</label>
+            <input type="text" id="form-category-0" value="" placeholder="Frontend">
+          </div>
+          <div class="form-group">
+            <label>Skills (comma-separated):</label>
+            <input type="text" id="form-skills-0" value="" placeholder="React, JavaScript">
+          </div>
+        </div>
+      `
+          : ''
+      }
+    </div>
+    <div class="form-group">
+      <button type="button" onclick="addSkillCategory()">Add Category</button>
+    </div>
   `;
 }
 
@@ -319,6 +450,14 @@ function createProjectForm(item = {}) {
       <input type="text" id="form-title" value="${item.title || ''}" placeholder="Project Name">
     </div>
     <div class="form-group">
+      <label>Slug (URL-friendly):</label>
+      <input type="text" id="form-slug" value="${item.slug || ''}" placeholder="my-project">
+    </div>
+    <div class="form-group">
+      <label>Icon:</label>
+      <input type="text" id="form-icon" value="${item.icon || ''}" placeholder="🚀">
+    </div>
+    <div class="form-group">
       <label>Description:</label>
       <textarea id="form-description" placeholder="Project description...">${item.description || ''}</textarea>
     </div>
@@ -329,6 +468,26 @@ function createProjectForm(item = {}) {
         <option value="Active" ${item.status === 'Active' ? 'selected' : ''}>Active</option>
         <option value="Completed" ${item.status === 'Completed' ? 'selected' : ''}>Completed</option>
       </select>
+    </div>
+    <div class="form-group">
+      <label>GitHub URL:</label>
+      <input type="url" id="form-githuburl" value="${item.githubUrl || ''}" placeholder="https://github.com/user/repo">
+    </div>
+    <div class="form-group">
+      <label>Overview:</label>
+      <textarea id="form-overview" placeholder="Detailed project overview...">${item.overview || ''}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Challenge:</label>
+      <textarea id="form-challenge" placeholder="Main challenge addressed...">${item.challenge || ''}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Solution:</label>
+      <textarea id="form-solution" placeholder="Solution approach taken...">${item.solution || ''}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Highlights (comma-separated):</label>
+      <input type="text" id="form-highlights" value="${item.highlights?.join(', ') || ''}" placeholder="Key features, achievements">
     </div>
     <div class="form-group">
       <label>Tech Stack (comma-separated):</label>
@@ -367,143 +526,263 @@ function createRecruiterForm(item = {}) {
       <label>Skills (comma-separated):</label>
       <input type="text" id="form-skills" value="${item.skills?.join(', ') || ''}" placeholder="AWS, React, Node.js">
     </div>
+
+    <div class="form-group">
+      <label>Link Expiry:</label>
+      <span class="readonly-field">${item.linkExpiry ? new Date(item.linkExpiry).toLocaleString() : 'Not set'}</span>
+    </div>
+    <div class="form-group">
+      <label>Link URL:</label>
+      <span class="readonly-field">${item.linkUrl || 'Not generated'}</span>
+    </div>
   `;
 }
 
 // Modal management
-let editingType = null;
+let editingTable = null;
 let editingIndex = null;
 
-function showModal(title, content, type, index) {
+function showModal(title, content, table, index) {
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-body').innerHTML = content;
   document.getElementById('modal').style.display = 'block';
 
-  editingType = type;
+  editingTable = table;
   editingIndex = index;
 }
 
 function closeModal() {
   document.getElementById('modal').style.display = 'none';
-  editingType = null;
+  editingTable = null;
   editingIndex = null;
 }
 
-function saveItem() {
-  if (!editingType) return;
-
-  if (editingType === 'developer') {
-    // Update existing developer template, preserving all fields
-    appState.data.developer.id = document.getElementById('form-id').value;
-    appState.data.developer.name = document.getElementById('form-name').value;
-    appState.data.developer.title = document.getElementById('form-title').value;
-    appState.data.developer.email = document.getElementById('form-email').value;
-    appState.data.developer.bio = document.getElementById('form-bio').value;
-  } else if (editingType === 'projects') {
-    // Update existing project template, preserving all fields
-    const project = appState.data[editingType][editingIndex];
-    project.id = document.getElementById('form-id').value;
-    project.title = document.getElementById('form-title').value;
-    project.description = document.getElementById('form-description').value;
-    project.status = document.getElementById('form-status').value;
-    project.techStack = document
-      .getElementById('form-techstack')
-      .value.split(',')
-      .map((s) => s.trim())
-      .filter((s) => s);
-    project.developerId = document.getElementById('form-developerid').value;
-  } else if (editingType === 'recruiters') {
-    // Update existing recruiter template, preserving all fields
-    const recruiter = appState.data[editingType][editingIndex];
-    recruiter.linkId = document.getElementById('form-linkid').value;
-    recruiter.recruiterName = document.getElementById('form-recruitername').value;
-    recruiter.companyName = document.getElementById('form-companyname').value;
-    recruiter.open_position = document.getElementById('form-openposition').value;
-    recruiter.context = document.getElementById('form-context').value;
-    recruiter.skills = document
-      .getElementById('form-skills')
-      .value.split(',')
-      .map((s) => s.trim())
-      .filter((s) => s);
-    if (!recruiter.createdAt) {
-      recruiter.createdAt = new Date().toISOString();
-    }
-
-    // Check if this is a new recruiter (no existing Cognito user)
-    const isNewRecruiter = !recruiter.cognitoUserCreated;
-
-    if (isNewRecruiter) {
-      // Create recruiter with Cognito user
-      recruiter.cognitoUserCreated = true;
-      closeModal();
-      createRecruiterWithUser(recruiter);
-      return;
-    }
-  }
-
-  renderData(editingType);
-  closeModal();
-
-  const itemTypeName = editingType ? editingType.slice(0, -1) : 'item';
-  showStatus(`${itemTypeName} updated. Use 'Save All Changes' to save to database.`, 'success');
-}
-
-// Save operations
-async function saveAllData() {
-  showStatus('Saving all data to DynamoDB...', 'loading');
-
+// Save functions
+async function saveDeveloper() {
   try {
-    for (const [type, data] of Object.entries(appState.data)) {
-      // Validate required fields before saving
-      if (type === 'developer' && (!data.id || data.id === '')) {
-        showStatus('Developer ID is required', 'error');
-        return;
-      }
+    const skillSets = [];
+    let index = 0;
 
-      if (type === 'projects') {
-        for (const project of data) {
-          if (!project.id || project.id === '') {
-            showStatus('All projects must have an ID', 'error');
-            return;
-          }
-        }
-      }
+    while (document.getElementById(`form-category-${index}`)) {
+      const categoryName = document.getElementById(`form-category-${index}`).value.trim();
+      const skillsValue = document.getElementById(`form-skills-${index}`).value.trim();
 
-      if (type === 'recruiters') {
-        for (const recruiter of data) {
-          if (!recruiter.linkId || recruiter.linkId === '') {
-            showStatus('All recruiters must have a Link ID', 'error');
-            return;
-          }
-        }
+      if (categoryName && skillsValue) {
+        skillSets.push({
+          id: categoryName.toLowerCase().replace(/\s+/g, '-'),
+          name: categoryName,
+          skills: skillsValue
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s)
+        });
       }
-
-      const response = await fetch(`/api/data/${appState.currentEnv}/${type}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error);
-      }
+      index++;
     }
 
-    // Mark as dirty after successful save
-    appState.syncStatus.isDirty = true;
-    updateSyncStatusUI();
+    const data = {
+      id: document.getElementById('form-id').value,
+      name: document.getElementById('form-name').value,
+      title: document.getElementById('form-title').value,
+      email: document.getElementById('form-email').value,
+      bio: document.getElementById('form-bio').value,
+      skillSets:
+        skillSets.length > 0
+          ? skillSets
+          : [{ id: 'general', name: 'General', skills: ['To be updated'] }]
+    };
 
-    showStatus('All data saved to DynamoDB successfully', 'success');
+    const response = await fetch(`/api/${appState.currentEnv}/developer`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await response.json();
+
+    if (result.success) {
+      appState.data.developer = data;
+      renderData('developer');
+      updateSyncStatus(result.syncStatus);
+      closeModal();
+      showStatus('Developer saved', 'success');
+    } else {
+      throw new Error(result.error);
+    }
   } catch (error) {
     showStatus(`Save failed: ${error.message}`, 'error');
   }
 }
 
+async function saveProject() {
+  const data = {
+    id: document.getElementById('form-id').value,
+    title: document.getElementById('form-title').value,
+    slug: document.getElementById('form-slug').value,
+    icon: document.getElementById('form-icon').value,
+    description: document.getElementById('form-description').value,
+    status: document.getElementById('form-status').value,
+    highlights: document
+      .getElementById('form-highlights')
+      .value.split(',')
+      .map((s) => s.trim())
+      .filter((s) => s),
+    techStack: document
+      .getElementById('form-techstack')
+      .value.split(',')
+      .map((s) => s.trim())
+      .filter((s) => s),
+    githubUrl: document.getElementById('form-githuburl').value,
+    overview: document.getElementById('form-overview').value,
+    challenge: document.getElementById('form-challenge').value,
+    solution: document.getElementById('form-solution').value,
+    architecture: [],
+    technicalShowcases: [],
+    archPatterns: [],
+    performance: [],
+    repositoryAndDevelopment: {},
+    developerId: document.getElementById('form-developerid').value
+  };
+
+  const isNew =
+    editingIndex >= appState.data.projects.length || !appState.data.projects[editingIndex]?.id;
+  const method = isNew ? 'POST' : 'PUT';
+  const url = isNew
+    ? `/api/${appState.currentEnv}/projects`
+    : `/api/${appState.currentEnv}/projects/${data.id}`;
+
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await response.json();
+
+    if (result.success) {
+      appState.data.projects[editingIndex] = data;
+      renderData('projects');
+      updateSyncStatus(result.syncStatus);
+      closeModal();
+      showStatus('Project saved', 'success');
+    } else {
+      throw new Error(result.error);
+    }
+  } catch (error) {
+    showStatus(`Save failed: ${error.message}`, 'error');
+  }
+}
+
+async function saveRecruiter() {
+  const data = {
+    linkId: document.getElementById('form-linkid').value,
+    recruiterName: document.getElementById('form-recruitername').value,
+    companyName: document.getElementById('form-companyname').value,
+    open_position: document.getElementById('form-openposition').value,
+    context: document.getElementById('form-context').value,
+    skills: document
+      .getElementById('form-skills')
+      .value.split(',')
+      .map((s) => s.trim())
+      .filter((s) => s),
+    active: appState.data.recruiters[editingIndex]?.active ?? true,
+    // Preserve existing values, don't send empty strings
+    ...(appState.data.recruiters[editingIndex]?.linkExpiry && {
+      linkExpiry: appState.data.recruiters[editingIndex].linkExpiry
+    }),
+    ...(appState.data.recruiters[editingIndex]?.linkUrl && {
+      linkUrl: appState.data.recruiters[editingIndex].linkUrl
+    })
+  };
+
+  const isNew =
+    editingIndex >= appState.data.recruiters.length ||
+    !appState.data.recruiters[editingIndex]?.linkId;
+
+  if (isNew) {
+    closeModal();
+    createRecruiterWithUser(data);
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/${appState.currentEnv}/recruiters/${data.linkId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await response.json();
+
+    if (result.success) {
+      appState.data.recruiters[editingIndex] = data;
+      renderData('recruiters');
+      updateSyncStatus(result.syncStatus);
+      closeModal();
+      showStatus('Recruiter saved', 'success');
+    } else {
+      throw new Error(result.error);
+    }
+  } catch (error) {
+    showStatus(`Save failed: ${error.message}`, 'error');
+  }
+}
+
+// Route to correct save function
+function saveItem() {
+  if (editingTable === 'developer') {
+    saveDeveloper();
+  } else if (editingTable === 'projects') {
+    saveProject();
+  } else if (editingTable === 'recruiters') {
+    saveRecruiter();
+  }
+}
+
+// Helper function
+function updateSyncStatus(syncStatus) {
+  if (syncStatus) {
+    appState.syncStatus = syncStatus;
+    updateSyncStatusUI();
+  }
+}
+
+// Add skill category function
+function addSkillCategory() {
+  const container = document.getElementById('skill-categories');
+  const existingCategories = container.querySelectorAll('[id^="form-category-"]');
+  const nextIndex = existingCategories.length;
+
+  const newCategoryHTML = `
+    <div class="skill-category-group">
+      <div class="category-header">
+        <h4>Category ${nextIndex + 1}</h4>
+        <button type="button" onclick="removeSkillCategory(${nextIndex})" class="remove-btn">Remove</button>
+      </div>
+      <div class="form-group">
+        <label>Name:</label>
+        <input type="text" id="form-category-${nextIndex}" value="" placeholder="Frontend">
+      </div>
+      <div class="form-group">
+        <label>Skills (comma-separated):</label>
+        <input type="text" id="form-skills-${nextIndex}" value="" placeholder="React, JavaScript">
+      </div>
+    </div>
+  `;
+
+  container.insertAdjacentHTML('beforeend', newCategoryHTML);
+}
+
+// Remove skill category function
+function removeSkillCategory(index) {
+  const categoryGroup = document
+    .getElementById(`form-category-${index}`)
+    .closest('.skill-category-group');
+  categoryGroup.remove();
+}
+
 // Load sync status
 async function loadSyncStatus() {
   try {
-    const response = await fetch(`/api/sync-status/${appState.currentEnv}`);
+    const response = await fetch(`/api/${appState.currentEnv}/sync-status`);
     appState.syncStatus = await response.json();
     updateSyncStatusUI();
   } catch (error) {
@@ -537,7 +816,7 @@ async function exportAndUpload() {
   showStatus('Exporting DDB data and uploading to S3...', 'loading');
 
   try {
-    const response = await fetch(`/api/export-upload/${appState.currentEnv}`, {
+    const response = await fetch(`/api/${appState.currentEnv}/export-upload`, {
       method: 'POST'
     });
 
@@ -576,15 +855,25 @@ function showError(message) {
 // Event delegation for dynamically generated buttons
 document.addEventListener('click', (e) => {
   const action = e.target.dataset.action;
-  const type = e.target.dataset.type;
+  const table = e.target.dataset.table;
   const index = parseInt(e.target.dataset.index);
 
   if (action === 'generate-link') {
     generateLinkForRecruiter(index);
+  } else if (action === 'toggle-active') {
+    toggleRecruiterActive(index);
   } else if (action === 'edit') {
-    editItem(type, index);
+    if (table === 'projects') {
+      editProject(index);
+    } else if (table === 'recruiters') {
+      editRecruiter(index);
+    }
   } else if (action === 'delete') {
-    deleteItem(type, index);
+    if (table === 'projects') {
+      deleteProject(index);
+    } else if (table === 'recruiters') {
+      deleteRecruiter(index);
+    }
   } else if (action === 'edit-developer') {
     editDeveloper();
   }
@@ -609,7 +898,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Action buttons
   document.getElementById('export-upload-btn').addEventListener('click', exportAndUpload);
-  document.getElementById('save-all-btn').addEventListener('click', saveAllData);
 
   // Modal buttons
   document.querySelector('.close').addEventListener('click', closeModal);
