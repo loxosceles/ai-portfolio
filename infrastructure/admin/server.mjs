@@ -43,43 +43,31 @@ async function saveSyncState() {
   await fs.writeFile(stateFile, JSON.stringify(syncState, null, 2));
 }
 
-// Get sync status
-app.get('/api/sync-status/:env', (req, res) => {
-  const { env } = req.params;
-  res.json(syncState[env] || { isDirty: false, lastSync: null });
-});
+// Create environment-specific router
+function createEnvironmentRouter(env) {
+  const router = express.Router();
 
-// DDB-direct data loading
-app.get('/api/data/:env/:type', async (req, res) => {
-  try {
-    const { env, type } = req.params;
+  // Sync status
+  router.get('/sync-status', (req, res) => {
+    res.json(syncState[env] || { isDirty: false, lastSync: null });
+  });
 
-    if (!ADMIN_CONFIG.tables[type]) {
-      return res.status(400).json({ error: `Unknown data type: ${type}` });
-    }
-
-    const items = await awsOps.getAllItems(env, type);
-
-    res.json(items);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// DDB-direct data saving with dirty state marking
-app.post('/api/data/:env/:type', async (req, res) => {
-  try {
-    const { env, type } = req.params;
-    const data = req.body;
-
-    if (!ADMIN_CONFIG.tables[type]) {
-      return res.status(400).json({ error: `Unknown data type: ${type}` });
-    }
-
-    // Validate data against schema
+  // Developer endpoints
+  router.get('/developer', async (req, res) => {
     try {
-      const bucketName = await awsOps.getSSMParameter(env, 'DATA_BUCKET_NAME');
-      const validationResult = await validateData(type, data, bucketName, ADMIN_CONFIG.regions.dynamodb);
+      const items = await awsOps.getAllItems(env, 'developer');
+      res.json(items[0] || {}); // Return single object for developer
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.put('/developer', async (req, res) => {
+    try {
+      const data = req.body;
+      
+      // Validate data against schema
+      const validationResult = await validateData('developer', data, env);
       
       if (!validationResult.valid) {
         return res.status(400).json({ 
@@ -87,164 +75,330 @@ app.post('/api/data/:env/:type', async (req, res) => {
           details: validationResult.errors 
         });
       }
-    } catch (validationError) {
-      console.error('Validation error:', validationError);
-      return res.status(500).json({ 
-        error: 'Validation system error', 
-        message: validationError.message 
-      });
-    }
 
-    // Save to DynamoDB
-    await awsOps.saveItems(env, type, data);
+      await awsOps.updateItem(env, 'developer', data);
+      
+      syncState[env].isDirty = true;
+      await saveSyncState();
 
-    // Mark as dirty
-    syncState[env].isDirty = true;
-    await saveSyncState();
-
-    res.json({
-      success: true,
-      message: `${type} saved to DynamoDB`,
-      syncStatus: { isDirty: true }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Export and upload (clears dirty state)
-app.post('/api/export-upload/:env', async (req, res) => {
-  try {
-    const { env } = req.params;
-
-    // 1. Export DDB to JSON files
-    const exportResults = await awsOps.exportToFiles(env);
-
-    // 2. Upload to S3 using existing CLI
-    await execAsync(`pnpm upload-static-data:${env}`, {
-      cwd: path.join(__dirname, '..')
-    });
-
-    // 3. Clear dirty state
-    syncState[env].isDirty = false;
-    syncState[env].lastSync = new Date().toISOString();
-    await saveSyncState();
-
-    res.json({
-      success: true,
-      message: 'Export and upload completed',
-      exportResults: exportResults,
-      syncStatus: { isDirty: false, lastSync: syncState[env].lastSync }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Create recruiter with Cognito user
-app.post('/api/recruiters/create/:env', async (req, res) => {
-  try {
-    const { env } = req.params;
-    const recruiterData = req.body;
-
-    // Validate required fields
-    if (!recruiterData.linkId || recruiterData.linkId === '') {
-      return res.status(400).json({ error: 'Link ID is required' });
-    }
-
-    // 1. Create Cognito user
-    const cognitoResult = await awsOps.createCognitoUser(
-      env,
-      recruiterData.linkId,
-      ADMIN_CONFIG.cognito
-    );
-    if (!cognitoResult.success) {
-      return res.status(500).json({
-        error: `Failed to create Cognito user: ${cognitoResult.error}`
-      });
-    }
-
-    // 2. Save recruiter to DynamoDB
-    await awsOps.saveItems(env, 'recruiters', [recruiterData]);
-
-    // 3. Mark as dirty
-    syncState[env].isDirty = true;
-    await saveSyncState();
-
-    res.json({
-      success: true,
-      message: 'Recruiter and Cognito user created successfully',
-      cognitoUser: {
-        username: cognitoResult.username
-      },
-      syncStatus: { isDirty: true }
-    });
-  } catch (error) {
-    console.error('Recruiter creation error:', error);
-    res.status(500).json({
-      success: false,
-      error: `Recruiter creation failed: ${error.message}`
-    });
-  }
-});
-
-// Individual link generation
-app.post('/api/links/generate/:recruiterId', async (req, res) => {
-  try {
-    const { recruiterId } = req.params;
-    const { env } = req.body;
-
-    // Get current environment if not provided
-    const currentEnv = env || 'dev';
-
-    // Invoke LinkGenerator Lambda
-    const lambdaClient = new LambdaClient({
-      region: ADMIN_CONFIG.regions.dynamodb // eu-central-1
-    });
-
-    console.log(`Invoking Lambda: link-generator-${currentEnv} with recruiterId: ${recruiterId}`);
-
-    const command = new InvokeCommand({
-      FunctionName: `link-generator-${currentEnv}`,
-      Payload: JSON.stringify({
-        recruiterId,
-        createRecruiterProfile: false // Don't create profile, use existing recruiter data
-      })
-    });
-
-    const response = await lambdaClient.send(command);
-    const lambdaResult = JSON.parse(new TextDecoder().decode(response.Payload));
-
-    console.log('Lambda response:', JSON.stringify(lambdaResult, null, 2));
-
-    if (lambdaResult.statusCode === 200) {
-      const body = JSON.parse(lambdaResult.body);
-
-      console.log('Lambda body:', JSON.stringify(body, null, 2));
-
-      // Map Lambda response to admin board format
-      const adminResult = {
+      res.json({
         success: true,
-        url: body.link,
-        linkId: body.linkId,
-        expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days
-        generatedAt: new Date().toISOString()
-      };
-
-      res.json(adminResult);
-    } else {
-      const errorBody = JSON.parse(lambdaResult.body);
-      console.error('Link generation error:', error);
-      console.error('Lambda error response:', errorBody);
-      throw new Error(errorBody.error || 'Lambda execution failed');
+        message: 'Developer updated',
+        syncStatus: { isDirty: true }
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: `Link generation failed: ${error.message}`
-    });
-  }
-});
+  });
+
+  // Projects endpoints
+  router.get('/projects', async (req, res) => {
+    try {
+      const items = await awsOps.getAllItems(env, 'projects');
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.post('/projects', async (req, res) => {
+    try {
+      const data = req.body;
+      
+      const validationResult = await validateData('projects', data, env);
+      
+      if (!validationResult.valid) {
+        return res.status(400).json({ 
+          error: 'Validation failed', 
+          details: validationResult.errors 
+        });
+      }
+
+      await awsOps.createItem(env, 'projects', data);
+      
+      syncState[env].isDirty = true;
+      await saveSyncState();
+
+      res.json({
+        success: true,
+        message: 'Project created',
+        syncStatus: { isDirty: true }
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.put('/projects/:id', async (req, res) => {
+    try {
+      const data = req.body;
+      
+      const validationResult = await validateData('projects', data, env);
+      
+      if (!validationResult.valid) {
+        return res.status(400).json({ 
+          error: 'Validation failed', 
+          details: validationResult.errors 
+        });
+      }
+
+      await awsOps.updateItem(env, 'projects', data);
+      
+      syncState[env].isDirty = true;
+      await saveSyncState();
+
+      res.json({
+        success: true,
+        message: 'Project updated',
+        syncStatus: { isDirty: true }
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.delete('/projects/:id', async (req, res) => {
+    try {
+      await awsOps.deleteItem(env, 'projects', { id: req.params.id });
+      
+      syncState[env].isDirty = true;
+      await saveSyncState();
+
+      res.json({
+        success: true,
+        message: 'Project deleted',
+        syncStatus: { isDirty: true }
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Recruiters endpoints
+  router.get('/recruiters', async (req, res) => {
+    try {
+      const items = await awsOps.getAllItems(env, 'recruiters');
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.post('/recruiters', async (req, res) => {
+    try {
+      const recruiterData = req.body;
+
+      // Validate required fields
+      if (!recruiterData.linkId || recruiterData.linkId === '') {
+        return res.status(400).json({ error: 'Link ID is required' });
+      }
+
+      // 1. Create Cognito user
+      const cognitoResult = await awsOps.createCognitoUser(
+        env,
+        recruiterData.linkId,
+        ADMIN_CONFIG.cognito
+      );
+      if (!cognitoResult.success) {
+        return res.status(500).json({
+          error: `Failed to create Cognito user: ${cognitoResult.error}`
+        });
+      }
+
+      // 2. Create recruiter in DynamoDB
+      await awsOps.createItem(env, 'recruiters', recruiterData);
+
+      // 3. Mark as dirty
+      syncState[env].isDirty = true;
+      await saveSyncState();
+
+      res.json({
+        success: true,
+        message: 'Recruiter and Cognito user created successfully',
+        cognitoUser: {
+          username: cognitoResult.username
+        },
+        syncStatus: { isDirty: true }
+      });
+    } catch (error) {
+      console.error('Recruiter creation error:', error);
+      res.status(500).json({
+        success: false,
+        error: `Recruiter creation failed: ${error.message}`
+      });
+    }
+  });
+
+  router.put('/recruiters/:linkId', async (req, res) => {
+    try {
+      const data = req.body;
+      
+      const validationResult = await validateData('recruiters', data, env);
+      
+      if (!validationResult.valid) {
+        return res.status(400).json({ 
+          error: 'Validation failed', 
+          details: validationResult.errors 
+        });
+      }
+
+      await awsOps.updateItem(env, 'recruiters', data);
+      
+      syncState[env].isDirty = true;
+      await saveSyncState();
+
+      res.json({
+        success: true,
+        message: 'Recruiter updated',
+        syncStatus: { isDirty: true }
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.delete('/recruiters/:linkId', async (req, res) => {
+    try {
+      await awsOps.deleteItem(env, 'recruiters', { linkId: req.params.linkId });
+      
+      syncState[env].isDirty = true;
+      await saveSyncState();
+
+      res.json({
+        success: true,
+        message: 'Recruiter deleted',
+        syncStatus: { isDirty: true }
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Export and upload
+  router.post('/export-upload', async (req, res) => {
+    try {
+      // 1. Export DDB to JSON files
+      const exportResults = await awsOps.exportToFiles(env);
+
+      // 2. Upload to S3 using existing CLI
+      await execAsync(`pnpm upload-static-data:${env}`, {
+        cwd: path.join(__dirname, '..')
+      });
+
+      // 3. Clear dirty state
+      syncState[env].isDirty = false;
+      syncState[env].lastSync = new Date().toISOString();
+      await saveSyncState();
+
+      res.json({
+        success: true,
+        message: 'Export and upload completed',
+        exportResults: exportResults,
+        syncStatus: { isDirty: false, lastSync: syncState[env].lastSync }
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Link generation
+  router.post('/links/generate/:recruiterId', async (req, res) => {
+    try {
+      const { recruiterId } = req.params;
+
+      // Invoke LinkGenerator Lambda
+      const lambdaClient = new LambdaClient({
+        region: ADMIN_CONFIG.regions.dynamodb
+      });
+
+      console.log(`Invoking Lambda: link-generator-${env} with recruiterId: ${recruiterId}`);
+
+      const command = new InvokeCommand({
+        FunctionName: `link-generator-${env}`,
+        Payload: JSON.stringify({
+          recruiterId,
+          createRecruiterProfile: false
+        })
+      });
+
+      const response = await lambdaClient.send(command);
+      const lambdaResult = JSON.parse(new TextDecoder().decode(response.Payload));
+
+      if (lambdaResult.statusCode === 200) {
+        const body = JSON.parse(lambdaResult.body);
+
+        const adminResult = {
+          success: true,
+          url: body.link,
+          linkId: body.linkId,
+          expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          generatedAt: new Date().toISOString()
+        };
+
+        res.json(adminResult);
+      } else {
+        const errorBody = JSON.parse(lambdaResult.body);
+        throw new Error(errorBody.error || 'Lambda execution failed');
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: `Link generation failed: ${error.message}`
+      });
+    }
+  });
+
+  // Link removal
+  router.post('/links/remove/:recruiterId', async (req, res) => {
+    try {
+      const { recruiterId } = req.params;
+
+      // Invoke LinkGenerator Lambda with remove action
+      const lambdaClient = new LambdaClient({
+        region: ADMIN_CONFIG.regions.dynamodb
+      });
+
+      console.log(`Invoking Lambda: link-generator-${env} with recruiterId: ${recruiterId} (remove action)`);
+
+      const command = new InvokeCommand({
+        FunctionName: `link-generator-${env}`,
+        Payload: JSON.stringify({
+          recruiterId,
+          action: 'remove'
+        })
+      });
+
+      const response = await lambdaClient.send(command);
+      const lambdaResult = JSON.parse(new TextDecoder().decode(response.Payload));
+
+      if (lambdaResult.statusCode === 200) {
+        const body = JSON.parse(lambdaResult.body);
+
+        const adminResult = {
+          success: true,
+          message: body.message || 'Link removed successfully',
+          removedAt: new Date().toISOString()
+        };
+
+        res.json(adminResult);
+      } else {
+        const errorBody = JSON.parse(lambdaResult.body);
+        throw new Error(errorBody.error || 'Lambda execution failed');
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: `Link removal failed: ${error.message}`
+      });
+    }
+  });
+
+  return router;
+}
+
+// Mount environment routers
+app.use('/api/dev', createEnvironmentRouter('dev'));
+app.use('/api/prod', createEnvironmentRouter('prod'));
 
 const PORT = 3001;
 
