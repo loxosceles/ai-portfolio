@@ -1,0 +1,267 @@
+[
+  {
+    "description": "A containerized Python CLI tool for batch image processing with concurrent execution, EXIF metadata preservation, and production-ready deployment infrastructure.",
+    "developerId": "DEVELOPER_PROFILE",
+    "highlights": [
+      "Concurrent batch processing with ThreadPoolExecutor",
+      "EXIF-aware rotation with metadata preservation",
+      "Production-ready containerization with Alpine Linux",
+      "Integrated interactive IPython tooling and DevContainer setup for development"
+    ],
+    "id": "proj-2",
+    "status": "Active",
+    "techStack": [
+      "Python",
+      "Pillow (PIL)",
+      "piexif",
+      "Docker",
+      "Alpine Linux",
+      "pytest",
+      "ThreadPoolExecutor",
+      "tqdm",
+      "uv",
+      "IPython",
+      "DevContainer"
+    ],
+    "title": "Image Processor CLI"
+  },
+  {
+    "archPatterns": [
+      "Microservices Architecture: Independent containers for frontend, backend, data processing, and caching enable isolated scaling",
+      "Event-Driven Design: Redis pub/sub messaging decouples data processing from client connections",
+      "Real-time Streaming: Server-Sent Events provide efficient one-way data streaming without polling overhead"
+    ],
+    "architecture": [
+      {
+        "details": "React 18 SPA with Server-Sent Events, Zustand state management, SCSS styling, and responsive table components with real-time data updates",
+        "name": "Frontend Architecture"
+      },
+      {
+        "details": "Flask RESTful API with Redis caching, pub/sub messaging system, Server-Sent Events streaming endpoints, and environment-based configuration",
+        "name": "Backend Architecture"
+      },
+      {
+        "details": "Automated CoinGecko API fetching with data diffing algorithms, MC/FDV calculations, percentage relativization, and cron-based scheduling",
+        "name": "Data Processing Engine"
+      },
+      {
+        "details": "Multi-service Docker architecture with Nginx reverse proxy, Redis caching layer, automated SSL certificates, and production deployment scripts",
+        "name": "Container Infrastructure"
+      }
+    ],
+    "challenge": "Cryptocurrency markets require real-time data access with sub-minute updates and comprehensive tokenomics analysis including market cap ratios.",
+    "description": "A real-time cryptocurrency market dashboard providing live data streaming and comprehensive tokenomics analysis through microservices architecture and Server-Sent Events integration.",
+    "developerId": "DEVELOPER_PROFILE",
+    "githubUrl": "https://github.com/example",
+    "highlights": [
+      "Real-time market data streaming with Server-Sent Events and Redis pub/sub messaging",
+      "Automated data processing with MC/FDV calculations and percentage relativization algorithms",
+      "Production-ready containerized deployment with automated SSL certificate management",
+      "CI/CD pipeline with multi-platform Docker builds and AWS ECR integration"
+    ],
+    "icon": "Aperture",
+    "id": "proj-3",
+    "overview": "A real-time cryptocurrency market dashboard providing live data streaming and comprehensive tokenomics analysis through microservices architecture and Server-Sent Events integration.",
+    "performance": [
+      "Real-time Updates: Sub-second data delivery through Server-Sent Events streaming",
+      "Data Efficiency: Data diffing algorithms reduce database writes by 60-80% compared to full updates",
+      "Container Optimization: Multi-stage Docker builds reduce image sizes and deployment times"
+    ],
+    "repositoryAndDevelopment": {
+      "plannedFeatures": [
+        "Enhanced AI capabilities",
+        "User accounts and personalization",
+        "Custom portfolio watchlists",
+        "Technical analysis charts"
+      ],
+      "vision": "Currently focused on market analysis, this platform will evolve into a comprehensive DeFi portfolio management suite with advanced trading insights and cross-chain analytics."
+    },
+    "slug": "web3snapshot",
+    "solution": "Containerized microservices dashboard with CoinGecko API integration, Redis pub/sub messaging for real-time updates, Server-Sent Events streaming, and automated deployment pipeline.",
+    "status": "Completed",
+    "techStack": [
+      "React",
+      "Flask",
+      "Redis",
+      "Docker",
+      "Nginx",
+      "Gunicorn",
+      "Zustand",
+      "SCSS",
+      "pytest",
+      "GitHub Actions",
+      "AWS ECR",
+      "Let's Encrypt",
+      "Shell Script"
+    ],
+    "technicalShowcases": [
+      {
+        "description": "The system implements real-time cryptocurrency data streaming using Server-Sent Events combined with Redis pub/sub messaging. The Flask backend maintains persistent EventSource connections through the `/api/coin-stream` endpoint, which subscribes to Redis pub/sub channels. When the data fetcher processes new CoinGecko API responses, it publishes updates to Redis channels, triggering immediate updates to the dashboard interface. The frontend React application establishes EventSource connections in the Dashboard component, automatically updating Zustand stores for both prices and tokenomics data. The streaming implementation includes keepalive messages every 30 seconds to prevent connection timeouts and graceful error handling with automatic reconnection.",
+        "highlights": [
+          "Server-Sent Events maintain persistent connections for sub-second data delivery to multiple clients",
+          "Redis pub/sub decouples data processing from client connections, enabling horizontal scaling",
+          "EventSource connections automatically handle reconnection and provide built-in error recovery",
+          "Keepalive messages every 30 seconds prevent proxy timeouts and maintain connection stability",
+          "Zustand state management ensures consistent data updates across React components",
+          "Real-time updates eliminate polling overhead and reduce server load significantly"
+        ],
+        "title": "Live Data Updates"
+      },
+      {
+        "description": "The data processing system fetches cryptocurrency data from CoinGecko API in short intervals, transforming the incoming API data to filter, transform and compute derived metrics. The system calculates market cap to fully diluted valuation ratios (MC/FDV), circulating supply ratios, and calculates visual percentage scaling that maps field values to color gradients, where the highest value displays as 100% (full green) and lowest as 0% (full red). Data diffing algorithms compare current API responses with cached Redis data, publishing updates only when meaningful changes occur. The system processes the top 100 cryptocurrencies while implementing rotating single-coin detail fetching to stay within API rate limits. All calculations include null value handling and precision rounding for consistent data presentation.",
+        "highlights": [
+          "MC/FDV ratio calculations provide critical tokenomics insights for investment analysis",
+          "Visual percentage scaling provides intuitive color-coded field comparisons relative to min/max values",
+          "Data diffing algorithms reduce unnecessary database writes and network traffic by 60-80%",
+          "Rotating single-coin fetching maximizes API efficiency while staying within rate limits",
+          "Null value handling and precision rounding ensure consistent data presentation",
+          "Cron-based scheduling with error handling maintains reliable data freshness"
+        ],
+        "title": "Data Processing and Caching"
+      },
+      {
+        "description": "The application implements a microservices architecture using Docker containers with separate services for frontend (React/Nginx), backend (Flask/Gunicorn), data fetcher (Python/cron), and Redis caching. Each service runs in isolated containers with dedicated resource limits and health checks. Nginx serves as a reverse proxy handling SSL termination and routing requests to backend services. The system uses Docker networks to isolate internal service communication while exposing only necessary ports to external traffic. Container orchestration includes automatic restart policies, volume management for data persistence, and inter-service dependency management through Docker Compose.",
+        "highlights": [
+          "Multi-container architecture enables independent scaling and deployment of each service",
+          "Container networking isolation secures internal communications while exposing only necessary ports",
+          "Docker volume management persists SSL certificates and Redis data across container restarts",
+          "Health checks and restart policies ensure automatic recovery from service failures",
+          "Nginx reverse proxy provides load balancing and SSL termination for production traffic",
+          "Resource limits and memory constraints prevent individual services from consuming excessive resources"
+        ],
+        "title": "Containerized Services"
+      },
+      {
+        "description": "The CI/CD pipeline uses GitHub Actions to automate the entire deployment process from code commit to production deployment. On every main branch merge, the system triggers multi-platform Docker builds (AMD64/ARM64) and pushes images to AWS ECR repositories with automatic authentication. Configuration management leverages AWS SSM Parameter Store for secure handling of secrets and environment variables. The pipeline uploads Docker Compose files and deployment scripts to S3, enabling server-side pulls during deployment. Production deployment is orchestrated through comprehensive shell scripts that handle EC2 bootstrap, dependency installation, SSL certificate generation, and zero-downtime container updates.",
+        "highlights": [
+          "Multi-platform Docker builds (AMD64/ARM64) ensure compatibility across different server architectures",
+          "AWS ECR integration with automated authentication eliminates manual registry management",
+          "SSM Parameter Store provides secure configuration management with encrypted parameter storage",
+          "S3-based artifact distribution enables deployment script pulls from any server location",
+          "EC2 user data scripts automate server bootstrap and dependency installation",
+          "Zero-downtime deployments through health check validation and rolling container updates"
+        ],
+        "title": "Automated Deployment Pipeline"
+      }
+    ],
+    "title": "Web3 Snapshot"
+  },
+  {
+    "archPatterns": [
+      "Serverless Architecture: Pay-per-use model with Lambda, AppSync, and DynamoDB",
+      "Event-Driven Design: AI processing triggered by recruiter interactions",
+      "Multi-Region Strategy: Frontend in US, backend in EU for data residency"
+    ],
+    "architecture": [
+      {
+        "details": "Next.js with React 19, TypeScript, Apollo Client for GraphQL, TailwindCSS for styling, and centralized auth context",
+        "name": "Frontend Architecture"
+      },
+      {
+        "details": "AWS AppSync GraphQL API, Lambda resolvers, DynamoDB storage, Amazon Bedrock AI integration, S3 & CloudFront hosting",
+        "name": "Backend Architecture"
+      },
+      {
+        "details": "AWS CDK multi-stack approach with environment-based deployments and automated CI/CD pipeline",
+        "name": "Infrastructure as Code"
+      }
+    ],
+    "challenge": "Creating personalized portfolio experiences for recruiters while maintaining cost-effective serverless architecture and seamless user experience.",
+    "description": "A modern, serverless web application that showcases a developer's professional profile with AI-powered personalization features using Next.js and AWS services.",
+    "developerId": "DEVELOPER_PROFILE",
+    "githubUrl": "https://github.com/example",
+    "highlights": [
+      "AI-powered content personalization with Amazon Bedrock",
+      "Invisible authentication using virtual Cognito users",
+      "Multi-region serverless architecture",
+      "Comprehensive CI/CD with environment management"
+    ],
+    "icon": "ParenthesesInitials",
+    "id": "proj-1",
+    "overview": "A modern, serverless web application that showcases a developer's professional profile with AI-powered personalization features using Next.js and AWS services.",
+    "performance": [
+      "Cost optimization: <$5/month operational costs",
+      "Global CDN: CloudFront distribution for sub-100ms response times",
+      "Serverless scaling: Auto-scaling from 0 to handle traffic spikes"
+    ],
+    "repositoryAndDevelopment": {
+      "plannedFeatures": [
+        "Company website scraping",
+        "Enhanced AI Q&A",
+        "Cover letter generation",
+        "RAG implementation"
+      ],
+      "vision": "This portfolio demonstrates a foundation for AI-powered recruitment tools. Future development will focus on intelligent company analysis and automated personalization at scale."
+    },
+    "slug": "ai-portfolio",
+    "solution": "Next.js frontend with AWS services backend, featuring AI-powered personalization, invisible authentication, and multi-region deployment strategy.",
+    "status": "Active",
+    "techStack": [
+      "Next.js",
+      "TypeScript",
+      "AWS AppSync",
+      "AWS Lambda",
+      "DynamoDB",
+      "Amazon Bedrock",
+      "CloudFront",
+      "S3",
+      "Cognito",
+      "CDK",
+      "TailwindCSS"
+    ],
+    "technicalShowcases": [
+      {
+        "description": "The authentication system requires no user login actions by intercepting HTTP requests at CloudFront edge locations using Lambda@Edge functions. When a recruiter accesses a personalized link containing a visitor token, the edge function validates the token against DynamoDB and performs an AdminInitiateAuth call to AWS Cognito to generate JWT tokens for a virtual user. The function sets HttpOnly cookies (AccessToken, IdToken, LinkId) in response headers, enabling the static Next.js frontend to make authenticated GraphQL requests without user interaction. The implementation uses viewer-request events to intercept incoming requests and viewer-response events to inject authentication cookies, with graceful handling for standard website visitors and personalized features available for recruiters using special links.",
+        "highlights": [
+          "Lambda@Edge functions execute at 200+ CloudFront edge locations for sub-100ms authentication latency",
+          "Virtual Cognito users created via AdminInitiateAuth API calls eliminate traditional login requirements",
+          "HttpOnly cookies (AccessToken, IdToken, LinkId) set by edge functions maintain session state across static frontend",
+          "Viewer-request/viewer-response event handling enables token validation and cookie injection in a single request cycle",
+          "Static asset bypassing (_next/, .js, .css) prevents unnecessary Lambda@Edge invocations and reduces costs",
+          "Graceful fallback to original request ensures system resilience when authentication components fail"
+        ],
+        "title": "Lambda@Edge Authentication"
+      },
+      {
+        "description": "The AI system integrates with Amazon Bedrock using Claude 3.5 Sonnet through a model adapter pattern that abstracts different AI providers. The BedrockRuntimeClient sends InvokeModelCommand requests with JSON payloads formatted according to the model's API specification. Conversation history is maintained in DynamoDB using role-based message storage (user/assistant) with timestamps and message limits to improve user experience by keeping responses focused and concise. The system implements dynamic prompt generation incorporating recruiter context and developer profile data for personalized responses. Fine-tuned rules keep responses factual and grounded, combined with low temperature settings, with token limits ensuring concise answers and graceful degradation when Bedrock is unavailable.",
+        "highlights": [
+          "Model adapter pattern supports multiple AI providers through standardized formatPrompt/parseResponse interfaces",
+          "Claude 3.5 Sonnet integration uses Bedrock's latest API specification for optimal performance",
+          "Conversation history stored in DynamoDB with message limits to prevent item size constraints",
+          "Dynamic prompt generation incorporates recruiter context and developer profile for personalized responses",
+          "Temperature settings optimized for consistent Q&A and creative greetings with token limits for concise responses",
+          "Graceful degradation to static content when Bedrock API calls fail or timeout",
+          "Role-based message storage (user/assistant) with timestamps enables conversation context tracking"
+        ],
+        "title": "Bedrock AI Integration"
+      },
+      {
+        "description": "The system achieves low operational costs through careful serverless component selection and configuration. S3 static hosting eliminates server costs entirely, with CloudFront CDN providing global distribution at competitive pricing. Lambda functions provide fast, cheap, and scalable compute, scaling from zero with millisecond billing precision within free tier limits. DynamoDB uses on-demand billing eliminating capacity planning, while AppSync GraphQL API uses per-request pricing with built-in caching. Lambda@Edge functions are optimized to bypass static assets, minimizing invocation costs. The entire stack typically operates under $5/month for moderate traffic, with linear cost scaling and zero fixed infrastructure costs.",
+        "highlights": [
+          "S3 static hosting eliminates server costs entirely, with CloudFront CDN providing competitive global distribution pricing",
+          "Lambda functions provide serverless compute that scales to zero when unused, staying within monthly free tier limits",
+          "DynamoDB on-demand billing charges only for actual read/write operations, eliminating fixed costs",
+          "AppSync GraphQL API uses per-request pricing with built-in caching to reduce redundant data fetching costs",
+          "Lambda@Edge optimized to bypass static assets, minimizing authentication-related invocation costs",
+          "Zero fixed infrastructure costs - entire stack scales to $0 when unused",
+          "Linear cost scaling only occurs with significant traffic increases, maintaining predictable economics"
+        ],
+        "title": "Cost-Optimized Serverless Design"
+      },
+      {
+        "description": "The deployment system uses local automation scripts and cloud-based CI/CD pipelines for different development workflows. Local deployment is handled by a bash script that orchestrates pnpm commands across infrastructure and frontend directories, including CDK provisioning, SSM parameter synchronization, Next.js production builds, S3 publishing, and CloudFront cache invalidation. The CI/CD pipeline uses GitHub Actions to trigger AWS CodePipeline based on branch merges. Infrastructure as Code is implemented using AWS CDK with TypeScript, managing multi-stack deployments for web hosting, AI services, and data storage. The system uses an internal CLI API with shared code structure and manager classes for efficient business logic separation.",
+        "highlights": [
+          "Bash deployment script (deploy.sh) orchestrates pnpm commands across infrastructure and frontend directories",
+          "GitHub Actions triggers AWS CodePipeline based on branch merges (dev→dev pipeline, main→prod pipeline)",
+          "AWS CDK with TypeScript manages multi-stack Infrastructure as Code deployments",
+          "Environment isolation through separate AWS accounts and SSM parameter namespacing (/portfolio/env/)",
+          "Parameter synchronization commands support preview, apply, and cleanup of obsolete SSM parameters",
+          "Forward-only deployments support version management through code reversion and pipeline re-execution",
+          "Multi-service environment generation (frontend, link-generator) from deployed stack outputs"
+        ],
+        "title": "Multi-Environment Deployment"
+      }
+    ],
+    "title": "AI-Powered Portfolio"
+  }
+]

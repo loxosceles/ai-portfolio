@@ -1,0 +1,31 @@
+[
+  {
+    "bio": "Experienced full-stack developer with a passion for clean code",
+    "email": "john.doe@example.com",
+    "id": "DEVELOPER_PROFILE",
+    "name": "John Doe",
+    "skillSets": [
+      {
+        "id": "web-development",
+        "name": "Web Development",
+        "skills": ["React"]
+      },
+      {
+        "id": "backend",
+        "name": "Backend",
+        "skills": ["TypeScript/JavaScript"]
+      },
+      {
+        "id": "database",
+        "name": "Database",
+        "skills": ["HTML5/CSS"]
+      },
+      {
+        "id": "devops",
+        "name": "DevOps",
+        "skills": ["Node.js"]
+      }
+    ],
+    "title": "Senior Full Stack Developer"
+  }
+]
