@@ -59,66 +59,89 @@ describe('AWSOperations', () => {
     expect(ddbMock.commandCalls(ScanCommand)[0].args[0].input.TableName).toBe('dev-developers-table');
   });
 
-  // Test for single item tables (like developer) - put the item
-  test('should save single item to DynamoDB', async () => {
-    // Mock the PutCommand to succeed
-    ddbMock.on(PutCommand).resolves({});
+  describe('CRUD Operations', () => {
+    // Business Logic Tests - Primary Focus
+    describe('Business Rules', () => {
+      test('should prevent creating items in developer table', async () => {
+        await expect(awsOps.createItem('dev', 'developer', { id: 'dev1' }))
+          .rejects.toThrow('Cannot create new items in developer table. Use updateItem instead.');
+      });
 
-    const developerData = { id: 'dev1', name: 'John Doe', email: 'john@example.com' };
-    
-    // Call saveItems with single item data
-    await awsOps.saveItems('dev', 'developer', developerData);
+      test('should prevent deleting from developer table', async () => {
+        await expect(awsOps.deleteItem('dev', 'developer', {}))
+          .rejects.toThrow('Cannot delete from developer table.');
+      });
 
-    // Verify only one PutCommand was called with correct data
-    expect(ddbMock.commandCalls(PutCommand)).toHaveLength(1);
-    expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.TableName).toBe('dev-developers-table');
-    expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.Item).toEqual(developerData);
-  });
+      test('should require existing developer profile for updates', async () => {
+        ddbMock.on(ScanCommand).resolves({ Items: [] }); // No existing profile
+        
+        await expect(awsOps.updateItem('dev', 'developer', { id: 'dev1' }))
+          .rejects.toThrow('No developer profile exists. Create one through data import first.');
+      });
 
-  // Test for array item tables (projects and recruiters) - adds items to existing data
-  test('should add items to DynamoDB for array tables', async () => {
-    // Mock the PutCommand to succeed
-    ddbMock.on(PutCommand).resolves({});
+      test('should allow developer update when profile exists', async () => {
+        ddbMock.on(ScanCommand).resolves({ Items: [{ id: 'existing' }] });
+        ddbMock.on(PutCommand).resolves({});
+        
+        await expect(awsOps.updateItem('dev', 'developer', { id: 'dev1' }))
+          .resolves.not.toThrow();
+      });
+    });
 
-    // Test data for projects table
-    const projectsData = [
-      { id: 'proj1', name: 'Project 1' },
-      { id: 'proj2', name: 'Project 2' }
-    ];
-    
-    // Call saveItems with array data for projects
-    await awsOps.saveItems('dev', 'projects', projectsData);
+    // Contract Tests - Verify AWS SDK Usage
+    describe('AWS SDK Integration', () => {
+      test('should call PutCommand with correct parameters for createItem', async () => {
+        ddbMock.on(PutCommand).resolves({}); // Realistic success response
+        
+        const projectData = { id: 'proj1', name: 'Test Project' };
+        await awsOps.createItem('dev', 'projects', projectData);
+        
+        expect(ddbMock.commandCalls(PutCommand)).toHaveLength(1);
+        expect(ddbMock.commandCalls(PutCommand)[0].args[0].input).toEqual({
+          TableName: 'dev-projects-table',
+          Item: projectData
+        });
+      });
 
-    // Verify correct number of PutCommands for projects
-    expect(ddbMock.commandCalls(PutCommand)).toHaveLength(2);
-    expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.TableName).toBe('dev-projects-table');
-    expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.Item).toEqual(projectsData[0]);
-    expect(ddbMock.commandCalls(PutCommand)[1].args[0].input.Item).toEqual(projectsData[1]);
+      test('should call DeleteCommand with correct parameters', async () => {
+        ddbMock.on(DeleteCommand).resolves({}); // Realistic success response
+        
+        await awsOps.deleteItem('dev', 'projects', { id: 'proj1' });
+        
+        expect(ddbMock.commandCalls(DeleteCommand)).toHaveLength(1);
+        expect(ddbMock.commandCalls(DeleteCommand)[0].args[0].input).toEqual({
+          TableName: 'dev-projects-table',
+          Key: { id: 'proj1' }
+        });
+      });
 
-    // Reset mock for recruiters test
-    ddbMock.reset();
-    ssmMock.reset();
-    
-    // Re-mock SSM parameters for recruiters test
-    ssmMock.on(GetParameterCommand, { Name: '/portfolio/dev/RECRUITER_PROFILES_TABLE_NAME' })
-      .resolves({ Parameter: { Value: 'dev-recruiters-table' } });
-    
-    ddbMock.on(PutCommand).resolves({});
+      test('should call PutCommand for updateItem on multi-entity tables', async () => {
+        ddbMock.on(PutCommand).resolves({});
+        
+        const recruiterData = { linkId: 'rec1', name: 'Updated Recruiter' };
+        await awsOps.updateItem('dev', 'recruiters', recruiterData);
+        
+        expect(ddbMock.commandCalls(PutCommand)).toHaveLength(1);
+        expect(ddbMock.commandCalls(PutCommand)[0].args[0].input).toEqual({
+          TableName: 'dev-recruiters-table',
+          Item: recruiterData
+        });
+      });
+    });
 
-    // Test data for recruiters table
-    const recruitersData = [
-      { linkId: 'rec1', name: 'Recruiter 1' },
-      { linkId: 'rec2', name: 'Recruiter 2' }
-    ];
-    
-    // Call saveItems with array data for recruiters
-    await awsOps.saveItems('dev', 'recruiters', recruitersData);
-
-    // Verify correct number of PutCommands for recruiters
-    expect(ddbMock.commandCalls(PutCommand)).toHaveLength(2);
-    expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.TableName).toBe('dev-recruiters-table');
-    expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.Item).toEqual(recruitersData[0]);
-    expect(ddbMock.commandCalls(PutCommand)[1].args[0].input.Item).toEqual(recruitersData[1]);
+    // Helper Function Tests
+    describe('Helper Functions', () => {
+      test('should generate correct keys for different table types', () => {
+        expect(awsOps.getItemKey('recruiters', { linkId: 'rec1' }))
+          .toEqual({ linkId: 'rec1' });
+        
+        expect(awsOps.getItemKey('projects', { id: 'proj1' }))
+          .toEqual({ id: 'proj1' });
+        
+        expect(() => awsOps.getItemKey('unknown', {}))
+          .toThrow('Cannot generate key for table: unknown');
+      });
+    });
   });
 
   test('should get individual SSM parameter', async () => {
