@@ -6,7 +6,7 @@ import {
   AdminSetUserPasswordCommand
 } from '@aws-sdk/client-cognito-identity-provider';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 
 // Password exclusion characters to avoid issues with various systems
@@ -166,7 +166,7 @@ async function createLink(recruiterId) {
     }
 
     // Generate new short linkId and password
-    const linkId = nanoid(8); // Short professional ID
+    const linkId = nanoid(8);
     const password = generator.generate({
       length: 16,
       numbers: true,
@@ -269,11 +269,51 @@ async function createRecruiterProfileData(linkId) {
   }
 }
 
+async function removeLink(recruiterId) {
+  try {
+    const config = validateEnvironment();
+    
+    if (!recruiterId) {
+      throw new Error('recruiterId is required');
+    }
+
+    // Get recruiter profiles table name
+    const recruiterProfilesTable = process.env.RECRUITER_PROFILES_TABLE_NAME;
+    if (!recruiterProfilesTable) {
+      throw new Error('RECRUITER_PROFILES_TABLE_NAME not configured');
+    }
+
+    // Clear linkUrl and linkExpiry from recruiter profile
+    const client = new DynamoDBClient({ region: config.cognitoRegion });
+    const docClient = DynamoDBDocumentClient.from(client);
+
+    const command = new UpdateCommand({
+      TableName: recruiterProfilesTable,
+      Key: { linkId: recruiterId },
+      UpdateExpression: 'REMOVE linkUrl, linkExpiry',
+      ReturnValues: 'ALL_NEW'
+    });
+
+    await docClient.send(command);
+
+    return {
+      success: true,
+      message: 'Link removed successfully'
+    };
+  } catch (error) {
+    console.error('Error removing link:', error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 export const handler = async (event) => {
   console.log('Link Generator Lambda invoked:', JSON.stringify(event, null, 2));
   
   try {
-    const recruiterId = event.recruiterId;
+    const { recruiterId, action = 'generate' } = event;
     
     if (!recruiterId) {
       return {
@@ -285,6 +325,16 @@ export const handler = async (event) => {
       };
     }
 
+    if (action === 'remove') {
+      const result = await removeLink(recruiterId);
+      
+      return {
+        statusCode: result.success ? 200 : 500,
+        body: JSON.stringify(result)
+      };
+    }
+
+    // Default: generate action
     const result = await createLink(recruiterId);
     
     if (result.success) {
