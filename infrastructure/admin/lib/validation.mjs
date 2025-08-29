@@ -23,7 +23,9 @@ async function getSchemaFromLocal(dataType, stage) {
     throw new Error(`No schema file configured for data type: ${dataType}`);
   }
 
-  const schemaPath = config.paths.schemaTemplate.replace('{schemaFile}', dataTypeConfig.schemaFile);
+  const schemaPath = config.paths.schemaTemplate
+    .replace('{stage}', stage)
+    .replace('{schemaFile}', dataTypeConfig.schemaFile);
   const schemaFilePath = resolve(config.projectRoot, schemaPath);
   
   try {
@@ -34,36 +36,27 @@ async function getSchemaFromLocal(dataType, stage) {
   }
 }
 
-/**
- * Get or create validator for data type
- * @param {string} dataType - Type of data (developers, projects, recruiters)
- * @param {string} stage - Environment stage (dev/prod)
- * @returns {Promise<Function>} AJV validator function
- */
-async function getValidator(dataType, stage) {
-  const cacheKey = `${dataType}-${stage}`;
+async function getCachedValidator(dataType, stage, isSingleObject = false) {
+  const cacheKey = `${dataType}-${stage}-${isSingleObject ? 'single' : 'bulk'}`;
   
   if (validatorCache.has(cacheKey)) {
     return validatorCache.get(cacheKey);
   }
   
   const schema = await getSchemaFromLocal(dataType, stage);
-  const validator = ajv.compile(schema);
-  
+  const validationSchema = (isSingleObject && schema.type === 'array' && schema.items) 
+    ? schema.items 
+    : schema;
+    
+  const validator = ajv.compile(validationSchema);
   validatorCache.set(cacheKey, validator);
   return validator;
 }
 
-/**
- * Validate data against schema
- * @param {string} dataType - Type of data (developers, projects, recruiters)
- * @param {unknown} data - Data to validate
- * @param {string} stage - Environment stage (dev/prod)
- * @returns {Promise<{valid: boolean, errors: Array}>} Validation result with errors if any
- */
 export async function validateData(dataType, data, stage) {
   try {
-    const validator = await getValidator(dataType, stage);
+    const isSingleObject = !Array.isArray(data);
+    const validator = await getCachedValidator(dataType, stage, isSingleObject);
     const valid = validator(data);
     
     return {
