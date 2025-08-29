@@ -72,33 +72,61 @@ class AWSOperations {
     return result.Items || [];
   }
 
-  async saveItems(stage, tableName, data) {
+  // Create new item - prevents creation in developer table
+  async createItem(stage, tableName, item) {
+    if (tableName === 'developer') {
+      throw new Error('Cannot create new items in developer table. Use updateItem instead.');
+    }
+    
     const tableNames = await this.getTableNames(stage);
-    const tableNameResolved = tableNames[tableName];
+    await this.ddbClient.send(new PutCommand({ 
+      TableName: tableNames[tableName], 
+      Item: item 
+    }));
+  }
 
-    if (Array.isArray(data)) {
-      // Replace all items for arrays
+  // Update existing item - ensures developer profile exists before updating
+  async updateItem(stage, tableName, item) {
+    if (tableName === 'developer') {
       const existing = await this.getAllItems(stage, tableName);
-
-      // Delete existing
-      for (const item of existing) {
-        const key = tableName === 'recruiters' ? { linkId: item.linkId } : { id: item.id };
-        await this.ddbClient.send(
-          new DeleteCommand({
-            TableName: tableNameResolved,
-            Key: key
-          })
-        );
+      if (existing.length === 0) {
+        throw new Error('No developer profile exists. Create one through data import first.');
       }
+    }
+    
+    const tableNames = await this.getTableNames(stage);
+    await this.ddbClient.send(new PutCommand({ 
+      TableName: tableNames[tableName], 
+      Item: item 
+    }));
+  }
 
-      // Insert new
-      for (const item of data) {
-        await this.ddbClient.send(new PutCommand({ TableName: tableNameResolved, Item: item }));
-      }
-    } else {
-      await this.ddbClient.send(new PutCommand({ TableName: tableNameResolved, Item: data }));
+  // Delete item - prevents deletion from developer table
+  async deleteItem(stage, tableName, key) {
+    if (tableName === 'developer') {
+      throw new Error('Cannot delete from developer table.');
+    }
+    
+    const tableNames = await this.getTableNames(stage);
+    await this.ddbClient.send(new DeleteCommand({ 
+      TableName: tableNames[tableName], 
+      Key: key 
+    }));
+  }
+
+  // Helper to get correct key structure per table
+  getItemKey(tableName, item) {
+    switch (tableName) {
+      case 'recruiters':
+        return { linkId: item.linkId };
+      case 'projects':
+        return { id: item.id };
+      default:
+        throw new Error(`Cannot generate key for table: ${tableName}`);
     }
   }
+
+
 
   async exportToFiles(stage) {
     const dataPath = this.config.paths.dataTemplate.replace('{stage}', stage);
