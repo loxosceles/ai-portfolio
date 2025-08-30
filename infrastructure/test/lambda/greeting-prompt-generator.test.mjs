@@ -1,48 +1,12 @@
-import { PromptGeneratorModule, RecruiterData, DeveloperData, ProjectData } from '../types';
 
-// Mock AWS SDK modules
-jest.mock('@aws-sdk/client-dynamodb', () => ({
-  DynamoDBClient: jest.fn().mockImplementation(() => ({}))
-}));
+import { mockClient } from 'aws-sdk-client-mock';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { jest } from '@jest/globals';
 
-jest.mock('@aws-sdk/lib-dynamodb', () => ({
-  DynamoDBDocumentClient: {
-    from: jest.fn().mockImplementation(() => ({
-      send: jest.fn().mockImplementation((command) => {
-        if (command.constructor.name === 'GetCommand') {
-          return Promise.resolve({
-            Item: {
-              id: 'DEVELOPER_PROFILE',
-              name: 'John Doe',
-              title: 'Full Stack Developer',
-              skillSets: [
-                { name: 'Frontend', skills: ['React', 'TypeScript'] },
-                { name: 'Backend', skills: ['Node.js', 'Express'] }
-              ]
-            } as DeveloperData
-          });
-        }
-        return Promise.resolve({
-          Items: [
-            {
-              id: '1',
-              title: 'Portfolio Website',
-              tech: ['React', 'Next.js']
-            } as ProjectData
-          ]
-        });
-      })
-    }))
-  },
-  GetCommand: jest.fn().mockImplementation((params) => ({
-    constructor: { name: 'GetCommand' },
-    ...params
-  })),
-  ScanCommand: jest.fn().mockImplementation((params) => ({
-    constructor: { name: 'ScanCommand' },
-    ...params
-  }))
-}));
+// Mock AWS SDK clients
+const dynamoDBMock = mockClient(DynamoDBClient);
+const dynamoDBDocMock = mockClient(DynamoDBDocumentClient);
 
 // Mock utils functions
 jest.mock('../../lib/functions/ai-advocate/utils.mjs', () => ({
@@ -68,19 +32,44 @@ jest.mock('../../lib/functions/ai-advocate/utils.mjs', () => ({
 }));
 
 // Use dynamic import for ES modules
-let promptGeneratorModule: PromptGeneratorModule;
+let promptGeneratorModule;
 
 describe('Greeting Prompt Generator', () => {
   beforeAll(async () => {
     // Dynamically import the module under test
-    promptGeneratorModule = (await import(
+    promptGeneratorModule = await import(
       '../../lib/functions/ai-advocate/prompt-generator.mjs'
-    )) as PromptGeneratorModule;
+    );
   });
 
   beforeEach(() => {
-    // Reset mocks before each test
+    // Reset all mocks before each test
+    dynamoDBMock.reset();
+    dynamoDBDocMock.reset();
     jest.clearAllMocks();
+
+    // Setup DynamoDB Document Client mocks
+    dynamoDBDocMock.on(GetCommand).resolves({
+      Item: {
+        id: 'DEVELOPER_PROFILE',
+        name: 'John Doe',
+        title: 'Full Stack Developer',
+        skillSets: [
+          { name: 'Frontend', skills: ['React', 'TypeScript'] },
+          { name: 'Backend', skills: ['Node.js', 'Express'] }
+        ]
+      }
+    });
+
+    dynamoDBDocMock.on(ScanCommand).resolves({
+      Items: [
+        {
+          id: '1',
+          title: 'Portfolio Website',
+          tech: ['React', 'Next.js']
+        }
+      ]
+    });
 
     // Mock environment variables
     process.env.DEVELOPER_TABLE_NAME = 'test-developer-table';
@@ -89,7 +78,7 @@ describe('Greeting Prompt Generator', () => {
 
   test('should generate a greeting prompt with recruiter data', async () => {
     // Mock recruiter data
-    const recruiterData: RecruiterData = {
+    const recruiterData = {
       linkId: 'test-link',
       companyName: 'Test Company',
       recruiterName: 'Jane Smith',
@@ -117,7 +106,7 @@ describe('Greeting Prompt Generator', () => {
 
   test('should handle missing recruiter data gracefully', async () => {
     // Call with minimal recruiter data
-    const minimalData: RecruiterData = {
+    const minimalData = {
       linkId: 'minimal-link',
       companyName: 'Minimal Company',
       recruiterName: 'Minimal Recruiter'
