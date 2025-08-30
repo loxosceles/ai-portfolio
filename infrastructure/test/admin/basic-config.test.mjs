@@ -1,11 +1,7 @@
-describe('Admin Configuration', () => {
-  let ADMIN_CONFIG;
+// Import modules under test
+import ADMIN_CONFIG from '../../admin/lib/config.mjs';
 
-  beforeAll(async () => {
-    // Import the actual config
-    const configModule = await import('../lib/config.mjs');
-    ADMIN_CONFIG = configModule.default;
-  });
+describe('Admin Configuration', () => {
 
   describe('Basic structure', () => {
     test('should load admin config structure', () => {

@@ -7,9 +7,9 @@ import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 const ddbMock = mockClient(DynamoDBDocumentClient);
 const ssmMock = mockClient(SSMClient);
 
-// Import after mocking
-const { default: AWSOperations } = await import('../lib/aws-operations.mjs');
-const { default: ADMIN_CONFIG } = await import('../lib/config.mjs');
+// Import modules under test
+import AWSOperations from '../../admin/lib/aws-operations.mjs';
+import ADMIN_CONFIG from '../../admin/lib/config.mjs';
 
 describe('AWSOperations', () => {
   let awsOps;

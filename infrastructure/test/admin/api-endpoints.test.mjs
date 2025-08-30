@@ -10,13 +10,10 @@ const ddbMock = mockClient(DynamoDBDocumentClient);
 const ssmMock = mockClient(SSMClient);
 const cognitoMock = mockClient(CognitoIdentityProviderClient);
 
-describe('Individual CRUD Operations', () => {
-  let app;
+// Import modules under test
+import app from '../../admin/server.mjs';
 
-  beforeAll(async () => {
-    const serverModule = await import('../server.mjs');
-    app = serverModule.default;
-  });
+describe('Individual CRUD Operations', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
