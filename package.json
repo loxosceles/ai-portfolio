@@ -30,7 +30,6 @@
     "test:infra": "pnpm --filter=infrastructure run test",
     "test:infra:verbose": "VERBOSE_TEST_LOGS=1 pnpm --filter=infrastructure run test",
     "test:infra:watch": "pnpm --filter=infrastructure run test:watch",
-    "test:admin": "pnpm --filter=admin-interface run test",
     "lint": "pnpm --filter='..' run lint",
     "lint:frontend": "pnpm --filter=frontend run lint",
     "lint:infra": "pnpm --filter=infrastructure run lint",
