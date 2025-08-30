@@ -1,12 +1,11 @@
 packages:
   - frontend
   - infrastructure
-  - infrastructure/admin
 
 ignoredBuiltDependencies:
   - esbuild
 
 onlyBuiltDependencies:
-  - '@tailwindcss/oxide'
+  - "@tailwindcss/oxide"
   - sharp
   - unrs-resolver
