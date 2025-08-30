@@ -238,8 +238,26 @@ export async function handleDownloadData(
       };
     }
 
-    // Save to local files if output directory is specified
+    // Validate output directory if specified
     if (output) {
+      try {
+        const outputStat = await fs.stat(output);
+        if (!outputStat.isDirectory()) {
+          return {
+            success: false,
+            message: `Output path '${output}' exists but is not a directory`,
+            error: new Error(`Output path '${output}' exists but is not a directory`)
+          };
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: `Output directory '${output}' does not exist`,
+          error: new Error(`Output directory '${output}' does not exist`)
+        };
+      }
+
+      // Save to local files if output directory is specified and valid
       await fs.mkdir(path.join(output, 'data'), { recursive: true });
       await fs.mkdir(path.join(output, 'schemas'), { recursive: true });
 
