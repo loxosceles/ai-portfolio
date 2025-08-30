@@ -11,8 +11,8 @@ process.env.AWS_EC2_METADATA_DISABLED ??= 'true';
 
 // Utilities to scope environment variables to a single test/suite.
 /** Temporarily set process.env keys. Returns a restore function. */
-export function withEnv(env: Record<string, string | undefined>) {
-  const prev: Record<string, string | undefined> = {};
+function withEnv(env) {
+  const prev = {};
   for (const [k, v] of Object.entries(env)) {
     prev[k] = process.env[k];
     if (v === undefined) delete process.env[k];
@@ -27,12 +27,17 @@ export function withEnv(env: Record<string, string | undefined>) {
 }
 
 /** Reset module cache and import a module after applying env vars. */
-export async function loadModuleWithEnv<T = any>(
-  modulePath: string,
-  env: Record<string, string | undefined>
-): Promise<{ mod: T; restore: () => void }> {
+async function loadModuleWithEnv(modulePath, env) {
   const restore = withEnv(env);
   jest.resetModules();
-  const mod = (await import(modulePath)) as T;
+  const mod = await import(modulePath);
   return { mod, restore };
+}
+
+// Export for both CommonJS and ESM
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { withEnv, loadModuleWithEnv };
+} else {
+  globalThis.withEnv = withEnv;
+  globalThis.loadModuleWithEnv = loadModuleWithEnv;
 }
