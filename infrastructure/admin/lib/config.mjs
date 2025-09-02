@@ -36,7 +36,7 @@ const ADMIN_CONFIG = {
   // Path templates (reuse CLI template patterns)
   paths: {
     ssmTemplate: '/portfolio/{stage}/{paramName}',
-    dataTemplate: 'data',
+    dataTemplate: 'data/{stage}/data',
     schemaTemplate: 'data/{stage}/schemas/{schemaFile}',
     stateFile: 'data/.admin-state.json'
   },
