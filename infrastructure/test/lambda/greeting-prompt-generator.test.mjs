@@ -8,29 +8,6 @@ import { jest } from '@jest/globals';
 const dynamoDBMock = mockClient(DynamoDBClient);
 const dynamoDBDocMock = mockClient(DynamoDBDocumentClient);
 
-// Mock utils functions
-jest.mock('../../lib/functions/ai-advocate/utils.mjs', () => ({
-  findRelevantSkills: jest.fn().mockReturnValue({
-    matchingSkills: [{ skill: 'React', type: 'exact' }],
-    allDeveloperSkills: new Set(['React', 'Node.js', 'TypeScript']),
-    recruiterSkills: ['React'],
-    hasMatches: true
-  }),
-  formatSkillsSection: jest
-    .fn()
-    .mockReturnValue('- Frontend: React, TypeScript\\n- Backend: Node.js'),
-  formatProjectsSection: jest.fn().mockReturnValue('- Portfolio Website: React, Next.js'),
-  formatExperienceSection: jest.fn().mockReturnValue('- 5+ years of experience as a developer'),
-  buildGreetingRulesSection: jest
-    .fn()
-    .mockReturnValue(
-      'Greeting Guidelines:\\nHigh Priority:\\n- Create a warm, personalized greeting'
-    ),
-  buildRulesSection: jest
-    .fn()
-    .mockReturnValue('Response Guidelines:\\nHigh Priority:\\n- Rule 1\\n- Rule 2')
-}));
-
 // Use dynamic import for ES modules
 let promptGeneratorModule;
 

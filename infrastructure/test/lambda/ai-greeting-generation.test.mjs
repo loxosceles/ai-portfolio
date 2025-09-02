@@ -17,26 +17,6 @@ class MockTextDecoder {
 }
 global.TextDecoder = MockTextDecoder;
 
-jest.mock('../../lib/functions/ai-advocate/adapters/model-registry.mjs', () => ({
-  ModelRegistry: {
-    getAdapter: jest.fn().mockReturnValue({
-      formatPrompt: jest.fn().mockReturnValue({ prompt: 'test prompt' }),
-      parseResponse: jest.fn().mockImplementation((response) => response.completion)
-    })
-  }
-}));
-
-jest.mock('../../lib/functions/ai-advocate/prompt-generator.mjs', () => ({
-  generateGreetingPrompt: jest.fn().mockResolvedValue({
-    systemPrompt: 'You are an AI Advocate',
-    userPrompt: 'Create a greeting for Jane from Test Company'
-  }),
-  generateDynamicPrompt: jest.fn().mockResolvedValue({
-    systemPrompt: 'You are an AI Advocate',
-    userPrompt: 'Answer a question for Jane from Test Company'
-  })
-}));
-
 // Use dynamic import for ES modules
 let aiAdvocateHandler;
 
