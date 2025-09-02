@@ -190,14 +190,14 @@ class AWSOperations {
     }
   }
 
-  async createCognitoUser(env, recruiterId, cognitoConfig) {
+  async createCognitoUser(env, linkId, cognitoConfig) {
     try {
       // Get Cognito configuration from provided config
       const userPoolId = await this.getSSMParameter(env, cognitoConfig.userPoolParam);
       const region = cognitoConfig.region || this.config.regions.dynamodb;
 
       const client = new CognitoIdentityProviderClient({ region });
-      const username = `${recruiterId}@visitor.temporary.com`;
+      const username = `${linkId}@visitor.temporary.com`;
       const password = generator.generate({
         length: 16,
         numbers: true,
@@ -235,7 +235,7 @@ class AWSOperations {
         success: true,
         username,
         password,
-        recruiterId
+        linkId
       };
     } catch (error) {
       console.error('Error creating Cognito user:', error);
@@ -246,7 +246,7 @@ class AWSOperations {
     }
   }
 
-  async generateInitialLink(env, recruiterId) {
+  async generateInitialLink(env, linkId) {
     try {
       const lambdaClient = new LambdaClient({
         region: this.config.regions.dynamodb
@@ -255,7 +255,7 @@ class AWSOperations {
       const command = new InvokeCommand({
         FunctionName: `link-generator-${env}`,
         Payload: JSON.stringify({
-          recruiterId
+          linkId
         })
       });
 

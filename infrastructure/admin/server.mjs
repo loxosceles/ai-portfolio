@@ -65,19 +65,19 @@ function createEnvironmentRouter(env) {
   router.put('/developer', async (req, res) => {
     try {
       const data = req.body;
-      
+
       // Validate data against schema
       const validationResult = await validateData('developer', data, env);
-      
+
       if (!validationResult.valid) {
-        return res.status(400).json({ 
-          error: 'Validation failed', 
-          details: validationResult.errors 
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: validationResult.errors
         });
       }
 
       await awsOps.updateItem(env, 'developer', data);
-      
+
       syncState[env].isDirty = true;
       await saveSyncState();
 
@@ -104,18 +104,18 @@ function createEnvironmentRouter(env) {
   router.post('/projects', async (req, res) => {
     try {
       const data = req.body;
-      
+
       const validationResult = await validateData('projects', data, env);
-      
+
       if (!validationResult.valid) {
-        return res.status(400).json({ 
-          error: 'Validation failed', 
-          details: validationResult.errors 
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: validationResult.errors
         });
       }
 
       await awsOps.createItem(env, 'projects', data);
-      
+
       syncState[env].isDirty = true;
       await saveSyncState();
 
@@ -132,18 +132,18 @@ function createEnvironmentRouter(env) {
   router.put('/projects/:id', async (req, res) => {
     try {
       const data = req.body;
-      
+
       const validationResult = await validateData('projects', data, env);
-      
+
       if (!validationResult.valid) {
-        return res.status(400).json({ 
-          error: 'Validation failed', 
-          details: validationResult.errors 
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: validationResult.errors
         });
       }
 
       await awsOps.updateItem(env, 'projects', data);
-      
+
       syncState[env].isDirty = true;
       await saveSyncState();
 
@@ -160,7 +160,7 @@ function createEnvironmentRouter(env) {
   router.delete('/projects/:id', async (req, res) => {
     try {
       await awsOps.deleteItem(env, 'projects', { id: req.params.id });
-      
+
       syncState[env].isDirty = true;
       await saveSyncState();
 
@@ -232,18 +232,18 @@ function createEnvironmentRouter(env) {
   router.put('/recruiters/:linkId', async (req, res) => {
     try {
       const data = req.body;
-      
+
       const validationResult = await validateData('recruiters', data, env);
-      
+
       if (!validationResult.valid) {
-        return res.status(400).json({ 
-          error: 'Validation failed', 
-          details: validationResult.errors 
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: validationResult.errors
         });
       }
 
       await awsOps.updateItem(env, 'recruiters', data);
-      
+
       syncState[env].isDirty = true;
       await saveSyncState();
 
@@ -260,7 +260,7 @@ function createEnvironmentRouter(env) {
   router.delete('/recruiters/:linkId', async (req, res) => {
     try {
       await awsOps.deleteItem(env, 'recruiters', { linkId: req.params.linkId });
-      
+
       syncState[env].isDirty = true;
       await saveSyncState();
 
@@ -302,21 +302,21 @@ function createEnvironmentRouter(env) {
   });
 
   // Link generation
-  router.post('/links/generate/:recruiterId', async (req, res) => {
+  router.post('/links/generate/:linkId', async (req, res) => {
     try {
-      const { recruiterId } = req.params;
+      const { linkId } = req.params;
 
       // Invoke LinkGenerator Lambda
       const lambdaClient = new LambdaClient({
         region: ADMIN_CONFIG.regions.dynamodb
       });
 
-      console.log(`Invoking Lambda: link-generator-${env} with recruiterId: ${recruiterId}`);
+      console.log(`Invoking Lambda: link-generator-${env} with linkId: ${linkId}`);
 
       const command = new InvokeCommand({
         FunctionName: `link-generator-${env}`,
         Payload: JSON.stringify({
-          recruiterId,
+          linkId,
           createRecruiterProfile: false
         })
       });
@@ -349,21 +349,21 @@ function createEnvironmentRouter(env) {
   });
 
   // Link removal
-  router.post('/links/remove/:recruiterId', async (req, res) => {
+  router.post('/links/remove/:linkId', async (req, res) => {
     try {
-      const { recruiterId } = req.params;
+      const { linkId } = req.params;
 
       // Invoke LinkGenerator Lambda with remove action
       const lambdaClient = new LambdaClient({
         region: ADMIN_CONFIG.regions.dynamodb
       });
 
-      console.log(`Invoking Lambda: link-generator-${env} with recruiterId: ${recruiterId} (remove action)`);
+      console.log(`Invoking Lambda: link-generator-${env} with linkId: ${linkId} (remove action)`);
 
       const command = new InvokeCommand({
         FunctionName: `link-generator-${env}`,
         Payload: JSON.stringify({
-          recruiterId,
+          linkId,
           action: 'remove'
         })
       });

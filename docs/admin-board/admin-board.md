@@ -123,7 +123,7 @@ Each recruiter has a "Generate Link" button that calls the LinkGenerator Lambda 
 
 **Service Integration**:
 
-- Endpoint: `/api/links/generate/:recruiterId`
+- Endpoint: `/api/links/generate/:linkId`
 - Calls LinkGenerator Lambda with recruiter data
 - Creates Cognito user and VisitorLinks table entry
 - Returns personalized portfolio URL with 14-day expiration
@@ -243,7 +243,7 @@ pnpm admin:dev
 
 **Ready for Integration**: Mock link generation designed for easy Lambda connection
 
-- Endpoint: `/api/links/generate/:recruiterId`
+- Endpoint: `/api/links/generate/:linkId`
 - Payload: `{ env, recruiter }`
 - Response: `{ success, url, expiresAt, generatedAt }`
 
