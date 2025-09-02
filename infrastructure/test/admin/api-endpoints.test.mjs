@@ -5,15 +5,38 @@ import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import { CognitoIdentityProviderClient, AdminCreateUserCommand } from '@aws-sdk/client-cognito-identity-provider';
 import request from 'supertest';
 
+// CRITICAL: Mock fs modules before importing server to prevent real file creation
+// ES modules capture dependencies at import time, so mocks must be set up first
+// Must mock both 'fs' (for `import { promises as fs }`) and 'fs/promises' (for `import { readFile }`)
+jest.unstable_mockModule('fs', () => ({
+  promises: {
+    writeFile: jest.fn().mockResolvedValue(undefined),
+    mkdir: jest.fn().mockResolvedValue(undefined),
+    readFile: jest.fn().mockResolvedValue('{}')
+  }
+}));
+
+jest.unstable_mockModule('fs/promises', () => ({
+  readFile: jest.fn().mockResolvedValue('{}')
+}));
+
+jest.unstable_mockModule('child_process', () => ({
+  exec: jest.fn((cmd, opts, cb) => cb(null, { stdout: '', stderr: '' }))
+}));
+
 // Create AWS client mocks
 const ddbMock = mockClient(DynamoDBDocumentClient);
 const ssmMock = mockClient(SSMClient);
 const cognitoMock = mockClient(CognitoIdentityProviderClient);
 
-// Import modules under test
-import app from '../../admin/server.mjs';
-
 describe('Individual CRUD Operations', () => {
+  let app;
+
+  beforeAll(async () => {
+    // Import server after mocks are set up
+    const serverModule = await import('../../admin/server.mjs');
+    app = serverModule.default;
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -193,6 +216,25 @@ describe('Individual CRUD Operations', () => {
 
       // May fail due to missing dependencies, but route should exist
       expect([200, 500].includes(response.status)).toBe(true);
+    });
+
+    test('should show file paths used during export', async () => {
+      // Get the mocked fs functions to inspect calls
+      const { promises: fs } = await import('fs');
+      
+      const response = await request(app)
+        .post('/api/dev/export-upload');
+        
+      // Check that writeFile was called with paths
+      const writeFileCalls = fs.writeFile.mock.calls;
+      const actualPaths = writeFileCalls.map(call => call[0]);
+      
+      // Show what paths are actually being used
+      expect(actualPaths.length).toBeGreaterThan(0);
+      expect(actualPaths[0]).toContain('data'); // Just verify it contains 'data'
+      
+      // This will show the actual paths in the test output
+      console.log('Paths used:', JSON.stringify(actualPaths, null, 2));
     });
   });
 });
