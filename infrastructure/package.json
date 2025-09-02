@@ -1,7 +1,6 @@
 {
   "name": "infrastructure",
   "version": "0.2.6",
-  "type": "commonjs",
   "description": "",
   "bin": {
     "app": "bin/app.ts"
@@ -48,13 +47,16 @@
   },
   "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad",
   "devDependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.848.0",
-    "@aws-sdk/client-cloudformation": "^3.844.0",
-    "@aws-sdk/client-cognito-identity-provider": "^3.826.0",
-    "@aws-sdk/client-dynamodb": "^3.525.0",
-    "@aws-sdk/client-s3": "^3.525.0",
-    "@aws-sdk/client-ssm": "^3.525.0",
-    "@aws-sdk/lib-dynamodb": "^3.525.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.879.0",
+    "@aws-sdk/client-cloudformation": "^3.879.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.879.0",
+    "@aws-sdk/client-dynamodb": "^3.879.0",
+    "@aws-sdk/client-lambda": "^3.879.0",
+    "@aws-sdk/client-s3": "^3.879.0",
+    "@aws-sdk/client-ssm": "^3.879.0",
+    "@aws-sdk/lib-dynamodb": "^3.879.0",
+    "express": "^4.18.0",
+    "generate-password": "^1.7.1",
     "@babel/core": "^7.27.4",
     "@babel/preset-env": "^7.27.2",
     "@babel/preset-typescript": "^7.27.1",
