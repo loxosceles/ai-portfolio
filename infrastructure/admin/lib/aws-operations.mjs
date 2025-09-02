@@ -42,11 +42,15 @@ class AWSOperations {
       })
     );
     this.ssmClient = new SSMClient({ region: config.regions.ssm });
-    this.tableNames = null;
+    this.tableNamesCache = new Map();
   }
 
   async getTableNames(stage) {
-    if (this.tableNames && this.tableNames._stage === stage) return this.tableNames;
+    const disableCache = process.env.ENVIRONMENT === 'test';
+    
+    if (!disableCache && this.tableNamesCache.has(stage)) {
+      return this.tableNamesCache.get(stage);
+    }
 
     const tableNames = {};
     for (const [tableName, tableConfig] of Object.entries(this.config.tables)) {
@@ -58,7 +62,9 @@ class AWSOperations {
       tableNames[tableName] = result.Parameter.Value;
     }
 
-    this.tableNames = { ...tableNames, _stage: stage };
+    if (!disableCache) {
+      this.tableNamesCache.set(stage, tableNames);
+    }
     return tableNames;
   }
 
