@@ -5,12 +5,11 @@ module.exports = {
   testMatch: ['**/*.test.ts', '**/*.test.js', '**/*.test.mjs'],
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
-    // '^.+\\.(js|jsx|mjs)$': 'babel-jest'
-    '^.+\\.(js|jsx)$': 'babel-jest'
+    '^.+\\.(js|jsx|mjs)$': 'babel-jest'
   },
   transformIgnorePatterns: ['node_modules/(?!(@aws-sdk)/)'],
   moduleNameMapper: {
-    // '^(\\.{1,2}/.*)\\.mjs$': '$1'
+    '^(\\.{1,2}/.*)\\.mjs$': '$1'
   },
   setupFiles: ['<rootDir>/test/setup/environment.js'],
   setupFilesAfterEnv: ['<rootDir>/test/setup/console-silence.js'],
