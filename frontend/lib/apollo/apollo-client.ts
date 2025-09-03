@@ -48,9 +48,7 @@ const authLink = setContext(async (_, { headers }) => {
 export const client = new ApolloClient({
   ssrMode: typeof window === 'undefined',
   link: authLink.concat(httpLink),
-  cache: new InMemoryCache({
-    addTypename: true
-  }),
+  cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: {
       errorPolicy: 'all',
@@ -62,8 +60,12 @@ export const client = new ApolloClient({
       fetchPolicy: typeof window === 'undefined' ? 'network-only' : 'cache-first'
     }
   },
-  name: 'portfolio-client',
-  version: '1.0',
+  clientAwareness: {
+    name: 'portfolio-client',
+    version: '1.0'
+  },
   assumeImmutableResults: true,
-  connectToDevTools: isLocal && typeof window !== 'undefined' && !!appsyncApiKey
+  devtools: {
+    enabled: isLocal && typeof window !== 'undefined' && !!appsyncApiKey
+  }
 });
