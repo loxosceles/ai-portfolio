@@ -1,6 +1,6 @@
 // tests/visitor-context.test.mjs
 
-import { handler } from '../../lib/functions/visitor-context/dev/index.mjs';
+import { handler, isStaticAsset } from '../../lib/functions/visitor-context/dev/index.mjs';
 import { mockClient } from 'aws-sdk-client-mock';
 import {
   SSMClient,
@@ -28,7 +28,33 @@ const dynamoDBMock = mockClient(DynamoDBClient);
 const dynamoDBDocMock = mockClient(DynamoDBDocumentClient);
 
 describe('Lambda@Edge Function', () => {
-  beforeEach(() => {
+  describe('isStaticAsset Function', () => {
+    test('should identify _next assets', () => {
+      expect(isStaticAsset('/_next/static/chunks/main.js')).toBe(true);
+      expect(isStaticAsset('/_next/image')).toBe(true);
+      expect(isStaticAsset('/_next/static/css/app.css')).toBe(true);
+    });
+
+    test('should identify static file extensions', () => {
+      expect(isStaticAsset('/script.js')).toBe(true);
+      expect(isStaticAsset('/styles.css')).toBe(true);
+      expect(isStaticAsset('/icon.png')).toBe(true);
+      expect(isStaticAsset('/favicon.ico')).toBe(true);
+      expect(isStaticAsset('/logo.svg')).toBe(true);
+      expect(isStaticAsset('/font.woff')).toBe(true);
+      expect(isStaticAsset('/font.woff2')).toBe(true);
+    });
+
+    test('should not identify regular pages as static', () => {
+      expect(isStaticAsset('/about')).toBe(false);
+      expect(isStaticAsset('/contact.html')).toBe(false);
+      expect(isStaticAsset('/')).toBe(false);
+      expect(isStaticAsset('/file.txt')).toBe(false);
+    });
+  });
+
+  describe('Integration Tests', () => {
+    beforeEach(() => {
     // Reset all mocks before each test
     ssmMock.reset();
     cognitoMock.reset();
@@ -119,7 +145,7 @@ describe('Lambda@Edge Function', () => {
     ]
   });
 
-  describe('Static Asset Handling', () => {
+    describe('Static Asset Handling', () => {
     test('should skip processing for _next assets', async () => {
       const event = createViewerRequestEvent('visitor=test-link-id');
       event.Records[0].cf.request.uri = '/_next/static/chunks/main.js';
@@ -148,7 +174,7 @@ describe('Lambda@Edge Function', () => {
     });
   });
 
-  describe('Event Type Handling', () => {
+    describe('Event Type Handling', () => {
     test('should handle viewer-request events with visitor parameter', async () => {
       const event = createViewerRequestEvent('visitor=test-link-id');
       const result = await handler(event);
@@ -211,7 +237,7 @@ describe('Lambda@Edge Function', () => {
     });
   });
 
-  describe('Error Handling', () => {
+    describe('Error Handling', () => {
     test('should handle SSM parameter errors gracefully', async () => {
       // Mock SSM to reject
       ssmMock.on(GetParametersCommand).rejects(new Error('SSM error'));
@@ -236,7 +262,7 @@ describe('Lambda@Edge Function', () => {
     });
   });
 
-  describe('AWS Client Interactions', () => {
+    describe('AWS Client Interactions', () => {
     test('should call SSM with correct parameters', async () => {
       const event = createViewerRequestEvent('visitor=test-link-id');
       await handler(event);
@@ -273,6 +299,7 @@ describe('Lambda@Edge Function', () => {
           PASSWORD: 'test-password'
         }
       });
+    });
     });
   });
 });

@@ -54,6 +54,7 @@ describe('WebStack Environment Variables', () => {
   afterEach(() => {
     consoleSpy.mockRestore();
     delete process.env.ENVIRONMENT;
+    delete process.env.AWS_REGION_DEFAULT;
     jest.clearAllMocks();
   });
 
@@ -138,13 +139,14 @@ describe('WebStack Environment Variables', () => {
   describe('Real Configuration Integration', () => {
     it('should work with actual stack configuration', () => {
       process.env.ENVIRONMENT = 'prod';
+      process.env.AWS_REGION_DEFAULT = 'eu-central-1';
       const realEnvManager = new EnvironmentManager(stackManagerConfig);
 
       mockFs.readFileSync.mockImplementation((filePath: fs.PathOrFileDescriptor) => {
         if (filePath.toString().includes('.env.prod')) {
           return `PROD_DOMAIN_NAME=${FAKE_DOMAIN}\nCERTIFICATE_ARN=${FAKE_CERTIFICATE_ARN}`;
         }
-        return `AWS_ADMIN_ARN=${FAKE_AWS_ARN}`;
+        return `AWS_ADMIN_ARN=${FAKE_AWS_ARN}\nAWS_REGION_DEFAULT=eu-central-1`;
       });
 
       const webStackEnv = realEnvManager.getStackEnv('web');
