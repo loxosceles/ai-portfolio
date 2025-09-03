@@ -12,43 +12,66 @@ import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 const dynamodb = new DynamoDBClient({ region: 'us-east-1' });
 const docClient = DynamoDBDocumentClient.from(dynamodb);
 const cognito = new CognitoIdentityProviderClient({ region: 'eu-central-1' });
+// We need to hard-code these regions here since the Lambda@Edge function does
+// not accept any environment variables. The regions are needed in order to
+// retrieve the SSM parameters for other configurations.
 const ssmMainRegion = new SSMClient({ region: 'eu-central-1' }); // For main app config
 const ssmEdgeRegion = new SSMClient({ region: 'us-east-1' }); // For edge-specific config
 
-let config = null;
-
-async function getConfig(request) {
-  if (config) return config;
-
-  // Fetch main app config from eu-central-1
-  const mainConfigCommand = new GetParametersCommand({
-    Names: ['/portfolio/dev/COGNITO_CLIENT_ID', '/portfolio/dev/COGNITO_USER_POOL_ID'],
-    WithDecryption: true
-  });
-
-  // Fetch edge-specific config from us-east-1
-  const edgeConfigCommand = new GetParametersCommand({
-    Names: ['/portfolio/dev/VISITOR_TABLE_NAME'],
-    WithDecryption: true
-  });
-
-  const [mainParameters, edgeParameters] = await Promise.all([
-    ssmMainRegion.send(mainConfigCommand),
-    ssmEdgeRegion.send(edgeConfigCommand)
-  ]);
-
-  const allParameters = [...mainParameters.Parameters, ...edgeParameters.Parameters];
-
-  config = {
-    clientId: allParameters.find((p) => p.Name.endsWith('COGNITO_CLIENT_ID')).Value,
-    userPoolId: allParameters.find((p) => p.Name.endsWith('COGNITO_USER_POOL_ID')).Value,
-    tableName: allParameters.find((p) => p.Name.endsWith('VISITOR_TABLE_NAME')).Value
-  };
-
-  return config;
+export function isStaticAsset(uri) {
+  const staticExtensions = ['.js', '.css', '.png', '.ico', '.svg', '.woff', '.woff2'];
+  return (
+    uri.startsWith('/_next/') ||
+    staticExtensions.some((ext) => uri.endsWith(ext))
+  );
 }
 
-async function getLinkData(tableName, linkId) {
+async function getConfigsFromSSMParamStore() {
+  try {
+    // Fetch main app config from eu-central-1
+    const mainConfigCommand = new GetParametersCommand({
+      Names: ['/portfolio/dev/COGNITO_CLIENT_ID', '/portfolio/dev/COGNITO_USER_POOL_ID'],
+      WithDecryption: true
+    });
+
+    // Fetch edge-specific config from us-east-1
+    const edgeConfigCommand = new GetParametersCommand({
+      Names: ['/portfolio/dev/VISITOR_TABLE_NAME'],
+      WithDecryption: true
+    });
+
+    const [mainParameters, edgeParameters] = await Promise.all([
+      ssmMainRegion.send(mainConfigCommand),
+      ssmEdgeRegion.send(edgeConfigCommand)
+    ]);
+
+    const allParameters = [...mainParameters.Parameters, ...edgeParameters.Parameters];
+
+    // Parameter extraction
+    const clientIdParam = allParameters.find((p) => p.Name.endsWith('COGNITO_CLIENT_ID'));
+    const userPoolIdParam = allParameters.find((p) => p.Name.endsWith('COGNITO_USER_POOL_ID'));
+    const tableNameParam = allParameters.find((p) => p.Name.endsWith('VISITOR_TABLE_NAME'));
+
+    if (!clientIdParam || !userPoolIdParam || !tableNameParam) {
+      throw new Error(
+        `Missing required parameters: clientId=${!!clientIdParam}, userPoolId=${!!userPoolIdParam}, tableName=${!!tableNameParam}`
+      );
+    }
+
+    const config = {
+      clientId: clientIdParam.Value,
+      userPoolId: userPoolIdParam.Value,
+      tableName: tableNameParam.Value
+    };
+
+    return config;
+  } catch (error) {
+    console.error('Error loading config:', error);
+    throw new Error(`Failed to load SSM configuration: ${error.message}`);
+  }
+}
+
+async function getLinkDataFromDDB(tableName, linkId) {
   try {
     const command = new GetCommand({
       TableName: tableName,
@@ -61,11 +84,11 @@ async function getLinkData(tableName, linkId) {
     return response.Item;
   } catch (error) {
     console.error('Error fetching link data:', error);
-    return null;
+    throw new Error(`Failed to fetch link data for ${linkId}: ${error.message}`);
   }
 }
 
-async function getCognitoToken(username, password, userPoolId, clientId) {
+async function requestCognitoTokenWithUserCredentials(username, password, userPoolId, clientId) {
   try {
     const command = new AdminInitiateAuthCommand({
       AuthFlow: 'ADMIN_USER_PASSWORD_AUTH',
@@ -81,131 +104,82 @@ async function getCognitoToken(username, password, userPoolId, clientId) {
     return response.AuthenticationResult;
   } catch (error) {
     console.error('Cognito authentication error:', error);
-    return null;
+    throw new Error(`Failed to authenticate user ${username}: ${error.message}`);
   }
 }
 
-async function handleViewerRequest(request) {
-  const params = new URLSearchParams(request.querystring);
-  const linkId = params.get('visitor');
-
-  if (!linkId) {
-    return request;
+async function attachAuthHeaders(request, linkData, tokens, linkId) {
+  // Add tokens and link ID to headers
+  if (!request.headers) {
+    request.headers = {};
   }
 
-  // Skip static assets
-  if (
-    request.uri.startsWith('/_next/') ||
-    request.uri.includes('.js') ||
-    request.uri.includes('.css') ||
-    request.uri.includes('.png') ||
-    request.uri.includes('.ico')
-  ) {
-    return request;
-  }
-
-  try {
-    const { tableName, userPoolId, clientId } = await getConfig(request);
-
-    // Get link data from DynamoDB
-    const linkData = await getLinkData(tableName, linkId);
-
-    if (!linkData || !linkData.password) {
-      console.error('No valid link data found');
-      return request;
+  request.headers['x-auth-tokens'] = [
+    {
+      key: 'X-Auth-Tokens',
+      value: JSON.stringify(tokens)
     }
+  ];
 
-    // Generate username from linkId (same format as link creator)
-    const username = `${linkId}@visitor.temporary.com`;
-
-    // Get Cognito tokens
-    const tokens = await getCognitoToken(username, linkData.password, userPoolId, clientId);
-
-    if (!tokens) {
-      console.error('Failed to obtain Cognito tokens');
-      return request;
+  request.headers['x-link-id'] = [
+    {
+      key: 'X-Link-Id',
+      value: linkId
     }
+  ];
 
-    // Add tokens and link ID to headers
-    if (!request.headers) {
-      request.headers = {};
-    }
-
-    request.headers['x-auth-tokens'] = [
-      {
-        key: 'X-Auth-Tokens',
-        value: JSON.stringify(tokens)
-      }
-    ];
-
-    request.headers['x-link-id'] = [
-      {
-        key: 'X-Link-Id',
-        value: linkId
-      }
-    ];
-
-    return request;
-  } catch (error) {
-    console.error('Error in viewer request handler:', error);
-    return request;
-  }
+  return request;
 }
 
-async function handleViewerResponse(request, response) {
+async function attachAuthCookies(request, response) {
   const authTokens = request.headers['x-auth-tokens']?.[0]?.value;
 
   if (!authTokens) {
     return response;
   }
 
-  try {
-    const tokens = JSON.parse(authTokens);
-    const linkId = request.headers['x-link-id']?.[0]?.value;
+  const tokens = JSON.parse(authTokens);
+  const linkId = request.headers['x-link-id']?.[0]?.value;
 
-    // Set secure cookies for auth tokens (readable by client)
-    // NOTE: HttpOnly flag is intentionally omitted as the static frontend needs
-    // JavaScript access to these tokens for client-side API requests.
-    // Security is enhanced with SameSite=Strict and short expiration times.
-    const cookies = [
+  // Set secure cookies for auth tokens (readable by client)
+  // NOTE: HttpOnly flag is intentionally omitted as the static frontend needs
+  // JavaScript access to these tokens for client-side API requests.
+  // Security is enhanced with SameSite=Strict and short expiration times.
+  const cookies = [
+    {
+      key: 'Set-Cookie',
+      value: `IdToken=${tokens.IdToken}; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
+    },
+    {
+      key: 'Set-Cookie',
+      value: `AccessToken=${tokens.AccessToken}; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
+    }
+  ];
+
+  // Set visitor info cookies that the frontend can read
+  if (linkId) {
+    cookies.push(
       {
         key: 'Set-Cookie',
-        value: `IdToken=${tokens.IdToken}; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
+        value: `LinkId=${linkId}; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
       },
       {
         key: 'Set-Cookie',
-        value: `AccessToken=${tokens.AccessToken}; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
+        value: `visitor_company=Demo Company; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
+      },
+      {
+        key: 'Set-Cookie',
+        value: `visitor_name=Visitor; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
+      },
+      {
+        key: 'Set-Cookie',
+        value: `visitor_context=portfolio review; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
       }
-    ];
-
-    // Set visitor info cookies that the frontend can read
-    if (linkId) {
-      cookies.push(
-        {
-          key: 'Set-Cookie',
-          value: `LinkId=${linkId}; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
-        },
-        {
-          key: 'Set-Cookie',
-          value: `visitor_company=Demo Company; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
-        },
-        {
-          key: 'Set-Cookie',
-          value: `visitor_name=Visitor; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
-        },
-        {
-          key: 'Set-Cookie',
-          value: `visitor_context=portfolio review; Path=/; Secure; SameSite=Strict; Max-Age=${tokens.ExpiresIn}`
-        }
-      );
-    }
-
-    response.headers['set-cookie'] = cookies;
-    return response;
-  } catch (error) {
-    console.error('Error in viewer response handler:', error);
-    return response;
+    );
   }
+
+  response.headers['set-cookie'] = cookies;
+  return response;
 }
 
 export const handler = async (event) => {
@@ -214,12 +188,49 @@ export const handler = async (event) => {
 
   try {
     if (eventType === 'viewer-request') {
-      return await handleViewerRequest(request);
-    } else if (eventType === 'viewer-response') {
-      return await handleViewerResponse(request, response);
-    }
+      // Skip static assets early - before any AWS calls
+      if (isStaticAsset(request.uri)) {
+        return request;
+      }
 
-    return eventType === 'viewer-request' ? request : response;
+      // Intercept viewer requests
+      const params = new URLSearchParams(request.querystring);
+      const linkId = params.get('visitor');
+
+      // Exit early if no linkId is present
+      if (!linkId) {
+        return request;
+      }
+
+      const { tableName, userPoolId, clientId } = await getConfigsFromSSMParamStore();
+      const linkData = await getLinkDataFromDDB(tableName, linkId);
+
+      // If the linkData is not found in the database, return the unmodified request
+      if (!linkData) {
+        console.error('No link data found for linkId:', linkId);
+        return request;
+      }
+
+      if (!linkData.password) {
+        console.error('No valid link data found - missing password');
+        return request;
+      }
+
+      const username = `${linkId}@visitor.temporary.com`;
+      const tokens = await requestCognitoTokenWithUserCredentials(
+        username,
+        linkData.password,
+        userPoolId,
+        clientId
+      );
+
+      const requestWithHeaders = await attachAuthHeaders(request, linkData, tokens, linkId);
+      return requestWithHeaders;
+    } else if (eventType === 'viewer-response') {
+      // Intercept viewer responses
+      const responseWithCookies = await attachAuthCookies(request, response);
+      return responseWithCookies;
+    }
   } catch (error) {
     console.error('Unhandled error:', error);
     return eventType === 'viewer-request' ? request : response;
