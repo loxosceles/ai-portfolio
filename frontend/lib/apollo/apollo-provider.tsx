@@ -14,7 +14,7 @@ export default function GraphQLProvider({ children }: { children: React.ReactNod
           connectApolloClientToVSCodeDevTools(client, 'ws://localhost:7095');
         })
         .catch((error) => {
-          console.error('VSCode DevTools not available:', error.message);
+          console.error('VSCode DevTools not available:', error?.message || error);
         });
     }
   }, []);

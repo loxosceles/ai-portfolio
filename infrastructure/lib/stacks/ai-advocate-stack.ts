@@ -10,24 +10,38 @@ import { AIAdvocateResolverConstruct } from '../resolvers/ai-advocate-resolver-c
 import { addStackOutputs } from './stack-helpers';
 import { IAIAdvocateStackEnv } from '../../types';
 
+interface TableConfig {
+  name: string;
+  constructId: string;
+}
+
 interface IAIAdvocateStackProps extends cdk.StackProps {
   developerTable: dynamodb.ITable;
   projectsTable: dynamodb.ITable;
   stackEnv: IAIAdvocateStackEnv;
+  tableNames: {
+    recruiterProfiles: TableConfig;
+    developers: TableConfig;
+    projects: TableConfig;
+  };
 }
 
 export class AIAdvocateStack extends cdk.Stack {
   public readonly aiAdvocateLambda: lambda.Function;
   private readonly stage: string;
   private readonly stackEnv: IAIAdvocateStackEnv;
+  private readonly recruiterProfilesTableName: string;
+  private readonly recruiterProfilesTableConfig: TableConfig;
 
   public readonly recruiterProfilesTable: dynamodb.ITable;
 
   constructor(scope: Construct, id: string, props: IAIAdvocateStackProps) {
     super(scope, id, props);
-    const { developerTable, projectsTable, stackEnv } = props;
+    const { developerTable, projectsTable, stackEnv, tableNames } = props;
     this.stackEnv = stackEnv;
     this.stage = this.stackEnv.stage;
+    this.recruiterProfilesTableName = tableNames.recruiterProfiles.name;
+    this.recruiterProfilesTableConfig = tableNames.recruiterProfiles;
 
     // Import GraphQL API using CloudFormation exports
     // NOTE: CloudFormation exports are used here instead of SSM parameters because
@@ -66,7 +80,7 @@ export class AIAdvocateStack extends cdk.Stack {
     }
 
     // Create AI Advocate Lambda function
-    this.aiAdvocateLambda = this.createAIAdvocateLambda(bedrockModelId);
+    this.aiAdvocateLambda = this.createAIAdvocateLambda(bedrockModelId, tableNames);
 
     // Grant DynamoDB permissions
     this.grantDynamoDBPermissions(developerTable, projectsTable);
@@ -94,9 +108,12 @@ export class AIAdvocateStack extends cdk.Stack {
     ]);
   }
 
-  private createAIAdvocateLambda(bedrockModelId: string): lambda.Function {
-    const developerTableName = `PortfolioDevelopers-${this.stage}`;
-    const projectsTableName = `PortfolioProjects-${this.stage}`;
+  private createAIAdvocateLambda(
+    bedrockModelId: string,
+    tableNames: { developers: TableConfig; projects: TableConfig }
+  ): lambda.Function {
+    const developerTableName = tableNames.developers.name;
+    const projectsTableName = tableNames.projects.name;
 
     return new lambda.Function(this, 'AIAdvocateFunction', {
       functionName: `ai-advocate-${this.stage}`,
@@ -141,15 +158,17 @@ export class AIAdvocateStack extends cdk.Stack {
    * @returns The created DynamoDB table
    */
   private createRecruiterProfilesTable(isProd: boolean): dynamodb.ITable {
-    const tableName = `RecruiterProfiles-${this.stage}`;
-
     if (isProd) {
       // Reference existing production table
-      return dynamodb.Table.fromTableName(this, 'RecruiterProfilesTable', tableName);
+      return dynamodb.Table.fromTableName(
+        this,
+        this.recruiterProfilesTableConfig.constructId,
+        this.recruiterProfilesTableName
+      );
     } else {
       // Create new table for dev
-      return new dynamodb.Table(this, 'RecruiterProfilesTable', {
-        tableName,
+      return new dynamodb.Table(this, this.recruiterProfilesTableConfig.constructId, {
+        tableName: this.recruiterProfilesTableName,
         partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
         billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
         removalPolicy: cdk.RemovalPolicy.DESTROY,

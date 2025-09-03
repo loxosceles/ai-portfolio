@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Portfolio Admin</h1>
+            <div class="env-selector">
+                <label for="environment">Environment:</label>
+                <select id="environment">
+                    <option value="dev">Development</option>
+                    <option value="prod">Production</option>
+                </select>
+                <span class="env-badge" id="env-badge">DEV</span>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <nav class="tabs">
+            <button class="tab-button active" data-tab="developer">
+                Developer
+            </button>
+            <button class="tab-button" data-tab="projects">
+                Projects
+            </button>
+            <button class="tab-button" data-tab="recruiters">
+                Recruiters
+            </button>
+        </nav>
+
+        <!-- Tab Contents -->
+        <div id="developer" class="tab-content active">
+            <div class="tab-header">
+                <h2>Developer Profile</h2>
+            </div>
+            <div id="developer-list" class="data-list"></div>
+        </div>
+
+        <div id="projects" class="tab-content">
+            <div class="tab-header">
+                <h2>Projects</h2>
+                <button id="add-project-btn" class="add-btn">Add Project</button>
+            </div>
+            <div id="projects-list" class="data-list"></div>
+        </div>
+
+        <div id="recruiters" class="tab-content">
+            <div class="tab-header">
+                <h2>Recruiters</h2>
+                <button id="add-recruiter-btn" class="add-btn">Add Recruiter</button>
+            </div>
+            <div id="recruiters-list" class="data-list"></div>
+        </div>
+
+        <!-- Action Bar with Sync Status -->
+        <div class="action-bar">
+            <div class="sync-section">
+                <div id="sync-indicator" class="sync-status">Loading...</div>
+                <button id="export-upload-btn" disabled>
+                    Export & Upload to S3
+                </button>
+            </div>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <!-- Modal for Editing -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="modal-title"></h3>
+            <div id="modal-body"></div>
+            <div class="modal-actions">
+                <button id="modal-save-btn" class="save-btn">Update</button>
+                <button id="modal-cancel-btn" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

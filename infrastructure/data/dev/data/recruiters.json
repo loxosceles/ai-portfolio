@@ -1,0 +1,11 @@
+[
+  {
+    "active": true,
+    "companyName": "Marlboro",
+    "context": "Remote-first company",
+    "linkId": "jane-smith-strange-corps-234",
+    "open_position": "Senior Developer",
+    "recruiterName": "Jane Smith",
+    "skills": ["AWS", "React", "Java", "C", "C++"]
+  }
+]

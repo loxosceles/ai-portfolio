@@ -2,7 +2,7 @@ module.exports = {
   testEnvironment: 'node',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node', 'mjs'],
   roots: ['<rootDir>/test'],
-  testMatch: ['**/*.test.ts', '**/*.test.js'],
+  testMatch: ['**/*.test.ts', '**/*.test.js', '**/*.test.mjs'],
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
     '^.+\\.(js|jsx|mjs)$': 'babel-jest'
@@ -11,7 +11,8 @@ module.exports = {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.mjs$': '$1'
   },
-  setupFilesAfterEnv: ['./test/setup/environment.ts'], // Only need environment setup
+  setupFiles: ['<rootDir>/test/setup/environment.js'],
+  setupFilesAfterEnv: ['<rootDir>/test/setup/console-silence.js'],
   // Speed optimizations
   cache: true,
   maxConcurrency: 5,

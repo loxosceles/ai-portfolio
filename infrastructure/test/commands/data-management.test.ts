@@ -12,6 +12,100 @@ import {
   handlePopulateDynamoDB
 } from '../../lib/cli/commands/data-management';
 
+// Test configuration
+const TEST_DATA = {
+  developer: {
+    id: 'dev1',
+    name: 'Test Developer',
+    title: 'Software Engineer',
+    bio: 'Test bio',
+    email: 'test@example.com',
+    website: 'https://test.dev',
+    github: 'https://github.com/test',
+    linkedin: 'https://linkedin.com/in/test',
+    location: 'Test City',
+    yearsOfExperience: 5,
+    isActive: true,
+    skillSets: [{ id: 'skill1', name: 'Frontend', skills: ['React'] }]
+  },
+  project: {
+    id: 'proj1',
+    title: 'Test Project',
+    slug: 'test-project',
+    icon: 'TestIcon',
+    description: 'Test description',
+    status: 'Active',
+    highlights: ['Feature 1'],
+    techStack: ['React'],
+    githubUrl: 'https://github.com/test/project',
+    overview: 'Test overview',
+    challenge: 'Test challenge',
+    solution: 'Test solution',
+    architecture: [
+      {
+        name: 'Test Architecture',
+        details: 'Test architecture details'
+      }
+    ],
+    technicalShowcases: [
+      {
+        title: 'Test Showcase',
+        description: 'Test showcase description',
+        highlights: ['Test highlight']
+      }
+    ],
+    archPatterns: ['Test pattern'],
+    performance: ['Test performance'],
+    repositoryAndDevelopment: {
+      plannedFeatures: ['Test feature'],
+      vision: 'Test vision'
+    },
+    developerId: 'dev1'
+  }
+};
+
+const TEST_PATHS = {
+  data: 'data/',
+  schemas: 'schemas/'
+};
+
+const EXPECTED_MESSAGES = {
+  upload: 'Data and schema upload completed successfully',
+  download: 'Data and schema download completed successfully',
+  populate: 'DynamoDB tables populated successfully'
+};
+
+// Helper functions
+const getMockFileResponse = (filePath: string) => {
+  if (filePath.includes(`${TEST_PATHS.data}developer.json`)) {
+    return JSON.stringify([TEST_DATA.developer]);
+  } else if (filePath.includes(`${TEST_PATHS.data}projects.json`)) {
+    return JSON.stringify([TEST_DATA.project]);
+  } else if (filePath.includes(`${TEST_PATHS.data}recruiters.json`)) {
+    return '[]';
+  } else if (filePath.includes(`${TEST_PATHS.schemas}developer-schema.json`)) {
+    return JSON.stringify({ type: 'object', properties: {} });
+  } else if (filePath.includes(`${TEST_PATHS.schemas}projects-schema.json`)) {
+    return JSON.stringify({ type: 'array', items: { type: 'object' } });
+  } else if (filePath.includes(`${TEST_PATHS.schemas}recruiters-schema.json`)) {
+    return JSON.stringify({ type: 'array', items: { type: 'object' } });
+  }
+  return '[]';
+};
+
+const getMockS3Response = (key: string) => {
+  if (key.includes(`${TEST_PATHS.data}developer.json`)) {
+    return [TEST_DATA.developer];
+  } else if (key.includes(`${TEST_PATHS.data}projects.json`)) {
+    return [TEST_DATA.project];
+  } else if (key.includes(`${TEST_PATHS.data}recruiters.json`)) {
+    return [];
+  } else if (key.includes(TEST_PATHS.schemas)) {
+    return { type: 'object', properties: {} };
+  }
+  return [];
+};
+
 // Mock AWS SDK clients
 const s3Mock = mockClient(S3Client);
 const dynamoDBMock = mockClient(DynamoDBClient);
@@ -32,35 +126,7 @@ jest.mock('../../lib/core/env-manager', () => {
 // Mock fs to avoid file system operations
 jest.mock('fs/promises', () => ({
   readFile: jest.fn().mockImplementation((filePath) => {
-    if (filePath.toString().includes('developer.json')) {
-      return Promise.resolve(
-        JSON.stringify([
-          {
-            id: 'dev1',
-            name: 'Test Developer',
-            title: 'Software Engineer',
-            bio: 'Test bio',
-            email: 'test@example.com',
-            skillSets: [{ id: 'skill1', name: 'Frontend', skills: ['React'] }]
-          }
-        ])
-      );
-    } else if (filePath.toString().includes('projects.json')) {
-      return Promise.resolve(
-        JSON.stringify([
-          {
-            id: 'proj1',
-            title: 'Test Project',
-            description: 'Test description',
-            status: 'Active',
-            highlights: ['Feature 1'],
-            techStack: ['React'],
-            developerId: 'dev1'
-          }
-        ])
-      );
-    }
-    return Promise.resolve('{}');
+    return Promise.resolve(getMockFileResponse(filePath.toString()));
   }),
   mkdir: jest.fn().mockResolvedValue(undefined),
   writeFile: jest.fn().mockResolvedValue(undefined)
@@ -88,31 +154,7 @@ describe('Data Management Command Tests', () => {
       .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
       .mockImplementation((...args: unknown[]) => {
         const key = args[1] as string;
-        if (key.includes('developer.json')) {
-          return Promise.resolve([
-            {
-              id: 'dev1',
-              name: 'Test Developer',
-              title: 'Software Engineer',
-              bio: 'Test bio',
-              email: 'test@example.com',
-              skillSets: [{ id: 'skill1', name: 'Frontend', skills: ['React'] }]
-            }
-          ]);
-        } else if (key.includes('projects.json')) {
-          return Promise.resolve([
-            {
-              id: 'proj1',
-              title: 'Test Project',
-              description: 'Test description',
-              status: 'Active',
-              highlights: ['Feature 1'],
-              techStack: ['React'],
-              developerId: 'dev1'
-            }
-          ]);
-        }
-        return Promise.resolve([]);
+        return Promise.resolve(getMockS3Response(key));
       });
 
     jest
@@ -126,6 +168,8 @@ describe('Data Management Command Tests', () => {
           return Promise.resolve('test-developers');
         } else if (paramName.includes('PROJECTS_TABLE_NAME')) {
           return Promise.resolve('test-projects');
+        } else if (paramName.includes('RECRUITER_PROFILES_TABLE_NAME')) {
+          return Promise.resolve('test-recruiters');
         }
         return Promise.reject(new Error(`Parameter ${paramName} not found`));
       });
@@ -145,7 +189,7 @@ describe('Data Management Command Tests', () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.message).toContain('Data upload completed successfully');
+    expect(result.message).toContain(EXPECTED_MESSAGES.upload);
     expect(s3Mock.calls().length).toBeGreaterThan(0);
   });
 
@@ -157,7 +201,7 @@ describe('Data Management Command Tests', () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.message).toContain('Data download completed successfully');
+    expect(result.message).toContain(EXPECTED_MESSAGES.download);
   });
 
   test('should handle populate_ddb_with_static_data command like CLI', async () => {
@@ -167,7 +211,7 @@ describe('Data Management Command Tests', () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.message).toContain('DynamoDB tables populated successfully');
+    expect(result.message).toContain(EXPECTED_MESSAGES.populate);
   });
 
   test('should handle region option like CLI', async () => {

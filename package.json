@@ -22,11 +22,14 @@
     "sync-service-params-dry-run:prod": "pnpm --filter=infrastructure run sync-service-params-dry-run:prod",
     "sync-service-params-cleanup:dev": "pnpm --filter=infrastructure run sync-service-params-cleanup:dev",
     "sync-service-params-cleanup:prod": "pnpm --filter=infrastructure run sync-service-params-cleanup:prod",
+    "admin:start": "pnpm --filter=infrastructure run admin:start",
     "dev": "pnpm --filter=frontend run dev",
     "build": "pnpm --filter=frontend run build",
     "test": "pnpm --filter='..' run test",
     "test:frontend": "pnpm --filter=frontend run test",
     "test:infra": "pnpm --filter=infrastructure run test",
+    "test:infra:verbose": "VERBOSE_TEST_LOGS=1 pnpm --filter=infrastructure run test",
+    "test:infra:watch": "pnpm --filter=infrastructure run test:watch",
     "lint": "pnpm --filter='..' run lint",
     "lint:frontend": "pnpm --filter=frontend run lint",
     "lint:infra": "pnpm --filter=infrastructure run lint",
@@ -35,8 +38,8 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@aws-sdk/client-dynamodb": "^3.830.0",
-    "@aws-sdk/lib-dynamodb": "^3.830.0",
+    "@aws-sdk/client-dynamodb": "^3.879.0",
+    "@aws-sdk/lib-dynamodb": "^3.879.0",
     "@eslint/css": "^0.8.1",
     "@eslint/js": "^9.28.0",
     "@eslint/json": "^0.12.0",
@@ -76,8 +79,19 @@
       "prettier --write --end-of-line auto"
     ]
   },
-  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac",
+  "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b",
+  "pnpm": {
+    "overrides": {
+      "@smithy/types": "4.3.2",
+      "@smithy/core": "3.9.0"
+    }
+  },
+  "workspaces": [
+    "frontend",
+    "infrastructure",
+    "infrastructure/admin"
+  ],
   "dependencies": {
-    "@aws-sdk/client-cloudfront": "^3.844.0"
+    "@aws-sdk/client-cloudfront": "^3.879.0"
   }
 }
