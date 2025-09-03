@@ -1,13 +1,11 @@
 [
   {
     "active": true,
-    "companyName": "Test Company",
-    "context": "Test context",
-    "linkExpiry": "2025-09-05T23:05:33.954Z",
-    "linkId": "test-new-recruiter",
-    "linkUrl": "https://d2u34o1q6b8a3t.cloudfront.net/?visitor=test-new-recruiter",
-    "open_position": "Developer",
-    "recruiterName": "Test User",
-    "skills": ["JavaScript"]
+    "companyName": "Marlboro",
+    "context": "Remote-first company",
+    "linkId": "jane-smith-strange-corps-234",
+    "open_position": "Senior Developer",
+    "recruiterName": "Jane Smith",
+    "skills": ["AWS", "React", "Java", "C", "C++"]
   }
 ]
