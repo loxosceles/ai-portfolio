@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.879.0",
-    "@aws-sdk/lib-dynamodb": "link:3.850.0@aws-sdk/lib-dynamodb@3.850.nstall",
+    "@aws-sdk/lib-dynamodb": "^3.879.0",
     "@eslint/css": "^0.8.1",
     "@eslint/js": "^9.28.0",
     "@eslint/json": "^0.12.0",

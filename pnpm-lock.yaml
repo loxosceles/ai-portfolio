@@ -20,8 +20,8 @@ importers:
         specifier: ^3.879.0
         version: 3.879.0
       '@aws-sdk/lib-dynamodb':
-        specifier: link:3.850.0@aws-sdk/lib-dynamodb@3.850.nstall
-        version: link:3.850.0@aws-sdk/lib-dynamodb@3.850.nstall
+        specifier: ^3.879.0
+        version: 3.879.0(@aws-sdk/client-dynamodb@3.879.0)
       '@eslint/css':
         specifier: ^0.8.1
         version: 0.8.1
@@ -114,7 +114,7 @@ importers:
         version: 0.514.0(react@19.1.1)
       next:
         specifier: ^15.3.3
-        version: 15.5.2(@babel/core@7.28.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 15.5.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       oidc-client-ts:
         specifier: ^3.2.1
         version: 3.3.0
@@ -10680,7 +10680,7 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next@15.5.2(@babel/core@7.28.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
+  next@15.5.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
     dependencies:
       '@next/env': 15.5.2
       '@swc/helpers': 0.5.15
@@ -10688,7 +10688,7 @@ snapshots:
       postcss: 8.4.31
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
-      styled-jsx: 5.1.6(@babel/core@7.28.3)(react@19.1.1)
+      styled-jsx: 5.1.6(react@19.1.1)
     optionalDependencies:
       '@next/swc-darwin-arm64': 15.5.2
       '@next/swc-darwin-x64': 15.5.2
@@ -11331,12 +11331,10 @@ snapshots:
 
   strnum@2.1.1: {}
 
-  styled-jsx@5.1.6(@babel/core@7.28.3)(react@19.1.1):
+  styled-jsx@5.1.6(react@19.1.1):
     dependencies:
       client-only: 0.0.1
       react: 19.1.1
-    optionalDependencies:
-      '@babel/core': 7.28.3
 
   superagent@10.2.3:
     dependencies:
