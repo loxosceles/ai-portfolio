@@ -7,8 +7,6 @@ import { envManagerConfig } from '../../../configs/env-config';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { IDataItem, IDataCollection } from '../../../types/data';
-import { IProject } from '../../../types/data/project';
-import { IDeveloper } from '../../../types/data';
 import { buildSSMPath } from '../../../utils/ssm';
 import { validateData } from '../validation';
 
@@ -249,7 +247,7 @@ export async function handleDownloadData(
             error: new Error(`Output path '${output}' exists but is not a directory`)
           };
         }
-      } catch (error) {
+      } catch {
         return {
           success: false,
           message: `Output directory '${output}' does not exist`,

@@ -27,7 +27,7 @@ export function withEnv(env: Record<string, string | undefined>) {
 }
 
 /** Reset module cache and import a module after applying env vars. */
-export async function loadModuleWithEnv<T = any>(
+export async function loadModuleWithEnv<T = unknown>(
   modulePath: string,
   env: Record<string, string | undefined>
 ): Promise<{ mod: T; restore: () => void }> {

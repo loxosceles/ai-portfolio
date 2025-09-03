@@ -1,4 +1,4 @@
-import Ajv, { ValidateFunction } from 'ajv';
+import Ajv, { ValidateFunction, ErrorObject } from 'ajv';
 import addFormats from 'ajv-formats';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -77,7 +77,7 @@ export async function validateData(
       valid,
       errors: valid
         ? []
-        : (validator.errors || []).map((error: any) => ({
+        : (validator.errors || []).map((error: ErrorObject) => ({
             field: error.instancePath || error.schemaPath || 'unknown',
             message: error.message || 'Validation failed',
             value: error.data

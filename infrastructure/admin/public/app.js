@@ -434,7 +434,7 @@ function createDeveloperForm(item = {}) {
       }
     </div>
     <div class="form-group">
-      <button type="button" onclick="addSkillCategory()">Add Category</button>
+      <button type="button" data-action="add-skill-category">Add Category</button>
     </div>
   `;
 }
@@ -755,7 +755,7 @@ function addSkillCategory() {
     <div class="skill-category-group">
       <div class="category-header">
         <h4>Category ${nextIndex + 1}</h4>
-        <button type="button" onclick="removeSkillCategory(${nextIndex})" class="remove-btn">Remove</button>
+        <button type="button" data-action="remove-skill-category" data-index="${nextIndex}" class="remove-btn">Remove</button>
       </div>
       <div class="form-group">
         <label>Name:</label>
@@ -874,6 +874,10 @@ document.addEventListener('click', (e) => {
     } else if (table === 'recruiters') {
       deleteRecruiter(index);
     }
+  } else if (action === 'remove-skill-category') {
+    removeSkillCategory(index);
+  } else if (action === 'add-skill-category') {
+    addSkillCategory();
   } else if (action === 'edit-developer') {
     editDeveloper();
   }
