@@ -109,7 +109,7 @@ export class WebStack extends cdk.Stack {
         effect: iam.Effect.ALLOW,
         actions: ['cognito-idp:AdminInitiateAuth', 'cognito-idp:AdminGetUser'],
         resources: [
-          `arn:aws:cognito-idp:${process.env.AWS_DEFAULT_REGION}:${this.account}:userpool/*`
+          `arn:aws:cognito-idp:${this.stackEnv.awsRegionDefault}:${this.account}:userpool/*`
         ]
       })
     );

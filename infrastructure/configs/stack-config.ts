@@ -13,7 +13,7 @@ export const STACK_CONFIGS = {
     optional: []
   },
   web: {
-    base: [],
+    base: ['AWS_REGION_DEFAULT'],
     prod: ['PROD_DOMAIN_NAME', 'CERTIFICATE_ARN'],
     optional: ['PROD_DOMAIN_NAME', 'CERTIFICATE_ARN']
   },

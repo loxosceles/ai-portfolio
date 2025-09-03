@@ -7,6 +7,7 @@ import { IStackEnv } from './stack-env';
 export interface IWebStackEnv extends IStackEnv {
   prodDomainName?: string;
   certificateArn?: string;
+  awsRegionDefault: string;
 }
 
 export interface IApiStackEnv extends IStackEnv {
