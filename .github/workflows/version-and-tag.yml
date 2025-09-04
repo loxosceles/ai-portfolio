@@ -22,17 +22,48 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Validate version label
+        run: |
+          LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | jq -r '.[]')
+          VERSION_LABELS=$(echo "$LABELS" | grep -E '^(major|minor|patch)$' || true)
+          VERSION_COUNT=$(echo "$VERSION_LABELS" | grep -c . || echo 0)
+
+          if [ "$VERSION_COUNT" -eq 0 ]; then
+            echo "❌ Error: PR must have exactly one version label (major, minor, or patch)"
+            echo "Found labels: $(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | jq -r 'join(", ")')"
+            exit 1
+          elif [ "$VERSION_COUNT" -gt 1 ]; then
+            echo "❌ Error: PR has multiple version labels. Use exactly one: major, minor, or patch"
+            echo "Version labels found: $VERSION_LABELS"
+            exit 1
+          fi
+
+          echo "✅ Valid version label found: $VERSION_LABELS"
+
       - name: Bump version
         id: version
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          # Get current version and bump patch
+          # Get version label
+          LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | jq -r '.[]')
+          VERSION_TYPE=$(echo "$LABELS" | grep -E '^(major|minor|patch)$')
+
+          # Get current version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
+
+          # Calculate new version based on label
           NEW_VERSION=$(node -p "
-            const [major, minor, patch] = require('./package.json').version.split('.');
-            \`\${major}.\${minor}.\${parseInt(patch) + 1}\`;
+            const [major, minor, patch] = require('./package.json').version.split('.').map(Number);
+            const type = '$VERSION_TYPE';
+            if (type === 'major') {
+              \`\${major + 1}.0.0\`;
+            } else if (type === 'minor') {
+              \`\${major}.\${minor + 1}.0\`;
+            } else {
+              \`\${major}.\${minor}.\${patch + 1}\`;
+            }
           ")
 
           # Update package.json
@@ -43,7 +74,8 @@ jobs:
           "
 
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "Bumped version from $CURRENT_VERSION to $NEW_VERSION"
+          echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
+          echo "Bumped $VERSION_TYPE version from $CURRENT_VERSION to $NEW_VERSION"
 
       - name: Commit and tag
         run: |
