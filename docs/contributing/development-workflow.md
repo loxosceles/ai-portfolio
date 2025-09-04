@@ -229,6 +229,15 @@ All PRs targeting the `main` branch must include exactly one version label to in
 
 > **Technical Details**: See [Deployment Guide - Automatic Versioning](../guides/deployment.md#automatic-versioning) for implementation details.
 
+### Version Format
+
+The application uses [Semantic Versioning](https://semver.org/) with the format `MAJOR.MINOR.PATCH`:
+
+- **Package.json**: Stores version as `0.2.6` (no prefix)
+- **Git tags**: Created as `v0.2.6` (with "v" prefix)
+- **Supported format**: Numbers only (e.g., `1.2.3`)
+- **Not supported**: Pre-release suffixes (e.g., `1.2.3-alpha`, `1.2.3-beta`)
+
 ## Release Process
 
 Versions are automatically created when PRs are merged to `main`. The version number is determined by the label on the merged PR, and a corresponding git tag is created automatically.
