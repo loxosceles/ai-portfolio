@@ -22,33 +22,19 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Validate version label
-        run: |
-          LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | jq -r '.[]')
-          VERSION_LABELS=$(echo "$LABELS" | grep -E '^(major|minor|patch)$' || true)
-          VERSION_COUNT=$(echo "$VERSION_LABELS" | grep -c . || echo 0)
-
-          if [ "$VERSION_COUNT" -eq 0 ]; then
-            echo "❌ Error: PR must have exactly one version label (major, minor, or patch)"
-            echo "Found labels: $(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | jq -r 'join(", ")')"
-            exit 1
-          elif [ "$VERSION_COUNT" -gt 1 ]; then
-            echo "❌ Error: PR has multiple version labels. Use exactly one: major, minor, or patch"
-            echo "Version labels found: $VERSION_LABELS"
-            exit 1
-          fi
-
-          echo "✅ Valid version label found: $VERSION_LABELS"
-
       - name: Bump version
         id: version
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          # Get version label
-          LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | jq -r '.[]')
-          VERSION_TYPE=$(echo "$LABELS" | grep -E '^(major|minor|patch)$')
+          # Lean safety check - should never fail if pre-merge validation worked
+          VERSION_TYPE=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | jq -r '.[]' | grep -E '^(major|minor|patch)$' | head -1)
+          if [ -z "$VERSION_TYPE" ]; then
+            echo "❌ Safety check failed: No version label found (this should not happen)"
+            exit 1
+          fi
+          echo "Using version type: $VERSION_TYPE"
 
           # Get current version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
