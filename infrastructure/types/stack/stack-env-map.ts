@@ -7,6 +7,7 @@ import { IStackEnv } from './stack-env';
 export interface IWebStackEnv extends IStackEnv {
   prodDomainName?: string;
   certificateArn?: string;
+  awsRegionDefault: string;
 }
 
 export interface IApiStackEnv extends IStackEnv {
@@ -35,6 +36,11 @@ export interface ITestStackEnv extends IStackEnv {
   prodVar?: string;
 }
 
+export interface ILinkGeneratorStackEnv extends IStackEnv {
+  awsRegionDistrib: string;
+  awsRegionDefault: string;
+}
+
 /**
  * Type mapping for stack environment inference
  */
@@ -45,4 +51,5 @@ export interface StackEnvMap {
   shared: ISharedStackEnv;
   pipeline: IPipelineStackEnv;
   testStack: ITestStackEnv;
+  linkGenerator: ILinkGeneratorStackEnv;
 }

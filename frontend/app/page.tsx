@@ -37,14 +37,18 @@ const Portfolio = () => {
   const { getQueryContext } = useAuth();
 
   const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
-    context: getQueryContext('public'),
-    onCompleted: (data: { getDeveloper: { projects?: ProjectType[] } }) => {
-      setProjects(data.getDeveloper?.projects || []);
-    },
-    onError: (error: Error) => {
-      console.error('Query error:', error);
-    }
+    context: getQueryContext('public')
   });
+
+  // Update projects when data changes (Apollo Client v3.14+ recommendation)
+  if (data?.getDeveloper?.projects && projects !== data.getDeveloper.projects) {
+    setProjects(data.getDeveloper.projects);
+  }
+
+  // Handle errors during render
+  if (error) {
+    console.error('Query error:', error);
+  }
 
   useEffect(() => {
     const handleScroll = () => {

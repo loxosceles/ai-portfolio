@@ -35,7 +35,10 @@ export const SERVICE_CONFIGS = {
       'VISITOR_TABLE_NAME',
       'COGNITO_USER_POOL_ID',
       'COGNITO_CLIENT_ID',
-      'CLOUDFRONT_DOMAIN'
+      'CLOUDFRONT_DOMAIN',
+      'DEVELOPER_TABLE_NAME',
+      'PROJECTS_TABLE_NAME',
+      'RECRUITER_PROFILES_TABLE_NAME'
     ],
     prefix: '',
     additionalParams: {

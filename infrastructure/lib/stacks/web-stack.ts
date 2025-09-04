@@ -6,13 +6,22 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 import { addStackOutputs } from './stack-helpers';
 import * as path from 'path';
 import { IWebStackEnv } from '../../types';
 
+interface TableConfig {
+  name: string;
+  constructId: string;
+}
+
 interface IWebStackProps extends cdk.StackProps {
   stackEnv: IWebStackEnv;
+  tableNames: {
+    visitorLinks: TableConfig;
+  };
 }
 /**
  * Combined stack for website hosting, content delivery, and visitor context
@@ -23,13 +32,16 @@ export class WebStack extends cdk.Stack {
   public readonly distribution: cloudfront.Distribution;
   private readonly stage: string;
   private readonly stackEnv: IWebStackEnv;
+  private readonly visitorTableConfig: TableConfig;
 
   constructor(scope: Construct, id: string, props: IWebStackProps) {
     super(scope, id, props);
-    this.stackEnv = props.stackEnv;
+    const { stackEnv, tableNames } = props;
+    this.stackEnv = stackEnv;
     this.stage = this.stackEnv.stage;
+    this.visitorTableConfig = tableNames.visitorLinks;
 
-    const visitorTableName = `PortfolioVisitorLinks-${this.stage}`;
+    const visitorTableName = this.visitorTableConfig.name;
 
     // Get production-specific environment variables from stackEnv
     const prodDomainName = this.stackEnv.prodDomainName;
@@ -37,8 +49,8 @@ export class WebStack extends cdk.Stack {
 
     const isProd = this.stage === 'prod';
 
-    // Create DynamoDB table for visitor context
-    this.createVisitorTable(isProd, visitorTableName);
+    // Create VisitorLinks table
+    this.createVisitorLinksTable(isProd);
 
     // // Create S3 bucket for hosting
     this.websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {
@@ -97,7 +109,7 @@ export class WebStack extends cdk.Stack {
         effect: iam.Effect.ALLOW,
         actions: ['cognito-idp:AdminInitiateAuth', 'cognito-idp:AdminGetUser'],
         resources: [
-          `arn:aws:cognito-idp:${process.env.AWS_DEFAULT_REGION}:${this.account}:userpool/*`
+          `arn:aws:cognito-idp:${this.stackEnv.awsRegionDefault}:${this.account}:userpool/*`
         ]
       })
     );
@@ -120,6 +132,13 @@ export class WebStack extends cdk.Stack {
       })
     );
 
+    // Create log group for visitor context function
+    const visitorContextLogGroup = new logs.LogGroup(this, 'VisitorContextLogGroup', {
+      logGroupName: `/aws/lambda/visitor-context-${this.stage}`,
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: cdk.RemovalPolicy.DESTROY
+    });
+
     // Create the Lambda@Edge function using environment-specific directory
     const visitorContextFunction = new cloudfront.experimental.EdgeFunction(
       this,
@@ -136,7 +155,7 @@ export class WebStack extends cdk.Stack {
         timeout: cdk.Duration.seconds(5),
         memorySize: 128,
         description: `Adds visitor context headers for ${this.stage} environment`,
-        logRetention: cdk.aws_logs.RetentionDays.ONE_WEEK
+        logGroup: visitorContextLogGroup
       }
     );
 
@@ -285,14 +304,18 @@ export class WebStack extends cdk.Stack {
     ]);
   }
 
-  private createVisitorTable(isProd: boolean, visitorTableName: string): dynamodb.ITable {
+  private createVisitorLinksTable(isProd: boolean): dynamodb.ITable {
     if (isProd) {
       // Reference existing production table
-      return dynamodb.Table.fromTableName(this, 'VisitorLinkTable', visitorTableName);
+      return dynamodb.Table.fromTableName(
+        this,
+        this.visitorTableConfig.constructId,
+        this.visitorTableConfig.name
+      );
     } else {
       // Create new table for dev
-      return new dynamodb.Table(this, 'VisitorLinkTable', {
-        tableName: visitorTableName,
+      return new dynamodb.Table(this, this.visitorTableConfig.constructId, {
+        tableName: this.visitorTableConfig.name,
         partitionKey: { name: 'linkId', type: dynamodb.AttributeType.STRING },
         timeToLiveAttribute: 'ttl',
         billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,

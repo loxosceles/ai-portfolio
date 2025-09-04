@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as fs from 'fs';
 import { IUploadOptions, IExportOptions, IExportResult } from '../../../types/cli/ssm-params';
 import { AWSManager } from '../../core/aws-manager';
 import { EnvironmentManager } from '../../core/env-manager';
@@ -289,7 +290,6 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
       }
 
       // Handle overwrite protection based on environment and target type
-      const fs = require('fs');
       const isCI = process.env.CODEBUILD_BUILD_ID || process.env.CI;
       const isInfrastructureTarget =
         target === 'infrastructure' || (!target && finalOutputPath.includes('infrastructure'));

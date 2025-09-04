@@ -1,0 +1,171 @@
+{
+  "type": "array",
+  "minItems": 0,
+  "items": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Unique identifier for the project"
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Project title"
+      },
+      "slug": {
+        "type": "string",
+        "minLength": 1,
+        "description": "URL-friendly project identifier"
+      },
+      "icon": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Icon identifier for the project"
+      },
+      "description": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Brief project description"
+      },
+      "status": {
+        "type": "string",
+        "enum": ["Active", "Completed", "Planned"],
+        "description": "Current project status"
+      },
+      "highlights": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Key project highlights"
+      },
+      "techStack": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Technologies used in the project"
+      },
+      "githubUrl": {
+        "type": "string",
+        "format": "uri",
+        "description": "GitHub repository URL"
+      },
+      "overview": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Detailed project overview"
+      },
+      "challenge": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Main challenge addressed by the project"
+      },
+      "solution": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Solution approach taken"
+      },
+      "architecture": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Architecture component name"
+            },
+            "details": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Architecture component details"
+            }
+          },
+          "required": ["name", "details"],
+          "additionalProperties": false
+        },
+        "description": "Project architecture components"
+      },
+      "technicalShowcases": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Technical showcase title"
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Technical showcase description"
+            },
+            "highlights": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": "Technical showcase highlights"
+            }
+          },
+          "required": ["title", "description", "highlights"],
+          "additionalProperties": false
+        },
+        "description": "Technical showcases for the project"
+      },
+      "archPatterns": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Architectural patterns used"
+      },
+      "performance": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Performance characteristics"
+      },
+      "repositoryAndDevelopment": {
+        "type": "object",
+        "properties": {
+          "plannedFeatures": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Planned future features"
+          },
+          "vision": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project vision"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Repository and development information"
+      },
+      "developerId": {
+        "type": "string",
+        "minLength": 1,
+        "description": "ID of the developer who created this project"
+      }
+    },
+    "required": ["id", "title", "description", "status", "highlights", "techStack", "developerId"],
+    "additionalProperties": false
+  }
+}

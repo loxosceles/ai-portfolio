@@ -39,12 +39,12 @@ export const handler = async (event) => {
     const bucketName = process.env.DATA_BUCKET_NAME;
     
     // Load developers data
-    console.log(`Loading developers from s3://${bucketName}/${environment}/developer.json`);
-    const developersData = await getJsonFromS3(bucketName, `${environment}/developer.json`);
+    console.log(`Loading developers from s3://${bucketName}/data/developer.json`);
+    const developersData = await getJsonFromS3(bucketName, `data/developer.json`);
     
     // Load projects data
-    console.log(`Loading projects from s3://${bucketName}/${environment}/projects.json`);
-    const projectsData = await getJsonFromS3(bucketName, `${environment}/projects.json`);
+    console.log(`Loading projects from s3://${bucketName}/data/projects.json`);
+    const projectsData = await getJsonFromS3(bucketName, `data/projects.json`);
     
     // Validate data relationships
     validateData(developersData, projectsData);

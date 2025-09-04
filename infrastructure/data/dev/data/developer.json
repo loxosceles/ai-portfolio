@@ -1,0 +1,38 @@
+[
+  {
+    "bio": "Experienced full-stack developer with a passion for clean code",
+    "email": "john.doe@example.com",
+    "github": "https://github.com/vercel",
+    "id": "DEVELOPER_PROFILE",
+    "isActive": true,
+    "linkedin": "https://linkedin.com/company/vercel",
+    "location": "San Francisco, CA",
+    "name": "John Doe",
+    "skillSets": [
+      {
+        "id": "skill-1",
+        "name": "Web Development",
+        "skills": ["React", "Next.js", "TypeScript/JavaScript", "HTML5/CSS"]
+      },
+      {
+        "id": "skill-2",
+        "name": "Backend",
+        "skills": ["Node.js", "Serverless", "FastAPI", "Flask"]
+      },
+      {
+        "id": "skill-3",
+        "name": "Database",
+        "skills": ["PostgreSQL", "MongoDB", "DynamoDB", "Redis"]
+      },
+      {
+        "id": "skill-4",
+        "name": "DevOps",
+        "skills": ["Docker", "Linux Shell", "AWS", "CI/CD"]
+      }
+    ],
+    "telegram": "https://t.me/vercel",
+    "title": "Senior Full Stack Developer",
+    "website": "https://johndoe.dev",
+    "yearsOfExperience": 8
+  }
+]
