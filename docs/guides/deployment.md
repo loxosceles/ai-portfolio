@@ -318,3 +318,7 @@ For more detailed troubleshooting, see the [Troubleshooting Guide](troubleshooti
 - [Environment Variables Reference](../reference/environment-variables.md)
 - [Commands Reference](../reference/commands.md)
 - [Infrastructure Architecture](../architecture/infrastructure/overview.md)
+
+## Testing Notes
+
+The automatic versioning system has been implemented and is currently being tested.
