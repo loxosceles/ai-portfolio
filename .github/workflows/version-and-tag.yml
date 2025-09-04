@@ -29,11 +29,18 @@ jobs:
           git config --local user.name "GitHub Action"
 
           # Lean safety check - should never fail if pre-merge validation worked
-          VERSION_TYPE=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | jq -r '.[]' | grep -E '^(major|minor|patch)$' | head -1)
-          if [ -z "$VERSION_TYPE" ]; then
-            echo "❌ Safety check failed: No version label found (this should not happen)"
+          VERSION_LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | jq -r '.[]' | grep -E '^(major|minor|patch)$' || true)
+          VERSION_COUNT=$(echo "$VERSION_LABELS" | wc -l)
+
+          if [ "$VERSION_COUNT" -eq 0 ]; then
+            echo "❌ Safety check failed: No version label found"
+            exit 1
+          elif [ "$VERSION_COUNT" -gt 1 ]; then
+            echo "❌ Safety check failed: Multiple version labels found: $VERSION_LABELS"
             exit 1
           fi
+
+          VERSION_TYPE="$VERSION_LABELS"
           echo "Using version type: $VERSION_TYPE"
 
           # Get current version
