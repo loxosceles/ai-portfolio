@@ -188,6 +188,10 @@ The application automatically manages version numbers and git tags when PRs are 
 ### Version Management
 
 - **Single source of truth**: Version stored only in root `package.json`
+- **Version format**: Semantic versioning (`MAJOR.MINOR.PATCH`)
+  - Package.json: `1.2.3` (no prefix)
+  - Git tags: `v1.2.3` (with "v" prefix)
+  - Validation: Numbers only, no pre-release suffixes
 - **Automatic tagging**: Git tags created as `v1.2.3` format
 - **Sequential workflow**: Versioning → Deployment (no race conditions)
 
