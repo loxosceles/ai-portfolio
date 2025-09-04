@@ -142,12 +142,63 @@ pnpm run invalidate-cloudfront:dev  # or :prod
 cd ..
 ```
 
+## Automatic Versioning
+
+The application automatically manages version numbers and git tags when PRs are merged to the `main` branch.
+
+### How It Works
+
+1. **Pre-merge validation**: `validate-version-label.yml` workflow runs on PR events
+2. **Label enforcement**: Branch protection requires exactly one version label (`major`, `minor`, `patch`)
+3. **Post-merge versioning**: `version-and-tag.yml` workflow runs after successful merge
+4. **Pipeline trigger**: `trigger-pipeline.yml` workflow runs after versioning completes
+
+### GitHub Actions Workflows
+
+#### Validate Version Label
+
+- **File**: `.github/workflows/validate-version-label.yml`
+- **Triggers**: PR opened, synchronized, labeled, unlabeled (targeting `main`)
+- **Purpose**: Validates exactly one version label exists
+- **Result**: Shows as required status check in branch protection
+
+#### Version and Tag
+
+- **File**: `.github/workflows/version-and-tag.yml`
+- **Triggers**: PR merged to `main`
+- **Purpose**: Bumps version in `package.json` and creates git tag
+- **Logic**:
+  - `patch`: 0.2.6 → 0.2.7
+  - `minor`: 0.2.6 → 0.3.0
+  - `major`: 0.2.6 → 1.0.0
+
+#### Trigger Pipeline
+
+- **File**: `.github/workflows/trigger-pipeline.yml`
+- **Triggers**: After version workflow completes OR direct PR merge to `dev`
+- **Purpose**: Starts AWS CodePipeline deployment
+
+### Branch Protection Setup
+
+1. **Go to**: GitHub Settings → Branches → Add rule for `main`
+2. **Enable**: "Require status checks to pass before merging"
+3. **Add**: "Validate Version Label" as required status check
+4. **Result**: Prevents merges without proper version labels
+
+### Version Management
+
+- **Single source of truth**: Version stored only in root `package.json`
+- **Automatic tagging**: Git tags created as `v1.2.3` format
+- **Sequential workflow**: Versioning → Deployment (no race conditions)
+
+> **Developer Usage**: See [Development Workflow - Versioning Requirements](../contributing/development-workflow.md#versioning-requirements) for how to use version labels.
+
 ## CI/CD Pipeline Deployment
 
 ### Step 1: Set Up GitHub Repository
 
 1. Push your code to GitHub
-2. Configure branch protection for `dev` and `main` branches
+2. Configure branch protection for `dev` and `main` branches (see [Automatic Versioning](#automatic-versioning) for `main` branch setup)
 
 ### Step 2: Store GitHub Token
 

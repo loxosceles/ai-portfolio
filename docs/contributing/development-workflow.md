@@ -194,6 +194,41 @@ We use GitHub Actions for continuous integration:
 - **Develop Branch**: Deploy to the development environment.
 - **Main Branch**: Deploy to the production environment.
 
+## Versioning Requirements
+
+All PRs targeting the `main` branch must include exactly one version label to indicate the type of release.
+
+### Required Labels
+
+- **`patch`** - Bug fixes, documentation updates, minor improvements (0.0.x)
+- **`minor`** - New features, enhancements that don't break existing functionality (0.x.0)
+- **`major`** - Breaking changes, major architectural changes (x.0.0)
+
+### Adding Version Labels
+
+1. **Create your PR** from `dev` to `main`
+2. **Add exactly one version label** using GitHub's label interface
+3. **Status check validates** the label automatically
+4. **Merge is blocked** until a valid version label is present
+
+### Label Validation
+
+- ✅ **Valid**: PR has exactly one version label (`major`, `minor`, or `patch`)
+- ❌ **Invalid**: No version label or multiple version labels
+- 🔄 **Re-validation**: Status check runs automatically when labels change
+
+### Examples
+
+```
+✅ PR with "patch" label → Version 0.2.6 → 0.2.7
+✅ PR with "minor" label → Version 0.2.6 → 0.3.0
+✅ PR with "major" label → Version 0.2.6 → 1.0.0
+❌ PR with no version label → Merge blocked
+❌ PR with "patch" and "minor" labels → Merge blocked
+```
+
+> **Technical Details**: See [Deployment Guide - Automatic Versioning](../guides/deployment.md#automatic-versioning) for implementation details.
+
 ## Release Process
 
-Release process details will be documented when the release workflow is established.
+Versions are automatically created when PRs are merged to `main`. The version number is determined by the label on the merged PR, and a corresponding git tag is created automatically.
