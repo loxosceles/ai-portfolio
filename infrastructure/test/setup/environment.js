@@ -37,7 +37,7 @@ async function loadModuleWithEnv(modulePath, env) {
 // Export for both CommonJS and ESM
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { withEnv, loadModuleWithEnv };
-} else {
-  globalThis.withEnv = withEnv;
-  globalThis.loadModuleWithEnv = loadModuleWithEnv;
 }
+
+// For ESM environments, use named exports
+export { withEnv, loadModuleWithEnv };

@@ -49,7 +49,7 @@ export class WebStack extends cdk.Stack {
 
     const isProd = this.stage === 'prod';
 
-    // Create VisitorLinks table (moved back from LinkGeneratorStack)
+    // Create VisitorLinks table
     this.createVisitorLinksTable(isProd);
 
     // // Create S3 bucket for hosting

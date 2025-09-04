@@ -86,11 +86,6 @@
       "@smithy/core": "3.9.0"
     }
   },
-  "workspaces": [
-    "frontend",
-    "infrastructure",
-    "infrastructure/admin"
-  ],
   "dependencies": {
     "@aws-sdk/client-cloudfront": "^3.879.0"
   }
