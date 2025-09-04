@@ -28,9 +28,14 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          # Lean safety check - should never fail if pre-merge validation worked
-          VERSION_LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | jq -r '.[]' | grep -E '^(major|minor|patch)$' || true)
-          VERSION_COUNT=$(echo "$VERSION_LABELS" | wc -l)
+          # Safety check - validate exactly one version label exists
+          VERSION_LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | jq -r '.[]' | grep -E '^(major|minor|patch)$' 2>/dev/null || echo "")
+
+          if [ -z "$VERSION_LABELS" ]; then
+            VERSION_COUNT=0
+          else
+            VERSION_COUNT=$(echo "$VERSION_LABELS" | wc -l)
+          fi
 
           if [ "$VERSION_COUNT" -eq 0 ]; then
             echo "❌ Safety check failed: No version label found"
@@ -43,8 +48,12 @@ jobs:
           VERSION_TYPE="$VERSION_LABELS"
           echo "Using version type: $VERSION_TYPE"
 
-          # Get current version
+          # Get current version and validate format
           CURRENT_VERSION=$(node -p "require('./package.json').version")
+          if ! echo "$CURRENT_VERSION" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' >/dev/null; then
+            echo "❌ Invalid version format: $CURRENT_VERSION (expected: x.y.z)"
+            exit 1
+          fi
 
           # Calculate new version based on label
           NEW_VERSION=$(node -p "
@@ -75,5 +84,5 @@ jobs:
           git add package.json
           git commit -m "Bump version to ${{ steps.version.outputs.new_version }}"
           git tag "v${{ steps.version.outputs.new_version }}"
-          git push origin main
-          git push origin "v${{ steps.version.outputs.new_version }}"
+          git push origin main || { echo "❌ Failed to push version commit to main"; exit 1; }
+          git push origin "v${{ steps.version.outputs.new_version }}" || { echo "❌ Failed to push version tag"; exit 1; }
