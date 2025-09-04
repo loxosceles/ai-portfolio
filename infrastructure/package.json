@@ -1,6 +1,5 @@
 {
   "name": "infrastructure",
-  "version": "0.2.6",
   "description": "",
   "bin": {
     "app": "bin/app.ts"
