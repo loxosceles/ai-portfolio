@@ -4,12 +4,17 @@ on:
   pull_request:
     types: [closed]
     branches: [dev, main]
+  workflow_run:
+    workflows: ['Version and Tag']
+    types: [completed]
+    branches: [main]
 
 jobs:
   trigger-pipeline:
-    if: github.event.pull_request.merged == true
+    if: |
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
-
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -19,13 +24,15 @@ jobs:
           aws-region: eu-central-1
 
       - name: Trigger Dev Pipeline
-        if: github.base_ref == 'dev'
+        if: github.event_name == 'pull_request' && github.base_ref == 'dev'
         run: |
           echo "Triggering dev pipeline for PR merge to dev branch"
           aws codepipeline start-pipeline-execution --name portfolio-pipeline-dev
 
       - name: Trigger Prod Pipeline
-        if: github.base_ref == 'main'
+        if: |
+          (github.event_name == 'pull_request' && github.base_ref == 'main') ||
+          (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main')
         run: |
-          echo "Triggering prod pipeline for PR merge to main branch"
+          echo "Triggering prod pipeline for main branch"
           aws codepipeline start-pipeline-execution --name portfolio-pipeline-prod
