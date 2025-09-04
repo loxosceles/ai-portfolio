@@ -8,15 +8,19 @@ import {
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 
-// Initialize AWS clients
-const dynamodb = new DynamoDBClient({ region: 'us-east-1' });
-const docClient = DynamoDBDocumentClient.from(dynamodb);
-const cognito = new CognitoIdentityProviderClient({ region: 'eu-central-1' });
+
 // We need to hard-code these regions here since the Lambda@Edge function does
 // not accept any environment variables. The regions are needed in order to
 // retrieve the SSM parameters for other configurations.
-const ssmMainRegion = new SSMClient({ region: 'eu-central-1' }); // For main app config
-const ssmEdgeRegion = new SSMClient({ region: 'us-east-1' }); // For edge-specific config
+const DEFAULT_REGION = 'eu-central-1'; // For main app config
+const DISTRIB_REGION = 'us-east-1'; // For edge-specific config
+
+// Initialize AWS clients
+const dynamodb = new DynamoDBClient({ region: DISTRIB_REGION });
+const docClient = DynamoDBDocumentClient.from(dynamodb);
+const cognito = new CognitoIdentityProviderClient({ region: DEFAULT_REGION });
+const ssmMainRegion = new SSMClient({ region: DEFAULT_REGION }); 
+const ssmEdgeRegion = new SSMClient({ region: DISTRIB_REGION });
 
 export function isStaticAsset(uri) {
   const staticExtensions = ['.js', '.css', '.png', '.ico', '.svg', '.woff', '.woff2'];
@@ -28,7 +32,6 @@ export function isStaticAsset(uri) {
 
 async function getConfigsFromSSMParamStore() {
   try {
-    // Fetch main app config from eu-central-1
     const mainConfigCommand = new GetParametersCommand({
       Names: ['/portfolio/dev/COGNITO_CLIENT_ID', '/portfolio/dev/COGNITO_USER_POOL_ID'],
       WithDecryption: true
