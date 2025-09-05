@@ -237,7 +237,8 @@ export class ApiStack extends cdk.Stack {
         DEVELOPER_TABLE_NAME: this.developerTableName,
         PROJECTS_TABLE_NAME: this.projectsTableName,
         AWS_REGION_DEFAULT: this.awsRegionDefault
-      }
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK
     });
 
     // Grant permissions to the Lambda

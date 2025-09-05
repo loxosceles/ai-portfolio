@@ -132,13 +132,6 @@ export class WebStack extends cdk.Stack {
       })
     );
 
-    // Create log group for visitor context function
-    const visitorContextLogGroup = new logs.LogGroup(this, 'VisitorContextLogGroup', {
-      logGroupName: `/aws/lambda/visitor-context-${this.stage}`,
-      retention: logs.RetentionDays.ONE_WEEK,
-      removalPolicy: cdk.RemovalPolicy.DESTROY
-    });
-
     // Create the Lambda@Edge function using environment-specific directory
     const visitorContextFunction = new cloudfront.experimental.EdgeFunction(
       this,
@@ -155,7 +148,7 @@ export class WebStack extends cdk.Stack {
         timeout: cdk.Duration.seconds(5),
         memorySize: 128,
         description: `Adds visitor context headers for ${this.stage} environment`,
-        logGroup: visitorContextLogGroup
+        logRetention: logs.RetentionDays.ONE_WEEK
       }
     );
 
