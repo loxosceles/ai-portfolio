@@ -5,6 +5,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import { APIResolverConstruct } from '../resolvers/api-resolver-construct';
 import { Construct } from 'constructs';
 import * as path from 'path';
@@ -164,6 +165,9 @@ export class ApiStack extends cdk.Stack {
   }
 
   private createDynamoDBTables(isProd: boolean) {
+    // IMPORTANT: Tables with Global Secondary Indexes MUST use fromTableAttributes
+    // instead of fromTableName. CDK requires explicit GSI specification for proper
+    // permissions and data source creation. Use fromTableName only for simple tables.
     if (isProd) {
       // Reference existing production tables
       const developerTable = dynamodb.Table.fromTableName(
@@ -237,7 +241,8 @@ export class ApiStack extends cdk.Stack {
         DEVELOPER_TABLE_NAME: this.developerTableName,
         PROJECTS_TABLE_NAME: this.projectsTableName,
         AWS_REGION_DEFAULT: this.awsRegionDefault
-      }
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK
     });
 
     // Grant permissions to the Lambda

@@ -127,7 +127,8 @@ export class AIAdvocateStack extends cdk.Stack {
         BEDROCK_MODEL_ID: bedrockModelId
       },
       timeout: cdk.Duration.seconds(30),
-      memorySize: 512
+      memorySize: 512,
+      logRetention: logs.RetentionDays.ONE_WEEK
     });
   }
 
