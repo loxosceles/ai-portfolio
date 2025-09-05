@@ -104,7 +104,8 @@ export class LinkGeneratorStack extends cdk.Stack {
         // This allows WebStack to be deployed first, and LinkGeneratorStack to consume its output via SSM, avoiding direct stack dependencies.
       },
       timeout: cdk.Duration.seconds(30),
-      memorySize: 512
+      memorySize: 512,
+      logRetention: logs.RetentionDays.ONE_WEEK
     });
   }
 
