@@ -3,6 +3,7 @@ import * as appsync from 'aws-cdk-lib/aws-appsync';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
 import { Construct } from 'constructs';
 import { getSupportedModels } from '../resolvers/supported-models';
