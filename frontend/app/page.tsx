@@ -122,7 +122,14 @@ const Portfolio = () => {
 
   // Show loading state if either checking cookies or loading data
   if (isChecking || loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-surface-dark pt-20 overscroll-none md:px-20 flex items-center justify-center">
+        <div
+          className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-accent"
+          aria-label="Loading"
+        ></div>
+      </div>
+    );
   }
 
   if (error) return <div>Error: {error.message}</div>;
