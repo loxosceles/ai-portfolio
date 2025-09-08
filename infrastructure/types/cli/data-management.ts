@@ -10,6 +10,7 @@ export interface IDataManagementOptions {
   verbose: boolean;
   output?: string;
   region?: string;
+  useDownloadedSchemas?: boolean;
 }
 
 /**

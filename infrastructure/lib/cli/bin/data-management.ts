@@ -15,11 +15,13 @@ interface IDownloadDataCommandOptions {
   verbose?: boolean;
   output?: string;
   region?: string;
+  useDownloadedSchemas?: boolean;
 }
 
 interface IPopulateDynamoDBWithStaticDataCommandOptions {
   verbose?: boolean;
   region?: string;
+  useDownloadedSchemas?: boolean;
 }
 
 // Create a new command instance
@@ -58,12 +60,14 @@ program
   .option('-o, --output <directory>', 'Output directory for downloaded data')
   .option('-v, --verbose', 'Enable verbose logging')
   .option('-r, --region <region>', 'AWS region to use')
+  .option('--use-downloaded-schemas', 'Use schemas downloaded from S3 instead of local files')
   .action(async (options: IDownloadDataCommandOptions) => {
     try {
       const result = await handleDownloadData({
         verbose: options.verbose ?? false,
         output: options.output,
-        region: options.region
+        region: options.region,
+        useDownloadedSchemas: options.useDownloadedSchemas ?? false
       });
 
       if (!result.success) {
@@ -81,11 +85,13 @@ program
   .description('Download static data from S3 and populate DynamoDB tables')
   .option('-v, --verbose', 'Enable verbose logging')
   .option('-r, --region <region>', 'AWS region to use')
+  .option('--use-downloaded-schemas', 'Use schemas downloaded from S3 instead of local files')
   .action(async (options: IPopulateDynamoDBWithStaticDataCommandOptions) => {
     try {
       const result = await handlePopulateDynamoDB({
         verbose: options.verbose ?? false,
-        region: options.region
+        region: options.region,
+        useDownloadedSchemas: options.useDownloadedSchemas ?? false
       });
 
       if (!result.success) {

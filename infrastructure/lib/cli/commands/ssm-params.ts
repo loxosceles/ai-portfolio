@@ -50,7 +50,7 @@ export async function handleUploadParameters(options: IUploadOptions) {
           const deleteCount = await awsManager.deleteParametersByPath(cleanupPath, r, verbose);
           BaseManager.logVerbose(
             verbose && deleteCount > 0,
-            `✅ Cleaned up ${deleteCount} parameters from ${cleanupPath}`
+            `Cleaned up ${deleteCount} parameters from ${cleanupPath}`
           );
         }
       } catch (error) {
@@ -113,7 +113,7 @@ export async function handleUploadParameters(options: IUploadOptions) {
         if (errorCount === 0) {
           BaseManager.logVerbose(
             verbose,
-            `✅ Successfully uploaded ${uploadCount} parameters to ${r}`
+            `Successfully uploaded ${uploadCount} parameters to ${r}`
           );
         } else {
           console.error(`⚠️ Uploaded ${uploadCount} parameters to ${r} with ${errorCount} errors`);
@@ -126,7 +126,7 @@ export async function handleUploadParameters(options: IUploadOptions) {
       success: totalErrors === 0,
       message:
         totalErrors === 0
-          ? '✅ All parameters uploaded successfully'
+          ? 'All parameters uploaded successfully'
           : `⚠️ Completed with ${totalErrors} errors`,
       errorCount: totalErrors
     };
@@ -317,14 +317,14 @@ export async function handleExportParameters(options: IExportOptions): Promise<I
       // CI environments can overwrite any file without restrictions
 
       await envManager.writeEnvFile(finalOutputPath, content);
-      BaseManager.logVerbose(verbose, `✅ Parameters written to ${finalOutputPath}`);
+      BaseManager.logVerbose(verbose, `Parameters written to ${finalOutputPath}`);
     }
 
     return {
       success: totalErrors === 0,
       message:
         totalErrors === 0
-          ? '✅ Parameters exported successfully'
+          ? 'Parameters exported successfully'
           : `⚠️ Completed with ${totalErrors} errors`,
       errorCount: totalErrors,
       content
