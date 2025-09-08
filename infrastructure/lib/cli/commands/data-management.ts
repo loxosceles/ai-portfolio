@@ -218,8 +218,8 @@ export async function handleDownloadData(
           s3Key,
           validatedRegion
         );
-      } catch (error: any) {
-        if (!fileConfig.required && error.name === 'NoSuchKey') {
+      } catch (error: unknown) {
+        if (!fileConfig.required && error instanceof Error && error.name === 'NoSuchKey') {
           BaseManager.logVerbose(
             verbose,
             `ℹ️ Optional file ${fileConfig.file} not found, skipping`
@@ -365,8 +365,8 @@ export async function handlePopulateDynamoDB(
           s3Key,
           validatedRegion
         );
-      } catch (error: any) {
-        if (!fileConfig.required && error.name === 'NoSuchKey') {
+      } catch (error: unknown) {
+        if (!fileConfig.required && error instanceof Error && error.name === 'NoSuchKey') {
           BaseManager.logVerbose(
             verbose,
             `ℹ️ Optional file ${fileConfig.file} not found, skipping`
