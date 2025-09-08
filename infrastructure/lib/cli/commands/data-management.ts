@@ -32,18 +32,23 @@ async function validateDataWithSchemas(
 ): Promise<void> {
   const validationErrors: string[] = [];
 
-  // Validate each data type
-  for (const [dataType, items] of Object.entries(data)) {
+  // Validate each table
+  for (const [tableName, items] of Object.entries(data)) {
+    const fileConfig = DATA_CONFIG.dataFiles[tableName];
+
     if (!items || (Array.isArray(items) && items.length === 0)) {
-      continue; // Skip empty data
+      if (fileConfig.required) {
+        throw new Error(`Required data for table '${tableName}' is missing or empty`);
+      }
+      continue; // Skip validation for empty optional data
     }
 
     // For developers, validate the first item as single object (array contains one developer)
-    const dataToValidate = dataType === 'developers' && Array.isArray(items) ? items[0] : items;
+    const dataToValidate = tableName === 'developers' && Array.isArray(items) ? items[0] : items;
 
-    const result = await validateData(dataType, dataToValidate, stage);
+    const result = await validateData(tableName, dataToValidate, stage);
     if (!result.valid) {
-      const errorMessages = result.errors.map((err) => `${dataType}.${err.field}: ${err.message}`);
+      const errorMessages = result.errors.map((err) => `${tableName}.${err.field}: ${err.message}`);
       validationErrors.push(...errorMessages);
     }
   }
@@ -83,8 +88,8 @@ export async function handleUploadData(
     const data: IDataCollection<IDataItem> = {};
 
     try {
-      for (const [key, fileName] of Object.entries(DATA_CONFIG.dataFiles)) {
-        const filePath = path.join(dataDir, fileName);
+      for (const [key, fileConfig] of Object.entries(DATA_CONFIG.dataFiles)) {
+        const filePath = path.join(dataDir, fileConfig.file);
         const content = await fs.readFile(filePath, 'utf-8');
         data[key] = JSON.parse(content) as IDataItem[];
       }
@@ -134,15 +139,15 @@ export async function handleUploadData(
 
     // Upload data to S3
     for (const [key, items] of Object.entries(data)) {
-      const fileName = DATA_CONFIG.dataFiles[key as keyof typeof DATA_CONFIG.dataFiles];
-      if (!fileName) {
+      const fileConfig = DATA_CONFIG.dataFiles[key];
+      if (!fileConfig) {
         return {
           success: false,
           message: `Unknown data collection: ${key}`,
           error: new Error(`Unknown data collection: ${key}`)
         };
       }
-      const s3Key = DATA_CONFIG.s3PathTemplate.replace('{fileName}', fileName);
+      const s3Key = DATA_CONFIG.s3PathTemplate.replace('{fileName}', fileConfig.file);
       await awsManager.uploadJsonToS3(bucketName, s3Key, items, validatedRegion);
     }
     BaseManager.logVerbose(verbose, `✅ Uploaded data to s3://${bucketName}/data/`);
@@ -204,13 +209,26 @@ export async function handleDownloadData(
 
     // Download data from S3
     const data: IDataCollection<IDataItem> = {};
-    for (const [key, fileName] of Object.entries(DATA_CONFIG.dataFiles)) {
-      const s3Key = DATA_CONFIG.s3PathTemplate.replace('{fileName}', fileName);
-      data[key] = await awsManager.downloadJsonFromS3<IDataItem[]>(
-        bucketName,
-        s3Key,
-        validatedRegion
-      );
+    for (const [key, fileConfig] of Object.entries(DATA_CONFIG.dataFiles)) {
+      const s3Key = DATA_CONFIG.s3PathTemplate.replace('{fileName}', fileConfig.file);
+
+      try {
+        data[key] = await awsManager.downloadJsonFromS3<IDataItem[]>(
+          bucketName,
+          s3Key,
+          validatedRegion
+        );
+      } catch (error: any) {
+        if (!fileConfig.required && error.name === 'NoSuchKey') {
+          BaseManager.logVerbose(
+            verbose,
+            `ℹ️ Optional file ${fileConfig.file} not found, skipping`
+          );
+          data[key] = [];
+          continue;
+        }
+        throw error;
+      }
     }
 
     // Download schemas from S3
@@ -261,15 +279,18 @@ export async function handleDownloadData(
 
       // Save data files
       for (const [key, items] of Object.entries(data)) {
-        const fileName = DATA_CONFIG.dataFiles[key as keyof typeof DATA_CONFIG.dataFiles];
-        if (!fileName) {
+        const fileConfig = DATA_CONFIG.dataFiles[key];
+        if (!fileConfig) {
           return {
             success: false,
             message: `Unknown data collection: ${key}`,
             error: new Error(`Unknown data collection: ${key}`)
           };
         }
-        await fs.writeFile(path.join(output, 'data', fileName), JSON.stringify(items, null, 2));
+        await fs.writeFile(
+          path.join(output, 'data', fileConfig.file),
+          JSON.stringify(items, null, 2)
+        );
       }
 
       // Save schema files
@@ -335,13 +356,26 @@ export async function handlePopulateDynamoDB(
 
     // Download data from S3
     const data: IDataCollection<IDataItem> = {};
-    for (const [key, fileName] of Object.entries(DATA_CONFIG.dataFiles)) {
-      const s3Key = DATA_CONFIG.s3PathTemplate.replace('{fileName}', fileName);
-      data[key] = await awsManager.downloadJsonFromS3<IDataItem[]>(
-        bucketName,
-        s3Key,
-        validatedRegion
-      );
+    for (const [key, fileConfig] of Object.entries(DATA_CONFIG.dataFiles)) {
+      const s3Key = DATA_CONFIG.s3PathTemplate.replace('{fileName}', fileConfig.file);
+
+      try {
+        data[key] = await awsManager.downloadJsonFromS3<IDataItem[]>(
+          bucketName,
+          s3Key,
+          validatedRegion
+        );
+      } catch (error: any) {
+        if (!fileConfig.required && error.name === 'NoSuchKey') {
+          BaseManager.logVerbose(
+            verbose,
+            `ℹ️ Optional file ${fileConfig.file} not found, skipping`
+          );
+          data[key] = [];
+          continue;
+        }
+        throw error;
+      }
     }
 
     // Validate data before populating DynamoDB
