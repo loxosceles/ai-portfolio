@@ -9,7 +9,8 @@ import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
 import {
   handleUploadData,
   handleDownloadData,
-  handlePopulateDynamoDB
+  handlePopulateDynamoDB,
+  validateData
 } from '../../lib/cli/commands/data-management';
 
 // Test configuration
@@ -163,7 +164,8 @@ describe('Data Management Command Tests', () => {
 
     jest
       .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'getParameter')
-      .mockImplementation((paramName: string) => {
+      .mockImplementation((...args: unknown[]) => {
+        const paramName = args[0] as string;
         if (paramName.includes('DEVELOPER_TABLE_NAME')) {
           return Promise.resolve('test-developers');
         } else if (paramName.includes('PROJECTS_TABLE_NAME')) {
@@ -232,7 +234,8 @@ describe('Data Management Command Tests', () => {
   test('should handle missing optional recruiters file gracefully', async () => {
     jest
       .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
-      .mockImplementation((bucketName: string, key: string) => {
+      .mockImplementation((...args: unknown[]) => {
+        const key = args[1] as string;
         if (key.includes('recruiters.json')) {
           const error = new Error('The specified key does not exist.');
           error.name = 'NoSuchKey';
@@ -250,7 +253,8 @@ describe('Data Management Command Tests', () => {
   test('should fail when required developers file is missing', async () => {
     jest
       .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
-      .mockImplementation((bucketName: string, key: string) => {
+      .mockImplementation((...args: unknown[]) => {
+        const key = args[1] as string;
         if (key.includes('developer.json')) {
           const error = new Error('The specified key does not exist.');
           error.name = 'NoSuchKey';
@@ -268,7 +272,8 @@ describe('Data Management Command Tests', () => {
   test('should fail when required projects file is missing', async () => {
     jest
       .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
-      .mockImplementation((bucketName: string, key: string) => {
+      .mockImplementation((...args: unknown[]) => {
+        const key = args[1] as string;
         if (key.includes('projects.json')) {
           const error = new Error('The specified key does not exist.');
           error.name = 'NoSuchKey';
@@ -286,7 +291,8 @@ describe('Data Management Command Tests', () => {
   test('should handle empty optional recruiters file gracefully', async () => {
     jest
       .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
-      .mockImplementation((bucketName: string, key: string) => {
+      .mockImplementation((...args: unknown[]) => {
+        const key = args[1] as string;
         if (key.includes('recruiters.json')) {
           return Promise.resolve([]);
         }
@@ -302,7 +308,8 @@ describe('Data Management Command Tests', () => {
   test('should fail when required developers file is empty', async () => {
     jest
       .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
-      .mockImplementation((bucketName: string, key: string) => {
+      .mockImplementation((...args: unknown[]) => {
+        const key = args[1] as string;
         if (key.includes('developer.json')) {
           return Promise.resolve([]);
         }
@@ -313,5 +320,53 @@ describe('Data Management Command Tests', () => {
 
     expect(result.success).toBe(false);
     expect(result.message).toContain("Required data for table 'developers' is missing or empty");
+  });
+
+  describe('validation functions', () => {
+    const mockSchemaPath = '/tmp/test-schemas';
+    const mockStage = 'test';
+
+    test('should validate data successfully with valid schema and data', async () => {
+      const mockSchema = {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' }
+        },
+        required: ['id', 'name']
+      };
+
+      const mockFs = require('fs/promises');
+      mockFs.readFile.mockResolvedValueOnce(JSON.stringify(mockSchema));
+
+      const testData = { id: '1', name: 'Test' };
+
+      const result = await validateData('developers', testData, mockStage, mockSchemaPath);
+
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    test('should return validation errors for invalid data', async () => {
+      const mockSchema = {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' }
+        },
+        required: ['id', 'name']
+      };
+
+      const mockFs = require('fs/promises');
+      mockFs.readFile.mockResolvedValueOnce(JSON.stringify(mockSchema));
+
+      const testData = { id: '1' }; // Missing required 'name' field
+
+      const result = await validateData('developers', testData, mockStage, mockSchemaPath);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0].message).toContain('required');
+    });
   });
 });

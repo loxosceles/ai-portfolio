@@ -31,7 +31,7 @@ phases:
       - echo "Provisioning infrastructure for $ENVIRONMENT environment"
       - cd infrastructure && pnpm provision:$ENVIRONMENT && cd ..
       - echo "Setting up data for $ENVIRONMENT environment"
-      - cd infrastructure && pnpm populate-static-data-ddb:$ENVIRONMENT && cd ..
+      - cd infrastructure && pnpm populate-static-data-ddb:$ENVIRONMENT --use-downloaded-schemas && cd ..
       - echo "Generating service environment files"
       - cd infrastructure && pnpm export-ssm-params:$ENVIRONMENT --target=frontend --output && cd ..
       - cd infrastructure && pnpm export-ssm-params:$ENVIRONMENT --target=link-generator --output && cd ..
