@@ -115,7 +115,7 @@ export default [
       ...SHARED_RULES,
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
       'import/no-unresolved': 'error'
     }
   },
@@ -182,7 +182,7 @@ export default [
       ...SHARED_RULES,
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
-      '@typescript-eslint/no-explicit-any': 'warn'
+      '@typescript-eslint/no-explicit-any': 'error'
     }
   }
 ];
