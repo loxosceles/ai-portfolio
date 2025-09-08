@@ -228,4 +228,90 @@ describe('Data Management Command Tests', () => {
     expect(result.success).toBe(true);
     expect(s3Mock.calls().length).toBeGreaterThan(0);
   });
+
+  test('should handle missing optional recruiters file gracefully', async () => {
+    jest
+      .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
+      .mockImplementation((bucketName: string, key: string) => {
+        if (key.includes('recruiters.json')) {
+          const error = new Error('The specified key does not exist.');
+          error.name = 'NoSuchKey';
+          throw error;
+        }
+        return Promise.resolve(getMockS3Response(key));
+      });
+
+    const result = await handlePopulateDynamoDB({ verbose: false, region: undefined });
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain('DynamoDB tables populated successfully');
+  });
+
+  test('should fail when required developers file is missing', async () => {
+    jest
+      .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
+      .mockImplementation((bucketName: string, key: string) => {
+        if (key.includes('developer.json')) {
+          const error = new Error('The specified key does not exist.');
+          error.name = 'NoSuchKey';
+          throw error;
+        }
+        return Promise.resolve(getMockS3Response(key));
+      });
+
+    const result = await handlePopulateDynamoDB({ verbose: false, region: undefined });
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('Failed to populate DynamoDB');
+  });
+
+  test('should fail when required projects file is missing', async () => {
+    jest
+      .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
+      .mockImplementation((bucketName: string, key: string) => {
+        if (key.includes('projects.json')) {
+          const error = new Error('The specified key does not exist.');
+          error.name = 'NoSuchKey';
+          throw error;
+        }
+        return Promise.resolve(getMockS3Response(key));
+      });
+
+    const result = await handlePopulateDynamoDB({ verbose: false, region: undefined });
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('Failed to populate DynamoDB');
+  });
+
+  test('should handle empty optional recruiters file gracefully', async () => {
+    jest
+      .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
+      .mockImplementation((bucketName: string, key: string) => {
+        if (key.includes('recruiters.json')) {
+          return Promise.resolve([]);
+        }
+        return Promise.resolve(getMockS3Response(key));
+      });
+
+    const result = await handlePopulateDynamoDB({ verbose: false, region: undefined });
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain('DynamoDB tables populated successfully');
+  });
+
+  test('should fail when required developers file is empty', async () => {
+    jest
+      .spyOn(require('../../lib/core/aws-manager').AWSManager.prototype, 'downloadJsonFromS3')
+      .mockImplementation((bucketName: string, key: string) => {
+        if (key.includes('developer.json')) {
+          return Promise.resolve([]);
+        }
+        return Promise.resolve(getMockS3Response(key));
+      });
+
+    const result = await handlePopulateDynamoDB({ verbose: false, region: undefined });
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("Required data for table 'developers' is missing or empty");
+  });
 });

@@ -14,14 +14,14 @@ const validatorCache = new Map<string, ValidateFunction>();
 
 /**
  * Get validation schema from local file system
- * @param dataType - Type of data (developers, projects, recruiters)
+ * @param tableName - Name of table (developers, projects, recruiters)
  * @param stage - Environment stage (dev/prod)
  * @returns JSON schema object
  */
-async function getSchemaFromLocal(dataType: string, stage: string): Promise<unknown> {
-  const schemaFile = DATA_CONFIG.schemaFiles[dataType as keyof typeof DATA_CONFIG.schemaFiles];
+async function getSchemaFromLocal(tableName: string, stage: string): Promise<unknown> {
+  const schemaFile = DATA_CONFIG.schemaFiles[tableName as keyof typeof DATA_CONFIG.schemaFiles];
   if (!schemaFile) {
-    throw new Error(`No schema file configured for data type: ${dataType}`);
+    throw new Error(`No schema file configured for table: ${tableName}`);
   }
 
   const schemaPath = DATA_CONFIG.localSchemaPathTemplate.replace('{stage}', stage);
@@ -32,25 +32,25 @@ async function getSchemaFromLocal(dataType: string, stage: string): Promise<unkn
     return JSON.parse(schemaContent);
   } catch (error) {
     throw new Error(
-      `Failed to load schema for ${dataType}: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to load schema for ${tableName}: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }
 
 /**
- * Get or create validator for data type
- * @param dataType - Type of data (developers, projects, recruiters)
+ * Get or create validator for table
+ * @param tableName - Name of table (developers, projects, recruiters)
  * @param stage - Environment stage (dev/prod)
  * @returns AJV validator function
  */
-async function getValidator(dataType: string, stage: string): Promise<ValidateFunction> {
-  const cacheKey = `${dataType}-${stage}`;
+async function getValidator(tableName: string, stage: string): Promise<ValidateFunction> {
+  const cacheKey = `${tableName}-${stage}`;
 
   if (validatorCache.has(cacheKey)) {
     return validatorCache.get(cacheKey)!;
   }
 
-  const schema = await getSchemaFromLocal(dataType, stage);
+  const schema = await getSchemaFromLocal(tableName, stage);
   const validator = ajv.compile(schema as object);
 
   validatorCache.set(cacheKey, validator);
@@ -59,18 +59,18 @@ async function getValidator(dataType: string, stage: string): Promise<ValidateFu
 
 /**
  * Validate data against schema
- * @param dataType - Type of data (developers, projects, recruiters)
+ * @param tableName - Name of table (developers, projects, recruiters)
  * @param data - Data to validate
  * @param stage - Environment stage (dev/prod)
  * @returns Validation result with errors if any
  */
 export async function validateData(
-  dataType: string,
+  tableName: string,
   data: unknown,
   stage: string
 ): Promise<{ valid: boolean; errors: Array<{ field: string; message: string; value: unknown }> }> {
   try {
-    const validator = await getValidator(dataType, stage);
+    const validator = await getValidator(tableName, stage);
     const valid = validator(data);
 
     return {

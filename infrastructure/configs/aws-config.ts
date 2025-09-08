@@ -50,11 +50,26 @@ export const PARAMETER_SCHEMA: Record<Stage, Record<string, string[]>> = {
 };
 
 // Data management constants
-export const DATA_CONFIG = {
+interface DataFileConfig {
+  file: string;
+  required: boolean;
+}
+
+interface DataConfig {
+  dataFiles: Record<string, DataFileConfig>;
+  schemaFiles: Record<string, string>;
+  s3PathTemplate: string;
+  schemaPathTemplate: string;
+  localPathTemplate: string;
+  localDataPathTemplate: string;
+  localSchemaPathTemplate: string;
+}
+
+export const DATA_CONFIG: DataConfig = {
   dataFiles: {
-    developers: 'developer.json',
-    projects: 'projects.json',
-    recruiters: 'recruiters.json'
+    developers: { file: 'developer.json', required: true },
+    projects: { file: 'projects.json', required: true },
+    recruiters: { file: 'recruiters.json', required: false }
   },
   schemaFiles: {
     developers: 'developer-schema.json',
