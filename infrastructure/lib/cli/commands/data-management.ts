@@ -8,14 +8,19 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { IDataItem, IDataCollection } from '../../../types/data';
 import { buildSSMPath } from '../../../utils/ssm';
+// AJV is a fast and widely-used JSON schema validator for JavaScript/TypeScript.
+// It was chosen for its performance, compliance with the JSON Schema standard, and strong TypeScript support.
 import Ajv, { ValidateFunction, ErrorObject } from 'ajv';
+// ajv-formats extends AJV to support additional JSON schema formats (e.g., "date-time", "email", etc.).
 import addFormats from 'ajv-formats';
 
-// Initialize AJV with formats support
+// Initialize AJV with all errors enabled and add support for additional formats.
 const ajv = new Ajv({ allErrors: true });
 addFormats(ajv);
 
-// Cache for compiled validators
+// Cache for compiled validators to avoid recompiling schemas on every validation.
+// The cache key is a combination of table name, environment stage, and schema path.
+// This improves performance, especially when validating many items against the same schema.
 const validatorCache = new Map<string, ValidateFunction>();
 
 /**
