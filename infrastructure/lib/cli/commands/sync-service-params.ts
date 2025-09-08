@@ -172,7 +172,7 @@ export async function handleSyncServiceParameters(
     }
 
     const action = dryRun ? 'Would sync' : 'Synced';
-    let message = `✅ ${action} ${totalSynced} service parameters`;
+    let message = `${action} ${totalSynced} service parameters`;
 
     if (cleanup && totalDeleted > 0) {
       const deleteAction = dryRun ? 'would delete' : 'deleted';

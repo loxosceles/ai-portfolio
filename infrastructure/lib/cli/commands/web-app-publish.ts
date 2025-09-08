@@ -25,7 +25,7 @@ export async function handlePublishWepApp(verbose: boolean = false): Promise<voi
   const frontendOutDir = path.join(awsManager.config.projectRoot, 'frontend/out');
   BaseManager.logVerbose(verbose, `Syncing directory ${frontendOutDir} to s3://${bucketName}/`);
   await awsManager.syncDirectoryToS3(frontendOutDir, bucketName, region);
-  BaseManager.logVerbose(verbose, `✅ Synced files to s3://${bucketName}/`);
+  BaseManager.logVerbose(verbose, `Synced files to s3://${bucketName}/`);
 
-  BaseManager.logVerbose(verbose, '✅ Web app publishing completed');
+  BaseManager.logVerbose(verbose, 'Web app publishing completed');
 }

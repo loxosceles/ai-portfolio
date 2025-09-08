@@ -122,8 +122,10 @@ export async function handleUploadData(
 
     // Validate data using schemas before upload
     try {
-      await validateDataWithSchemas(data, stage);
-      BaseManager.logVerbose(verbose, `✅ Data validation passed`);
+      const localSchemaPath = DATA_CONFIG.localSchemaPathTemplate.replace('{stage}', stage);
+      const schemaPath = path.resolve(awsManagerConfig.projectRoot, localSchemaPath);
+      await validateDataWithSchemas(data, stage, schemaPath);
+      BaseManager.logVerbose(verbose, `Data validation passed`);
     } catch (error) {
       return {
         success: false,
@@ -150,7 +152,7 @@ export async function handleUploadData(
       const s3Key = DATA_CONFIG.s3PathTemplate.replace('{fileName}', fileConfig.file);
       await awsManager.uploadJsonToS3(bucketName, s3Key, items, validatedRegion);
     }
-    BaseManager.logVerbose(verbose, `✅ Uploaded data to s3://${bucketName}/data/`);
+    BaseManager.logVerbose(verbose, `Uploaded data to s3://${bucketName}/data/`);
 
     // Upload schemas to S3
     for (const [key, schema] of Object.entries(schemas)) {
@@ -165,11 +167,11 @@ export async function handleUploadData(
       const s3Key = DATA_CONFIG.schemaPathTemplate.replace('{schemaFile}', fileName);
       await awsManager.uploadJsonToS3(bucketName, s3Key, schema, validatedRegion);
     }
-    BaseManager.logVerbose(verbose, `✅ Uploaded schemas to s3://${bucketName}/schemas/`);
+    BaseManager.logVerbose(verbose, `Uploaded schemas to s3://${bucketName}/schemas/`);
 
     return {
       success: true,
-      message: '✅ Data and schema upload completed successfully'
+      message: 'Data and schema upload completed successfully'
     };
   } catch (error) {
     return {
@@ -244,8 +246,8 @@ export async function handleDownloadData(
 
     // Validate downloaded data using schemas
     try {
-      await validateDataWithSchemas(data, stage);
-      BaseManager.logVerbose(verbose, `✅ Downloaded data validation passed`);
+      await validateDataWithSchemas(data, stage, schemaPath);
+      BaseManager.logVerbose(verbose, `Downloaded data validation passed`);
     } catch (error) {
       return {
         success: false,
@@ -306,7 +308,7 @@ export async function handleDownloadData(
         await fs.writeFile(path.join(output, 'schemas', fileName), JSON.stringify(schema, null, 2));
       }
 
-      BaseManager.logVerbose(verbose, `✅ Data and schemas saved to ${output}`);
+      BaseManager.logVerbose(verbose, `Data and schemas saved to ${output}`);
     } else {
       // Output data to console if no output directory specified (for file redirection)
       process.stdout.write(`Developers: ${JSON.stringify(data.developers, null, 2)}\n`);
@@ -315,7 +317,7 @@ export async function handleDownloadData(
 
     return {
       success: true,
-      message: '✅ Data and schema download completed successfully',
+      message: 'Data and schema download completed successfully',
       data
     };
   } catch (error) {
@@ -380,8 +382,8 @@ export async function handlePopulateDynamoDB(
 
     // Validate data before populating DynamoDB
     try {
-      await validateDataWithSchemas(data, stage);
-      BaseManager.logVerbose(verbose, `✅ Data validation passed before DynamoDB population`);
+      await validateDataWithSchemas(data, stage, schemaPath);
+      BaseManager.logVerbose(verbose, `Data validation passed before DynamoDB population`);
     } catch (error) {
       return {
         success: false,
@@ -423,22 +425,22 @@ export async function handlePopulateDynamoDB(
       await awsManager.batchWriteToDynamoDB(recruiterTableName, data.recruiters, validatedRegion);
       BaseManager.logVerbose(
         verbose,
-        `✅ Populated ${recruiterTableName} with ${data.recruiters.length} items`
+        `Populated ${recruiterTableName} with ${data.recruiters.length} items`
       );
     }
 
     BaseManager.logVerbose(
       verbose,
-      `✅ Populated ${developerTableName} with ${data.developers.length} items`
+      `Populated ${developerTableName} with ${data.developers.length} items`
     );
     BaseManager.logVerbose(
       verbose,
-      `✅ Populated ${projectsTableName} with ${data.projects.length} items`
+      `Populated ${projectsTableName} with ${data.projects.length} items`
     );
 
     return {
       success: true,
-      message: '✅ DynamoDB tables populated successfully'
+      message: 'DynamoDB tables populated successfully'
     };
   } catch (error) {
     return {
