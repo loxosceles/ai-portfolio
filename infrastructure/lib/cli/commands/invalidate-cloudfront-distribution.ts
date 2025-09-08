@@ -30,9 +30,9 @@ export async function handleInvalidateCloudFrontDistribution(
 
     BaseManager.logVerbose(
       verbose,
-      `✅ CloudFront invalidation created for distribution ${distributionId}`
+      `CloudFront invalidation created for distribution ${distributionId}`
     );
-    BaseManager.logVerbose(verbose, '✅ CloudFront invalidation completed');
+    BaseManager.logVerbose(verbose, 'CloudFront invalidation completed');
   } catch (error) {
     console.error(`❌ Failed to invalidate CloudFront distribution: ${error}`);
     throw error;
