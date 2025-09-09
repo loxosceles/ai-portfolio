@@ -15,6 +15,9 @@ import {
 import TechBadge from './tech-badge';
 import ProjectIcon from './project-icon';
 import GitHubIcon from './icons/github-icon';
+import { useScreenSize } from '@/hooks/useScreenSize';
+import MobileSlidingTabs from './mobile-sliding-tabs';
+import TabHeader from './tab-header';
 
 interface ProjectDetailSectionProps {
   project: ProjectType;
@@ -233,6 +236,11 @@ interface TechnicalShowcaseTabsProps {
 
 function TechnicalShowcaseTabs({ showcases }: TechnicalShowcaseTabsProps) {
   const [activeTab, setActiveTab] = useState(0);
+  const { isMobile } = useScreenSize();
+
+  if (isMobile) {
+    return <MobileSlidingTabs showcases={showcases} />;
+  }
 
   return (
     <div className="card-glass rounded-xl p-8">
@@ -241,22 +249,7 @@ function TechnicalShowcaseTabs({ showcases }: TechnicalShowcaseTabsProps) {
         <h3 className="text-2xl font-semibold text-primary">Technical Deep Dive</h3>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex flex-wrap gap-2 mb-6 border-b border-brand-accent/20">
-        {showcases.map((showcase, index) => (
-          <button
-            key={index}
-            onClick={() => setActiveTab(index)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
-              activeTab === index
-                ? 'bg-brand-accent/20 text-primary border-b-2 border-brand-accent'
-                : 'text-secondary hover:text-primary hover:bg-brand-accent/10'
-            }`}
-          >
-            {showcase.title}
-          </button>
-        ))}
-      </div>
+      <TabHeader showcases={showcases} activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Tab Content */}
       <div className="h-96 md:h-[480px] pb-8">
