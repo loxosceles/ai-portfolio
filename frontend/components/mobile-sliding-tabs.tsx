@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Code, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SWIPE_THRESHOLD, TRANSITION_DURATION } from '@/shared/constants';
 
 interface MobileSlidingTabsProps {
   showcases: { title: string; description: string; highlights: string[] }[];
@@ -40,8 +41,8 @@ export default function MobileSlidingTabs({ showcases }: MobileSlidingTabsProps)
     if (!touchStartX.current || !touchEndX.current) return;
 
     const distance = touchStartX.current - touchEndX.current;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
+    const isLeftSwipe = distance > SWIPE_THRESHOLD;
+    const isRightSwipe = distance < -SWIPE_THRESHOLD;
 
     if (isLeftSwipe) {
       goToNext();
@@ -60,7 +61,7 @@ export default function MobileSlidingTabs({ showcases }: MobileSlidingTabsProps)
 
   useEffect(() => {
     if (isTransitioning) {
-      const timer = setTimeout(() => setIsTransitioning(false), 300);
+      const timer = setTimeout(() => setIsTransitioning(false), TRANSITION_DURATION);
       return () => clearTimeout(timer);
     }
   }, [isTransitioning]);
