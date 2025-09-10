@@ -111,7 +111,8 @@
         "title": "Development Tooling Integration"
       }
     ],
-    "title": "Image Processor CLI"
+    "title": "Image Processor CLI",
+    "order": 3
   },
   {
     "archPatterns": [
@@ -232,7 +233,8 @@
         "title": "Automated Deployment Pipeline"
       }
     ],
-    "title": "Web3 Snapshot"
+    "title": "Web3 Snapshot",
+    "order": 1
   },
   {
     "archPatterns": [
@@ -350,6 +352,7 @@
         "title": "Multi-Environment Deployment"
       }
     ],
-    "title": "AI-Powered Portfolio"
+    "title": "AI-Powered Portfolio",
+    "order": 2
   }
 ]

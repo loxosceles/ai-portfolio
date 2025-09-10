@@ -33,17 +33,13 @@ const Portfolio = () => {
   const [targetSection, setTargetSection] = useState('hero');
   const [scrollSection, setScrollSection] = useState('hero');
   const [isNavigating, setIsNavigating] = useState(false);
-  const [projects, setProjects] = useState<ProjectType[]>([]);
   const { getQueryContext } = useAuth();
 
   const { loading, error, data } = useQuery(GET_DEVELOPER_WITH_PROJECTS, {
     context: getQueryContext('public')
   });
 
-  // Update projects when data changes (Apollo Client v3.14+ recommendation)
-  if (data?.getDeveloper?.projects && projects !== data.getDeveloper.projects) {
-    setProjects(data.getDeveloper.projects);
-  }
+  const projects = data?.getDeveloper?.projects || [];
 
   // Handle errors during render
   if (error) {
@@ -139,13 +135,13 @@ const Portfolio = () => {
   return (
     <>
       <FloatingNavigation
-        projects={developer.projects || []}
+        projects={projects}
         activeSection={activeSection}
         onActiveSectionChange={handleNavigation}
       />
       <AutoHideHeader
         developer={developer}
-        projects={developer.projects || []}
+        projects={projects}
         activeSection={activeSection}
         onActiveSectionChange={handleNavigation}
       />
@@ -187,7 +183,7 @@ const Portfolio = () => {
                   developerId: developer.id || 'default-dev'
                 } as ProjectType
               ]
-          ).map((project, index) => (
+          ).map((project: ProjectType, index: number) => (
             <ProjectDetailSection
               key={project.id}
               id={project.slug}
