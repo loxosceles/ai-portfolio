@@ -1,6 +1,5 @@
 import { Construct } from 'constructs';
 import * as appsync from 'aws-cdk-lib/aws-appsync';
-import { DynamoDBResolverConstruct } from './dynamodb-resolver-construct';
 
 export interface IAPIResolverProps {
   api: appsync.GraphqlApi;
@@ -30,34 +29,16 @@ export class APIResolverConstruct extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem()
     });
 
-    // Developer mutation resolver
-    new DynamoDBResolverConstruct(this, 'UpdateDeveloper', {
-      dataSource: developerDataSource,
-      typeName: 'Mutation',
-      fieldName: 'updateDeveloper',
-      operation: 'update'
-    });
-
-    // Project query resolvers (Public - API key)
-    new DynamoDBResolverConstruct(this, 'GetProject', {
-      dataSource: projectsDataSource,
-      typeName: 'Query',
-      fieldName: 'getProject',
-      operation: 'get'
-    });
-
-    new DynamoDBResolverConstruct(this, 'ListProjects', {
-      dataSource: projectsDataSource,
-      typeName: 'Query',
-      fieldName: 'listProjects',
-      operation: 'list'
-    });
-
-    // Relationship resolvers
+    // Relationship resolver with efficient server-side sorting
     projectsDataSource.createResolver('DeveloperProjectsResolver', {
       typeName: 'Developer',
       fieldName: 'projects',
       requestMappingTemplate: appsync.MappingTemplate.fromString(`
+    #set($sortOrder = true) # Default to ASC
+    #if($ctx.args.sortOrder && $ctx.args.sortOrder == "DESC")
+      #set($sortOrder = false)
+    #end
+
     {
       "version": "2018-05-29",
       "operation": "Query",
@@ -67,7 +48,8 @@ export class APIResolverConstruct extends Construct {
           ":developerId": $util.dynamodb.toDynamoDBJson($ctx.source.id)
         }
       },
-      "index": "byDeveloperId"
+      "index": "byDeveloperId",
+      "scanIndexForward": $sortOrder
     }
   `),
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultList()

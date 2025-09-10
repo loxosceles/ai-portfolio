@@ -19,7 +19,7 @@ export const GET_DEVELOPER_WITH_PROJECTS = gql`
         skills
       }
       isActive
-      projects {
+      projects(sortOrder: ASC) {
         id
         title
         slug

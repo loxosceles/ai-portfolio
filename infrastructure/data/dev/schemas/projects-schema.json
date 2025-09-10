@@ -163,6 +163,10 @@
         "type": "string",
         "minLength": 1,
         "description": "ID of the developer who created this project"
+      },
+      "order": {
+        "type": "integer",
+        "description": "Display order for projects"
       }
     },
     "required": ["id", "title", "description", "status", "highlights", "techStack", "developerId"],
