@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import HeroSection from '@/components/hero-section';
+import GitHubStatsPanel from '@/components/github-stats-panel';
 import FeaturedProjects from '@/components/featured-projects';
 import SkillsSection from '@/components/skills-section';
 import ContactSection from '@/components/contact-section';
@@ -150,6 +151,7 @@ const Portfolio = () => {
 
         <TransitionManager targetSection={targetSection}>
           <HeroSection id="hero" developer={developer} />
+          <GitHubStatsPanel />
           <FeaturedProjects id="featured" developer={developer} onNavigate={handleNavigation} />
           <SkillsSection id="skills" developer={developer} />
           {(projects.length > 0
