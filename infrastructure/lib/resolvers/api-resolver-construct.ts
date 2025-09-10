@@ -34,7 +34,7 @@ export class APIResolverConstruct extends Construct {
       typeName: 'Developer',
       fieldName: 'projects',
       requestMappingTemplate: appsync.MappingTemplate.fromString(`
-    #set($sortOrder = true) ## Default to ASC
+    #set($sortOrder = true) # Default to ASC
     #if($ctx.args.sortOrder && $ctx.args.sortOrder == "DESC")
       #set($sortOrder = false)
     #end
