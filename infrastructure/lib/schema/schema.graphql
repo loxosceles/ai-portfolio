@@ -1,3 +1,8 @@
+enum SortDirection {
+  ASC
+  DESC
+}
+
 type Developer @aws_iam @aws_cognito_user_pools @aws_api_key {
   id: ID!
   name: String!
@@ -12,7 +17,7 @@ type Developer @aws_iam @aws_cognito_user_pools @aws_api_key {
   yearsOfExperience: Int
   skillSets: [SkillSet]
   isActive: Boolean
-  projects: [Project] @hasMany(fields: ["id"])
+  projects(sortOrder: SortDirection): [Project] @hasMany(fields: ["id"])
 }
 
 type Project @aws_iam @aws_cognito_user_pools @aws_api_key {

@@ -204,10 +204,11 @@ export class ApiStack extends cdk.Stack {
         encryption: dynamodb.TableEncryption.AWS_MANAGED
       });
 
-      // Add GSI that matches the original
+      // Add GSI with order as sort key for efficient sorting
       projectsTable.addGlobalSecondaryIndex({
         indexName: 'byDeveloperId',
-        partitionKey: { name: 'developerId', type: dynamodb.AttributeType.STRING }
+        partitionKey: { name: 'developerId', type: dynamodb.AttributeType.STRING },
+        sortKey: { name: 'order', type: dynamodb.AttributeType.NUMBER }
       });
 
       return { developerTable, projectsTable };

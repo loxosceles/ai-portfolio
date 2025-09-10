@@ -183,7 +183,7 @@ const Portfolio = () => {
                   developerId: developer.id || 'default-dev'
                 } as ProjectType
               ]
-          ).map((project, index) => (
+          ).map((project: ProjectType, index: number) => (
             <ProjectDetailSection
               key={project.id}
               id={project.slug}
